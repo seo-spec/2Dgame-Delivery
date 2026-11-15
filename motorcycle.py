@@ -20,6 +20,7 @@ BOOST_RAMP_TIME = 1.0  # 기본 배율에서 최대 배율까지 걸리는 초.
 REVERSE_ACCEL = 40.0
 BRAKE_ACCEL = 180.0
 NATURAL_DECEL = 100.0
+COLLISION_SPEED_REDUCTION = 0.5  # 새 건물 충돌 시 현재 속도 크기의 50% 감소.
 # 라디안/초. 초기값은 초당 180도 회전이다.
 TURN_RATE = pi
 # 가장 먼 앞부분 꼭짓점 (36, 6)의 거리 약 36.5픽셀까지 감싼다.
@@ -87,6 +88,10 @@ class Motorcycle:
         self.angle = (self.angle + turn_input * TURN_RATE * dt) % tau
         self.x += cos(self.angle) * self.speed * dt
         self.y += sin(self.angle) * self.speed * dt
+
+    def apply_collision_slowdown(self):
+        # 부호를 유지해 후진 충돌에서도 진행 방향이 뒤집히지 않게 한다.
+        self.speed *= 1.0 - COLLISION_SPEED_REDUCTION
 
     def _accelerate(self, direction, acceleration, dt):
         # 반대 방향으로 주행 중이면 먼저 제동한다. 정지 이후 남은 시간만
