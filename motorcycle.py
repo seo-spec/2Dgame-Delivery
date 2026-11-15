@@ -8,6 +8,7 @@ from pico2d import (
 )
 
 import game_framework
+import debug_view
 
 
 # 초기 주행 확인용 수치. 속도는 픽셀/초, 가감속은 픽셀/초².
@@ -111,7 +112,8 @@ class Motorcycle:
         # 도형 내부 좌표의 X 양의 방향을 차체 정면으로 사용한다.
         self._draw_outline(((-24, -12), (24, -12), (24, 12), (-24, 12)))
         self._draw_outline(((24, -6), (36, -6), (36, 6), (24, 6)))
-        self._draw_collision_circle()
+        if debug_view.enabled:
+            self._draw_collision_circle()
 
     def _draw_collision_circle(self):
         center_x, center_y = self.camera.world_to_screen(self.x, self.y)

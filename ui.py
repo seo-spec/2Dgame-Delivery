@@ -1,6 +1,7 @@
 """화물 상태를 확인하기 위한 임시 화면 고정 텍스트."""
 
 import os
+import debug_view
 from pathlib import Path
 
 from pico2d import get_canvas_height, get_canvas_width, load_font
@@ -38,33 +39,36 @@ class CargoDebugText:
         lines = [
             f'누적 수익: {total_revenue:,}원 / 목표: {controller.target_revenue:,}원',
             f'배송: {sum(house.delivered for house in delivery_houses)} / {len(delivery_houses)}',
-            f'경과시간: {elapsed_time:.1f}초',
             f'남은 시간: {remaining_time:.1f}초',
             f'현재 상태: {controller.state.value}',
             time_status,
         ]
-        if controller.state == StageState.DELIVERING:
-            lines.append(f'남은 최대 예상 수익: {controller.remaining_max_revenue:,}원')
+        if debug_view.enabled:
+            lines.append(f'경과시간: {elapsed_time:.1f}초')
+            if controller.state == StageState.DELIVERING:
+                lines.append(f'남은 최대 예상 수익: {controller.remaining_max_revenue:,}원')
         self._draw_lines(lines, TEXT_LEFT, get_canvas_height() - TEXT_TOP_MARGIN)
         cargo_by_id = {cargo.cargo_id: cargo for cargo in cargo_list}
         column_width = (get_canvas_width() - TEXT_LEFT * 2) / CARD_COLUMNS
         for index, house in enumerate(delivery_houses):
             label = house.label
-            lines = [f'[{label}] ({house.x}, {house.y})']
+            lines = [f'[{label}]']
+            if debug_view.enabled:
+                lines[0] += f' ({house.x}, {house.y})'
             cargo = cargo_by_id.get(house.cargo_id)
             if cargo is not None:
                 if cargo.delivered:
                     status = '배송 완료'
                 else:
                     status = '파손' if cargo.current_durability <= 0.0 else '정상'
-                lines.extend((
-                    f'화물 ID: {cargo.cargo_id}',
-                    f'상태: {status}',
-                    f'내구도: {cargo.current_durability:.1f} / {cargo.max_durability:.1f}',
-                    f'흔들림: {cargo.shake:.1f}',
-                ))
+                lines.append(f'{status} | 내구도: '
+                             f'{cargo.current_durability:.1f}/{cargo.max_durability:.1f}')
+                if debug_view.enabled:
+                    lines.extend((f'화물 ID: {cargo.cargo_id}', f'흔들림: {cargo.shake:.1f}'))
             else:
-                lines.extend((f'화물 ID: {house.cargo_id}', '상태: 수령 대기'))
+                lines.append('상태: 수령 대기')
+                if debug_view.enabled:
+                    lines.append(f'화물 ID: {house.cargo_id}')
             if house.delivered:
                 mood_text = f'{label} 배송 시 기분: {house.delivered_mood}'
             elif controller.state != StageState.WAITING:
@@ -74,7 +78,9 @@ class CargoDebugText:
             lines.append(mood_text)
             column, row = index % CARD_COLUMNS, index // CARD_COLUMNS
             left = round(TEXT_LEFT + column * column_width)
-            top = get_canvas_height() - TEXT_TOP_MARGIN - CARD_TOP_MARGIN - row * CARD_ROW_SPACING
+            top_margin = CARD_TOP_MARGIN if debug_view.enabled else 140
+            row_spacing = CARD_ROW_SPACING if debug_view.enabled else 104
+            top = get_canvas_height() - TEXT_TOP_MARGIN - top_margin - row * row_spacing
             self._draw_lines(lines, left, top)
 
     def _draw_lines(self, lines, left, top):

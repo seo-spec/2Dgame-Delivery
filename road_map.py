@@ -6,6 +6,7 @@ from pathlib import Path
 from pico2d import draw_rectangle, load_image
 
 import settings
+import debug_view
 from road_geometry import ASPHALT_COLOR, GRASS_COLOR, SIDEWALK_COLOR, RoadGeometry
 
 
@@ -125,7 +126,7 @@ class MapDecoration:
         x, y = self.camera.world_to_screen(self.x, self.y)
         self.image.draw(round(x), round(y), self.width, self.height)
         bounds = self.get_collision_bounds()
-        if bounds is not None:
+        if debug_view.enabled and bounds is not None:
             left, bottom, right, top = bounds
             screen_left, screen_bottom = self.camera.world_to_screen(left, bottom)
             screen_right, screen_top = self.camera.world_to_screen(right, top)

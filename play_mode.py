@@ -5,6 +5,7 @@ from pico2d import (
     SDL_KEYUP,
     SDL_QUIT,
     SDLK_ESCAPE,
+    SDLK_F1,
     SDLK_SPACE,
     SDLK_r,
     clear_canvas,
@@ -14,6 +15,7 @@ from pico2d import (
 )
 
 import game_framework
+import debug_view
 import game_world
 from camera import Camera
 from cargo import Cargo
@@ -52,6 +54,7 @@ def init():
     blocked_keys.clear()
     restart_frame = False
     controller = GameController()
+    debug_view.enabled = False
     total_revenue = 0
     space_pressed = False
     delivery_requested = False
@@ -142,6 +145,10 @@ def handle_events():
         if event.key in blocked_keys:
             if event.type == SDL_KEYUP:
                 blocked_keys.discard(event.key)
+            continue
+        if event.key == SDLK_F1:
+            if event.type == SDL_KEYDOWN and fresh_press:
+                debug_view.enabled = not debug_view.enabled
             continue
         if event.key == SDLK_r:
             if (event.type == SDL_KEYDOWN and fresh_press
