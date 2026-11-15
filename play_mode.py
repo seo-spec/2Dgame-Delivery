@@ -30,11 +30,13 @@ solid_obstacles = []
 contact_obstacles = set()
 delivery_houses = []
 space_pressed = False
+delivery_requested = False
 
 
 def init():
-    global motorcycle, camera, cargo_debug_text, space_pressed
+    global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     space_pressed = False
+    delivery_requested = False
     game_world.clear()
     solid_obstacles.clear()
     contact_obstacles.clear()
@@ -78,8 +80,9 @@ def init():
 
 
 def finish():
-    global motorcycle, camera, cargo_debug_text, space_pressed
+    global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     space_pressed = False
+    delivery_requested = False
     game_world.clear()
     motorcycle = None
     camera = None
@@ -90,7 +93,7 @@ def finish():
 
 
 def handle_events():
-    global space_pressed
+    global space_pressed, delivery_requested
     for event in get_events():
         if event.type == SDL_QUIT:
             game_framework.quit()
@@ -102,9 +105,7 @@ def handle_events():
             # 구역 밖에서도 눌림을 기록해, 유지한 채 진입하는 입력을 배제한다.
             if not space_pressed:
                 space_pressed = True
-                if any(not house.delivered and house.contains_position(motorcycle.x, motorcycle.y)
-                       for house in delivery_houses):
-                    print('배달 입력 감지')
+                delivery_requested = True
         elif event.type == SDL_KEYUP and event.key == SDLK_SPACE:
             space_pressed = False
         if event.type in (SDL_KEYDOWN, SDL_KEYUP):
@@ -112,6 +113,7 @@ def handle_events():
 
 
 def update():
+    global delivery_requested
     previous_x, previous_y = motorcycle.x, motorcycle.y
     previous_speed = motorcycle.speed
     game_world.update()
@@ -142,6 +144,14 @@ def update():
             is_decelerating=is_decelerating, collided=collided,
         )
         cargo.apply_shake_damage(game_framework.frame_time)
+    # 입력은 이번 프레임의 이동·충돌·손상 결과로 판정하고, 실패해도 소비한다.
+    if delivery_requested:
+        delivery_requested = False
+        for house in delivery_houses:
+            if house.try_deliver(motorcycle.x, motorcycle.y, motorcycle.speed,
+                                 motorcycle.cargo_list):
+                print(f'[배송 완료] 배송지={house.house_id}, 화물={house.cargo_id}')
+                break
     # 이번 프레임의 이동을 반영한 뒤 출력할 카메라 위치를 결정한다.
     camera.follow(motorcycle.x, motorcycle.y)
 

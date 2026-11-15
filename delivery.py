@@ -1,4 +1,4 @@
-"""배송지와 지정 화물 연결 데이터. 실제 배송 처리는 아직 하지 않는다."""
+"""배송지와 지정 화물 연결 데이터 및 배송 완료 처리."""
 
 
 STOP_SPEED_THRESHOLD = 15.0  # 전·후진 공통 저속·정차 기준. 단위: 픽셀/초.
@@ -31,3 +31,15 @@ class DeliveryHouse:
         return (not self.delivered
                 and self.contains_position(player_x, player_y)
                 and speed_magnitude <= STOP_SPEED_THRESHOLD)
+
+    def try_deliver(self, player_x, player_y, speed, cargo_list):
+        if not self.can_deliver(player_x, player_y, speed):
+            return False
+        cargo = next((cargo for cargo in cargo_list
+                      if cargo.cargo_id == self.cargo_id and not cargo.delivered), None)
+        if cargo is None:
+            return False
+        # 파손 여부와 무관하게 지정 화물과 배송지를 함께 완료한다. 화물은 보관한다.
+        cargo.delivered = True
+        self.delivered = True
+        return True
