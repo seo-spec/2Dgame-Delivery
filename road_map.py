@@ -103,7 +103,7 @@ class MapDecoration:
         self.image = image
         self.x, self.y = position
         self.width, self.height = size
-        # 이미지 크기와 독립적인 월드 단위 오프셋·크기. 지정된 건물만 사용한다.
+        # 이미지 크기와 독립적인 월드 단위 오프셋·크기. 지정된 건물·소품만 사용한다.
         self.collision = collision
         self.object_id = object_id
         self.is_building = is_building
