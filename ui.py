@@ -6,6 +6,7 @@ from pathlib import Path
 
 from pico2d import get_canvas_height, get_canvas_width, load_font
 from stage import StageState
+from minimap import MINIMAP_RESERVED_WIDTH
 
 
 FONT_PATH = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts' / 'malgun.ttf'
@@ -49,7 +50,7 @@ class CargoDebugText:
                 lines.append(f'남은 최대 예상 수익: {controller.remaining_max_revenue:,}원')
         self._draw_lines(lines, TEXT_LEFT, get_canvas_height() - TEXT_TOP_MARGIN)
         cargo_by_id = {cargo.cargo_id: cargo for cargo in cargo_list}
-        column_width = (get_canvas_width() - TEXT_LEFT * 2) / CARD_COLUMNS
+        column_width = (get_canvas_width() - MINIMAP_RESERVED_WIDTH - TEXT_LEFT * 2) / CARD_COLUMNS
         for index, house in enumerate(delivery_houses):
             label = house.label
             lines = [f'[{label}]']

@@ -22,6 +22,7 @@ from cargo import Cargo
 from collision import move_circle
 from delivery import DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings
 from motorcycle import Motorcycle
+from minimap import MiniMap
 from road_map import RoadMap, create_decorations
 from settings import WORLD_WIDTH, WORLD_HEIGHT
 from stage import GameController, StageState
@@ -31,6 +32,7 @@ from ui import CargoDebugText
 motorcycle = None
 camera = None
 cargo_debug_text = None
+minimap = None
 solid_obstacles = []
 contact_obstacles = set()
 delivery_houses = []
@@ -46,6 +48,7 @@ restart_frame = False
 
 
 def init():
+    global minimap
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     global controller, total_revenue
     global pickup_bounds
@@ -102,9 +105,12 @@ def init():
     game_world.add_object(motorcycle, game_world.ACTORS)
     camera.follow(motorcycle.x, motorcycle.y)
     cargo_debug_text = CargoDebugText()
+    minimap = MiniMap(road_map, cargo_debug_text.font)
 
 
 def finish():
+    global minimap
+    minimap = None
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     global controller, total_revenue
     global pickup_bounds
@@ -290,6 +296,7 @@ def draw():
         cargo_debug_text.draw_clear_result(delivery_houses, total_revenue, controller.target_revenue)
     if controller.state in (StageState.CLEAR, StageState.FAILED):
         cargo_debug_text.draw_restart_hint()
+    minimap.draw(motorcycle, delivery_houses)
     update_canvas()
 
 
