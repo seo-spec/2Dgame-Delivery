@@ -35,6 +35,7 @@
       "collision": {"offset": [0, -3], "size": [210, 146]}
     },
     {
+      "id": "delivery_house_b",
       "position": [1450, 1050],
       "size": [280, 280],
       "collision": {"offset": [0, -3], "size": [210, 146]}

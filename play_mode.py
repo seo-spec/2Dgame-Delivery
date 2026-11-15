@@ -17,7 +17,10 @@ import game_world
 from camera import Camera
 from cargo import Cargo
 from collision import move_circle
-from delivery import DeliveryHouse, INITIAL_A_BASE_FEE, INITIAL_A_DEADLINE
+from delivery import (
+    DeliveryHouse, INITIAL_A_BASE_FEE, INITIAL_A_DEADLINE,
+    INITIAL_B_BASE_FEE, INITIAL_B_DEADLINE,
+)
 from motorcycle import Motorcycle
 from road_map import RoadMap, create_decorations
 from ui import CargoDebugText
@@ -70,6 +73,23 @@ def init():
         deadline=INITIAL_A_DEADLINE,
     )
     delivery_houses.append(delivery_house)
+    cargo_b = Cargo('sample_cargo_02')
+    motorcycle.cargo_list.append(cargo_b)
+    house_b_config = next(
+        house for house in road_map.config['buildings']
+        if house.get('id') == 'delivery_house_b'
+    )
+    delivery_house_b = DeliveryHouse(
+        house_b_config['id'], *house_b_config['position'], cargo_b.cargo_id,
+        zone_offset=None, zone_size=None,
+        base_fee=INITIAL_B_BASE_FEE, deadline=INITIAL_B_DEADLINE,
+    )
+    delivery_houses.append(delivery_house_b)
+    print(
+        f'[배송지 연결] PRD=B집, ID={delivery_house_b.house_id}, '
+        f'지정 화물={delivery_house_b.cargo_id}, '
+        f'기본비={delivery_house_b.base_fee}원, 마감={delivery_house_b.deadline}초'
+    )
     print(
         f'[초기 확인용 화물] ID={sample_cargo.cargo_id}, '
         f'내구도={sample_cargo.current_durability}/{sample_cargo.max_durability}, '
@@ -180,7 +200,10 @@ def draw():
     clear_canvas()
     game_world.render()
     for house in delivery_houses:
-        left, bottom, right, top = house.get_zone_bounds()
+        bounds = house.get_zone_bounds()
+        if bounds is None:
+            continue
+        left, bottom, right, top = bounds
         screen_left, screen_bottom = camera.world_to_screen(left, bottom)
         screen_right, screen_top = camera.world_to_screen(right, top)
         # 청록색 충돌 영역과 구분되는 분홍색 배송 구역. 통행을 막지 않는다.

@@ -5,6 +5,8 @@ from math import floor
 
 INITIAL_A_BASE_FEE = 500  # PRD 6.2 A집 초기 배달비. 단위: 원.
 INITIAL_A_DEADLINE = 45.0  # 스테이지 출발 기준 마감. 단위: 초.
+INITIAL_B_BASE_FEE = 550
+INITIAL_B_DEADLINE = 65.0
 SATISFIED_DEADLINE_RATIO = 0.7
 SATISFIED_REWARD_MULTIPLIER = 1.2
 NORMAL_REWARD_MULTIPLIER = 1.0
@@ -24,8 +26,8 @@ class DeliveryHouse:
         self.reward = None  # 미정산과 0원 배송을 구분한다.
         self.delivered_mood = None
         # 건물 중심 기준 월드 단위 오프셋과 크기. 충돌 영역과는 별도다.
-        self.zone_offset = tuple(zone_offset)
-        self.zone_size = tuple(zone_size)
+        self.zone_offset = tuple(zone_offset) if zone_offset is not None else None
+        self.zone_size = tuple(zone_size) if zone_size is not None else None
 
     def get_customer_mood(self, elapsed_time):
         if elapsed_time <= self.deadline * SATISFIED_DEADLINE_RATIO:
@@ -35,6 +37,8 @@ class DeliveryHouse:
         return '불만'
 
     def get_zone_bounds(self):
+        if self.zone_offset is None or self.zone_size is None:
+            return None
         offset_x, offset_y = self.zone_offset
         width, height = self.zone_size
         center_x, center_y = self.x + offset_x, self.y + offset_y
@@ -42,7 +46,10 @@ class DeliveryHouse:
                 center_x + width / 2, center_y + height / 2)
 
     def contains_position(self, player_x, player_y):
-        left, bottom, right, top = self.get_zone_bounds()
+        bounds = self.get_zone_bounds()
+        if bounds is None:
+            return False
+        left, bottom, right, top = bounds
         return left <= player_x <= right and bottom <= player_y <= top
 
     def can_deliver(self, player_x, player_y):
