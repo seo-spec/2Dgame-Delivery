@@ -194,7 +194,7 @@ def update():
                 )
                 break
     previous_state = controller.state
-    controller.evaluate(delivery_houses, total_revenue)
+    controller.evaluate(delivery_houses, total_revenue, motorcycle.cargo_list)
     if controller.state != previous_state:
         print(f'[진행 상태] {controller.state.value}'
               + (f': {controller.failure_reason}' if controller.failure_reason else ''))

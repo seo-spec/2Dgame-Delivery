@@ -13,7 +13,7 @@ TEXT_LEFT = 16
 TEXT_TOP_MARGIN = 30
 LINE_SPACING = 26
 CARD_COLUMNS = 3
-CARD_TOP_MARGIN = 170
+CARD_TOP_MARGIN = 190
 CARD_ROW_SPACING = 208
 
 
@@ -43,6 +43,8 @@ class CargoDebugText:
             f'현재 상태: {controller.state.value}',
             time_status,
         ]
+        if controller.state == StageState.DELIVERING:
+            lines.append(f'남은 최대 예상 수익: {controller.remaining_max_revenue:,}원')
         self._draw_lines(lines, TEXT_LEFT, get_canvas_height() - TEXT_TOP_MARGIN)
         cargo_by_id = {cargo.cargo_id: cargo for cargo in cargo_list}
         column_width = (get_canvas_width() - TEXT_LEFT * 2) / CARD_COLUMNS
