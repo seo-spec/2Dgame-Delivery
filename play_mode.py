@@ -17,7 +17,7 @@ import game_world
 from camera import Camera
 from cargo import Cargo
 from collision import move_circle
-from delivery import DeliveryHouse
+from delivery import DeliveryHouse, INITIAL_A_BASE_FEE, INITIAL_A_DEADLINE
 from motorcycle import Motorcycle
 from road_map import RoadMap, create_decorations
 from ui import CargoDebugText
@@ -31,10 +31,13 @@ contact_obstacles = set()
 delivery_houses = []
 space_pressed = False
 delivery_requested = False
+elapsed_time = 0.0
 
 
 def init():
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
+    global elapsed_time
+    elapsed_time = 0.0
     space_pressed = False
     delivery_requested = False
     game_world.clear()
@@ -61,6 +64,8 @@ def init():
         house_config['id'], *house_config['position'], sample_cargo.cargo_id,
         zone_offset=house_config['delivery_zone']['offset'],
         zone_size=house_config['delivery_zone']['size'],
+        base_fee=INITIAL_A_BASE_FEE,
+        deadline=INITIAL_A_DEADLINE,
     )
     delivery_houses.append(delivery_house)
     print(
@@ -72,7 +77,8 @@ def init():
     print(
         f'[배송지 연결] ID={delivery_house.house_id}, '
         f'월드 위치=({delivery_house.x}, {delivery_house.y}), '
-        f'지정 화물={delivery_house.cargo_id}, 배송 완료={delivery_house.delivered}'
+        f'지정 화물={delivery_house.cargo_id}, 배송 완료={delivery_house.delivered}, '
+        f'PRD=A집, 기본비={delivery_house.base_fee}원, 마감={delivery_house.deadline}초'
     )
     game_world.add_object(motorcycle, game_world.ACTORS)
     camera.follow(motorcycle.x, motorcycle.y)
@@ -81,6 +87,8 @@ def init():
 
 def finish():
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
+    global elapsed_time
+    elapsed_time = 0.0
     space_pressed = False
     delivery_requested = False
     game_world.clear()
@@ -113,7 +121,9 @@ def handle_events():
 
 
 def update():
-    global delivery_requested
+    global delivery_requested, elapsed_time
+    # 출발부터의 시뮬레이션 시간. 배송은 이번 프레임의 갱신된 시간으로 판정한다.
+    elapsed_time += game_framework.frame_time
     previous_x, previous_y = motorcycle.x, motorcycle.y
     previous_speed = motorcycle.speed
     game_world.update()
@@ -148,9 +158,12 @@ def update():
     if delivery_requested:
         delivery_requested = False
         for house in delivery_houses:
-            if house.try_deliver(motorcycle.x, motorcycle.y, motorcycle.speed,
-                                 motorcycle.cargo_list):
-                print(f'[배송 완료] 배송지={house.house_id}, 화물={house.cargo_id}')
+            if house.try_deliver(motorcycle.x, motorcycle.y, motorcycle.cargo_list):
+                print(
+                    f'[배송 완료] 배송지={house.house_id}, 화물={house.cargo_id}, '
+                    f'경과시간={elapsed_time:.3f}초, '
+                    f'고객 기분={house.get_customer_mood(elapsed_time)}'
+                )
                 break
     # 이번 프레임의 이동을 반영한 뒤 출력할 카메라 위치를 결정한다.
     camera.follow(motorcycle.x, motorcycle.y)

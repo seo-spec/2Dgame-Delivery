@@ -1,19 +1,31 @@
 """배송지와 지정 화물 연결 데이터 및 배송 완료 처리."""
 
 
-STOP_SPEED_THRESHOLD = 15.0  # 전·후진 공통 저속·정차 기준. 단위: 픽셀/초.
+INITIAL_A_BASE_FEE = 500  # PRD 6.2 A집 초기 배달비. 단위: 원.
+INITIAL_A_DEADLINE = 45.0  # 스테이지 출발 기준 마감. 단위: 초.
+SATISFIED_DEADLINE_RATIO = 0.7
 
 
 class DeliveryHouse:
-    def __init__(self, house_id, x, y, cargo_id, zone_offset, zone_size):
+    def __init__(self, house_id, x, y, cargo_id, zone_offset, zone_size,
+                 base_fee, deadline):
         self.house_id = house_id
         self.x = x
         self.y = y
         self.cargo_id = cargo_id
         self.delivered = False
+        self.base_fee = base_fee
+        self.deadline = deadline
         # 건물 중심 기준 월드 단위 오프셋과 크기. 충돌 영역과는 별도다.
         self.zone_offset = tuple(zone_offset)
         self.zone_size = tuple(zone_size)
+
+    def get_customer_mood(self, elapsed_time):
+        if elapsed_time <= self.deadline * SATISFIED_DEADLINE_RATIO:
+            return '만족'
+        if elapsed_time <= self.deadline:
+            return '보통'
+        return '불만'
 
     def get_zone_bounds(self):
         offset_x, offset_y = self.zone_offset
@@ -26,14 +38,12 @@ class DeliveryHouse:
         left, bottom, right, top = self.get_zone_bounds()
         return left <= player_x <= right and bottom <= player_y <= top
 
-    def can_deliver(self, player_x, player_y, speed):
-        speed_magnitude = abs(speed)
+    def can_deliver(self, player_x, player_y):
         return (not self.delivered
-                and self.contains_position(player_x, player_y)
-                and speed_magnitude <= STOP_SPEED_THRESHOLD)
+                and self.contains_position(player_x, player_y))
 
-    def try_deliver(self, player_x, player_y, speed, cargo_list):
-        if not self.can_deliver(player_x, player_y, speed):
+    def try_deliver(self, player_x, player_y, cargo_list):
+        if not self.can_deliver(player_x, player_y):
             return False
         cargo = next((cargo for cargo in cargo_list
                       if cargo.cargo_id == self.cargo_id and not cargo.delivered), None)
