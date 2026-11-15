@@ -13,6 +13,7 @@ from pico2d import (
 import game_framework
 import game_world
 from camera import Camera
+from cargo import Cargo
 from collision import move_circle
 from motorcycle import Motorcycle
 from road_map import RoadMap, create_decorations
@@ -38,6 +39,14 @@ def init():
         if decoration.get_collision_bounds() is not None:
             solid_obstacles.append(decoration)
     motorcycle = Motorcycle(*road_map.spawn, camera)
+    sample_cargo = Cargo('sample_cargo_01')
+    motorcycle.cargo_list.append(sample_cargo)
+    print(
+        f'[초기 확인용 화물] ID={sample_cargo.cargo_id}, '
+        f'내구도={sample_cargo.current_durability}/{sample_cargo.max_durability}, '
+        f'흔들림={sample_cargo.shake}, 민감도={sample_cargo.sensitivity}, '
+        f'손상 임계치={sample_cargo.damage_threshold}, 배송 완료={sample_cargo.delivered}'
+    )
     game_world.add_object(motorcycle, game_world.ACTORS)
     camera.follow(motorcycle.x, motorcycle.y)
 

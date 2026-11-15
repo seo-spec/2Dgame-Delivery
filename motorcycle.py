@@ -40,6 +40,7 @@ class Motorcycle:
         # 0은 오른쪽, 양의 각도는 반시계 방향. 시작은 위쪽이다.
         self.angle = pi / 2
         self.pressed_keys = set()
+        self.cargo_list = []
 
     def handle_event(self, event):
         if event.key not in (SDLK_w, SDLK_s, SDLK_a, SDLK_d, SDLK_LSHIFT, SDLK_RSHIFT):
