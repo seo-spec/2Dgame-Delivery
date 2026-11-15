@@ -9,8 +9,9 @@ import game_framework
 
 # 초기 주행 확인용 수치. 속도는 픽셀/초, 가감속은 픽셀/초².
 FORWARD_MAX_SPEED = 180.0
-REVERSE_MAX_SPEED = 90.0
+REVERSE_MAX_SPEED = 60.0
 FORWARD_ACCEL = 120.0
+REVERSE_ACCEL = 40.0
 BRAKE_ACCEL = 180.0
 NATURAL_DECEL = 100.0
 # 라디안/초. 초기값은 초당 180도 회전이다.
@@ -40,9 +41,9 @@ class Motorcycle:
         reverse_pressed = SDLK_s in self.pressed_keys
 
         if forward_pressed and not reverse_pressed:
-            self.speed += FORWARD_ACCEL * dt
+            self._accelerate(1, FORWARD_ACCEL, dt)
         elif reverse_pressed and not forward_pressed:
-            self.speed -= BRAKE_ACCEL * dt
+            self._accelerate(-1, REVERSE_ACCEL, dt)
         elif self.speed > 0.0:
             self.speed = max(0.0, self.speed - NATURAL_DECEL * dt)
         elif self.speed < 0.0:
@@ -53,6 +54,18 @@ class Motorcycle:
         self.angle = (self.angle + turn_input * TURN_RATE * dt) % tau
         self.x += cos(self.angle) * self.speed * dt
         self.y += sin(self.angle) * self.speed * dt
+
+    def _accelerate(self, direction, acceleration, dt):
+        # 반대 방향으로 주행 중이면 먼저 제동한다. 정지 이후 남은 시간만
+        # 새 방향의 가속에 사용해 후진에 제동 가속도가 적용되지 않게 한다.
+        if self.speed * direction < 0.0:
+            stop_time = abs(self.speed) / BRAKE_ACCEL
+            if dt < stop_time:
+                self.speed += direction * BRAKE_ACCEL * dt
+                return
+            self.speed = 0.0
+            dt -= stop_time
+        self.speed += direction * acceleration * dt
 
     def draw(self):
         # 도형 내부 좌표의 X 양의 방향을 차체 정면으로 사용한다.
