@@ -22,6 +22,10 @@ BRAKE_ACCEL = 180.0
 NATURAL_DECEL = 100.0
 # 라디안/초. 초기값은 초당 180도 회전이다.
 TURN_RATE = pi
+# 가장 먼 앞부분 꼭짓점 (36, 6)의 거리 약 36.5픽셀까지 감싼다.
+# 방향에 무관하게 차체 전체가 원 안에 있어야 건물 안으로 들어가지 않는다.
+COLLISION_RADIUS = 37.0
+COLLISION_CIRCLE_SEGMENTS = 32
 
 
 class Motorcycle:
@@ -31,6 +35,7 @@ class Motorcycle:
         self.y = y
         self.speed = 0.0
         self.boost_multiplier = 1.0
+        self.collision_radius = COLLISION_RADIUS
         # 0은 오른쪽, 양의 각도는 반시계 방향. 시작은 위쪽이다.
         self.angle = pi / 2
         self.pressed_keys = set()
@@ -99,6 +104,18 @@ class Motorcycle:
         # 도형 내부 좌표의 X 양의 방향을 차체 정면으로 사용한다.
         self._draw_outline(((-24, -12), (24, -12), (24, 12), (-24, 12)))
         self._draw_outline(((24, -6), (36, -6), (36, 6), (24, 6)))
+        self._draw_collision_circle()
+
+    def _draw_collision_circle(self):
+        center_x, center_y = self.camera.world_to_screen(self.x, self.y)
+        points = [
+            (round(center_x + cos(tau * index / COLLISION_CIRCLE_SEGMENTS) * self.collision_radius),
+             round(center_y + sin(tau * index / COLLISION_CIRCLE_SEGMENTS) * self.collision_radius))
+            for index in range(COLLISION_CIRCLE_SEGMENTS)
+        ]
+        for index, start in enumerate(points):
+            end = points[(index + 1) % len(points)]
+            draw_line(*start, *end, 255, 230, 80)
 
     def _draw_outline(self, points):
         forward_x = cos(self.angle)
