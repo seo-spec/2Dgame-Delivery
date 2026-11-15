@@ -35,6 +35,13 @@ class CargoDebugText:
             f'배송: {sum(house.delivered for house in delivery_houses)} / {len(delivery_houses)}',
             f'경과시간: {elapsed_time:.1f}초',
         )
+        if delivery_houses:
+            house = delivery_houses[0]
+            if house.delivered:
+                mood_text = f'A집 배송 시 기분: {house.delivered_mood}'
+            else:
+                mood_text = f'A집 고객 기분: {house.get_customer_mood(elapsed_time)}'
+            lines += (mood_text,)
         top = get_canvas_height() - TEXT_TOP_MARGIN
         for index, text in enumerate(lines):
             y = top - index * LINE_SPACING
