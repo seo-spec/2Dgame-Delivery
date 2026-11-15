@@ -5,6 +5,7 @@ from pico2d import (
     SDL_KEYUP,
     SDL_QUIT,
     SDLK_ESCAPE,
+    SDLK_SPACE,
     clear_canvas,
     draw_rectangle,
     get_events,
@@ -28,10 +29,12 @@ cargo_debug_text = None
 solid_obstacles = []
 contact_obstacles = set()
 delivery_houses = []
+space_pressed = False
 
 
 def init():
-    global motorcycle, camera, cargo_debug_text
+    global motorcycle, camera, cargo_debug_text, space_pressed
+    space_pressed = False
     game_world.clear()
     solid_obstacles.clear()
     contact_obstacles.clear()
@@ -75,7 +78,8 @@ def init():
 
 
 def finish():
-    global motorcycle, camera, cargo_debug_text
+    global motorcycle, camera, cargo_debug_text, space_pressed
+    space_pressed = False
     game_world.clear()
     motorcycle = None
     camera = None
@@ -86,6 +90,7 @@ def finish():
 
 
 def handle_events():
+    global space_pressed
     for event in get_events():
         if event.type == SDL_QUIT:
             game_framework.quit()
@@ -93,6 +98,15 @@ def handle_events():
         if event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             game_framework.quit()
             return
+        if event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
+            # 구역 밖에서도 눌림을 기록해, 유지한 채 진입하는 입력을 배제한다.
+            if not space_pressed:
+                space_pressed = True
+                if any(not house.delivered and house.contains_position(motorcycle.x, motorcycle.y)
+                       for house in delivery_houses):
+                    print('배달 입력 감지')
+        elif event.type == SDL_KEYUP and event.key == SDLK_SPACE:
+            space_pressed = False
         if event.type in (SDL_KEYDOWN, SDL_KEYUP):
             motorcycle.handle_event(event)
 
