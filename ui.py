@@ -115,3 +115,6 @@ class CargoDebugText:
         )
         # 기존 화물 정보 아래의 빈 공간에 결과를 화면 좌표로 표시한다.
         self._draw_lines(lines, get_canvas_width() // 2 - 180, 130)
+
+    def draw_restart_hint(self):
+        self._draw_lines(('R: 다시 시작',), get_canvas_width() // 2 - 75, 25)

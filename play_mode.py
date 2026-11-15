@@ -6,6 +6,7 @@ from pico2d import (
     SDL_QUIT,
     SDLK_ESCAPE,
     SDLK_SPACE,
+    SDLK_r,
     clear_canvas,
     draw_rectangle,
     get_events,
@@ -37,12 +38,19 @@ controller = None
 total_revenue = 0
 
 pickup_bounds = None
+held_keys = set()
+blocked_keys = set()
+restart_frame = False
 
 
 def init():
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     global controller, total_revenue
     global pickup_bounds
+    global restart_frame
+    held_keys.clear()
+    blocked_keys.clear()
+    restart_frame = False
     controller = GameController()
     total_revenue = 0
     space_pressed = False
@@ -112,7 +120,8 @@ def finish():
 
 
 def handle_events():
-    global space_pressed, delivery_requested
+    global space_pressed, delivery_requested, restart_frame
+    restart_requested = False
     for event in get_events():
         if event.type == SDL_QUIT:
             game_framework.quit()
@@ -120,6 +129,25 @@ def handle_events():
         if event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             game_framework.quit()
             return
+        # 결과 상태에서도 눌림을 추적해, 이전부터 유지한 키의 반복 입력을 배제한다.
+        if event.type == SDL_KEYDOWN:
+            fresh_press = event.key not in held_keys
+            held_keys.add(event.key)
+        elif event.type == SDL_KEYUP:
+            held_keys.discard(event.key)
+        else:
+            continue
+        if restart_requested:
+            continue
+        if event.key in blocked_keys:
+            if event.type == SDL_KEYUP:
+                blocked_keys.discard(event.key)
+            continue
+        if event.key == SDLK_r:
+            if (event.type == SDL_KEYDOWN and fresh_press
+                    and controller.state in (StageState.FAILED, StageState.CLEAR)):
+                restart_requested = True
+            continue
         if controller.state in (StageState.FAILED, StageState.CLEAR):
             continue
         if event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
@@ -131,10 +159,23 @@ def handle_events():
             space_pressed = False
         if event.type in (SDL_KEYDOWN, SDL_KEYUP):
             motorcycle.handle_event(event)
+    if restart_requested:
+        # 남은 이벤트까지 소비한 뒤 재구성한다. 유지 중인 키는 해제 후 다시 눌러야 한다.
+        previous_held_keys = held_keys.copy()
+        finish()
+        init()
+        held_keys.update(previous_held_keys)
+        blocked_keys.update(previous_held_keys)
+        restart_frame = True
+        print('[다시 시작] 화물 수령 대기')
 
 
 def update():
-    global delivery_requested, total_revenue
+    global delivery_requested, total_revenue, restart_frame
+    if restart_frame:
+        # 리소스 재초기화에 걸린 시간을 새 플레이의 이동에 적용하지 않는다.
+        restart_frame = False
+        return
     # 출발부터의 시뮬레이션 시간. 배송은 이번 프레임의 갱신된 시간으로 판정한다.
     if controller.state in (StageState.FAILED, StageState.CLEAR):
         delivery_requested = False
@@ -240,6 +281,8 @@ def draw():
     cargo_debug_text.draw_pickup_hint(controller.state == StageState.WAITING and in_pickup_zone())
     if controller.state == StageState.CLEAR:
         cargo_debug_text.draw_clear_result(delivery_houses, total_revenue, controller.target_revenue)
+    if controller.state in (StageState.CLEAR, StageState.FAILED):
+        cargo_debug_text.draw_restart_hint()
     update_canvas()
 
 
