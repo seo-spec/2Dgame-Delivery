@@ -33,11 +33,15 @@ space_pressed = False
 delivery_requested = False
 elapsed_time = 0.0
 total_revenue = 0
+cargo_received = False
+pickup_bounds = None
 
 
 def init():
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     global elapsed_time, total_revenue
+    global cargo_received, pickup_bounds
+    cargo_received = False
     elapsed_time = 0.0
     total_revenue = 0
     space_pressed = False
@@ -60,9 +64,13 @@ def init():
         building['id']: building for building in road_map.config['buildings']
         if 'id' in building
     }
+    depot = buildings_by_id['delivery_depot']
+    offset_x, offset_y = depot['pickup_zone']['offset']
+    width, height = depot['pickup_zone']['size']
+    center_x, center_y = depot['position'][0] + offset_x, depot['position'][1] + offset_y
+    pickup_bounds = (center_x - width / 2, center_y - height / 2,
+                     center_x + width / 2, center_y + height / 2)
     for house_id, label, cargo_id, base_fee, deadline in INITIAL_DELIVERY_SETTINGS:
-        cargo = Cargo(cargo_id)
-        motorcycle.cargo_list.append(cargo)
         building = buildings_by_id[house_id]
         house = DeliveryHouse(
             house_id, *building['position'], cargo_id,
@@ -71,12 +79,6 @@ def init():
             base_fee=base_fee, deadline=deadline, label=label,
         )
         delivery_houses.append(house)
-        print(
-            f'[초기 확인용 화물] ID={cargo.cargo_id}, '
-            f'내구도={cargo.current_durability}/{cargo.max_durability}, '
-            f'흔들림={cargo.shake}, 민감도={cargo.sensitivity}, '
-            f'손상 임계치={cargo.damage_threshold}, 배송 완료={cargo.delivered}'
-        )
         print(
             f'[배송지 연결] PRD={label}, ID={house.house_id}, '
             f'월드 위치=({house.x}, {house.y}), 지정 화물={house.cargo_id}, '
@@ -90,6 +92,9 @@ def init():
 def finish():
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     global elapsed_time, total_revenue
+    global cargo_received, pickup_bounds
+    cargo_received = False
+    pickup_bounds = None
     elapsed_time = 0.0
     total_revenue = 0
     space_pressed = False
@@ -124,9 +129,10 @@ def handle_events():
 
 
 def update():
-    global delivery_requested, elapsed_time, total_revenue
+    global delivery_requested, elapsed_time, total_revenue, cargo_received
     # 출발부터의 시뮬레이션 시간. 배송은 이번 프레임의 갱신된 시간으로 판정한다.
-    elapsed_time += game_framework.frame_time
+    if cargo_received:
+        elapsed_time += game_framework.frame_time
     previous_x, previous_y = motorcycle.x, motorcycle.y
     previous_speed = motorcycle.speed
     game_world.update()
@@ -160,7 +166,15 @@ def update():
     # 입력은 이번 프레임의 이동·충돌·손상 결과로 판정하고, 실패해도 소비한다.
     if delivery_requested:
         delivery_requested = False
+        was_received = cargo_received
+        if not cargo_received and in_pickup_zone():
+            motorcycle.cargo_list.extend(Cargo(house.cargo_id) for house in delivery_houses)
+            cargo_received = True
+            elapsed_time = 0.0
+            print(f'[화물 수령 완료] 적재={len(motorcycle.cargo_list)}개, 배송 시작')
         for house in delivery_houses:
+            if not was_received:
+                break
             if house.try_deliver(motorcycle.x, motorcycle.y, motorcycle.cargo_list,
                                  elapsed_time):
                 # 배송 성공 전환에서만 확정 보상을 반영한다. 0원도 정상 정산이다.
@@ -179,6 +193,11 @@ def update():
 def draw():
     clear_canvas()
     game_world.render()
+    if not cargo_received:
+        left, bottom, right, top = pickup_bounds
+        left, bottom = camera.world_to_screen(left, bottom)
+        right, top = camera.world_to_screen(right, top)
+        draw_rectangle(round(left), round(bottom), round(right), round(top), 255, 200, 60)
     for house in delivery_houses:
         bounds = house.get_zone_bounds()
         if bounds is None:
@@ -189,10 +208,17 @@ def draw():
         # 청록색 충돌 영역과 구분되는 분홍색 배송 구역. 통행을 막지 않는다.
         draw_rectangle(round(screen_left), round(screen_bottom),
                        round(screen_right), round(screen_top), 255, 100, 220)
-    cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, elapsed_time)
-    show_delivery_hint = any(
+    cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, elapsed_time,
+                          cargo_received)
+    show_delivery_hint = cargo_received and any(
         not house.delivered and house.contains_position(motorcycle.x, motorcycle.y)
         for house in delivery_houses
     )
     cargo_debug_text.draw_delivery_hint(show_delivery_hint)
+    cargo_debug_text.draw_pickup_hint(not cargo_received and in_pickup_zone())
     update_canvas()
+
+
+def in_pickup_zone():
+    left, bottom, right, top = pickup_bounds
+    return left <= motorcycle.x <= right and bottom <= motorcycle.y <= top
