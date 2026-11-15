@@ -17,16 +17,18 @@ from cargo import Cargo
 from collision import move_circle
 from motorcycle import Motorcycle
 from road_map import RoadMap, create_decorations
+from ui import CargoDebugText
 
 
 motorcycle = None
 camera = None
+cargo_debug_text = None
 solid_obstacles = []
 contact_obstacles = set()
 
 
 def init():
-    global motorcycle, camera
+    global motorcycle, camera, cargo_debug_text
     game_world.clear()
     solid_obstacles.clear()
     contact_obstacles.clear()
@@ -49,13 +51,15 @@ def init():
     )
     game_world.add_object(motorcycle, game_world.ACTORS)
     camera.follow(motorcycle.x, motorcycle.y)
+    cargo_debug_text = CargoDebugText()
 
 
 def finish():
-    global motorcycle, camera
+    global motorcycle, camera, cargo_debug_text
     game_world.clear()
     motorcycle = None
     camera = None
+    cargo_debug_text = None
     solid_obstacles.clear()
     contact_obstacles.clear()
 
@@ -94,4 +98,5 @@ def update():
 def draw():
     clear_canvas()
     game_world.render()
+    cargo_debug_text.draw(motorcycle.cargo_list)
     update_canvas()
