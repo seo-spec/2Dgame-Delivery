@@ -97,11 +97,23 @@ class RoadMap:
 class MapDecoration:
     """건물·도시 소품·신호등의 이미지 표시만 담당하는 월드 객체."""
 
-    def __init__(self, camera, image, position, size):
+    def __init__(self, camera, image, position, size, collision=None):
         self.camera = camera
         self.image = image
         self.x, self.y = position
         self.width, self.height = size
+        # 이미지 크기와 독립적인 월드 단위 오프셋·크기. 지정된 건물만 사용한다.
+        self.collision = collision
+
+    def get_collision_bounds(self):
+        if self.collision is None:
+            return None
+        offset_x, offset_y = self.collision['offset']
+        width, height = self.collision['size']
+        center_x = self.x + offset_x
+        center_y = self.y + offset_y
+        return (center_x - width / 2, center_y - height / 2,
+                center_x + width / 2, center_y + height / 2)
 
     def update(self):
         pass
@@ -109,6 +121,13 @@ class MapDecoration:
     def draw(self):
         x, y = self.camera.world_to_screen(self.x, self.y)
         self.image.draw(round(x), round(y), self.width, self.height)
+        bounds = self.get_collision_bounds()
+        if bounds is not None:
+            left, bottom, right, top = bounds
+            screen_left, screen_bottom = self.camera.world_to_screen(left, bottom)
+            screen_right, screen_top = self.camera.world_to_screen(right, top)
+            draw_rectangle(round(screen_left), round(screen_bottom),
+                           round(screen_right), round(screen_top), 0, 255, 255)
 
 
 def create_decorations(camera, config):
@@ -130,7 +149,8 @@ def create_decorations(camera, config):
     def add_decoration(item, asset):
         if asset not in images:
             images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
-        decorations.append(MapDecoration(camera, images[asset], item['position'], item['size']))
+        decorations.append(MapDecoration(camera, images[asset], item['position'], item['size'],
+                                         collision=item.get('collision')))
 
     for item in config['buildings']:
         add_decoration(item, item.get('asset', 'building'))
