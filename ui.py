@@ -18,7 +18,7 @@ class CargoDebugText:
         # Windows 기본 한글 폰트. 플레이 초기화 시 한 번만 불러온다.
         self.font = load_font(str(FONT_PATH), FONT_SIZE)
 
-    def draw(self, cargo_list, total_revenue):
+    def draw(self, cargo_list, total_revenue, delivery_houses):
         if not cargo_list:
             return
         cargo = cargo_list[0]
@@ -32,6 +32,7 @@ class CargoDebugText:
             f'내구도: {cargo.current_durability:.1f} / {cargo.max_durability:.1f}',
             f'흔들림: {cargo.shake:.1f}',
             f'누적 수익: {total_revenue:,}원',
+            f'배송: {sum(house.delivered for house in delivery_houses)} / {len(delivery_houses)}',
         )
         top = get_canvas_height() - TEXT_TOP_MARGIN
         for index, text in enumerate(lines):
