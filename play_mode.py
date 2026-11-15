@@ -15,6 +15,7 @@ from pico2d import (
 import game_framework
 import game_world
 from motorcycle import Motorcycle
+from temporary_map import TemporaryMap
 
 
 motorcycle = None
@@ -23,6 +24,7 @@ motorcycle = None
 def init():
     global motorcycle
     game_world.clear()
+    game_world.add_object(TemporaryMap(), game_world.BACKGROUND)
     motorcycle = Motorcycle(get_canvas_width() / 2, get_canvas_height() / 2)
     game_world.add_object(motorcycle, game_world.ACTORS)
 
