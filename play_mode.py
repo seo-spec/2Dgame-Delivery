@@ -186,7 +186,7 @@ def draw():
         # 청록색 충돌 영역과 구분되는 분홍색 배송 구역. 통행을 막지 않는다.
         draw_rectangle(round(screen_left), round(screen_bottom),
                        round(screen_right), round(screen_top), 255, 100, 220)
-    cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses)
+    cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, elapsed_time)
     show_delivery_hint = any(
         not house.delivered and house.contains_position(motorcycle.x, motorcycle.y)
         for house in delivery_houses
