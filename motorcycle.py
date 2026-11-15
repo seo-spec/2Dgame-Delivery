@@ -15,6 +15,7 @@ FORWARD_MAX_SPEED = 180.0
 REVERSE_MAX_SPEED = 60.0
 FORWARD_ACCEL = 120.0
 BOOST_MAX_MULTIPLIER = 1.5
+BOOST_SPEED_MULTIPLIER = 1.4
 BOOST_RAMP_TIME = 1.0  # 기본 배율에서 최대 배율까지 걸리는 초.
 REVERSE_ACCEL = 40.0
 BRAKE_ACCEL = 180.0
@@ -44,11 +45,13 @@ class Motorcycle:
 
     def update(self):
         dt = game_framework.frame_time
+        previous_speed = self.speed
         forward_pressed = SDLK_w in self.pressed_keys
         reverse_pressed = SDLK_s in self.pressed_keys
 
         shift_pressed = bool(self.pressed_keys & {SDLK_LSHIFT, SDLK_RSHIFT})
-        if shift_pressed and forward_pressed and not reverse_pressed and self.speed >= 0.0:
+        boost_active = shift_pressed and forward_pressed and not reverse_pressed and self.speed >= 0.0
+        if boost_active:
             self.boost_multiplier = min(
                 BOOST_MAX_MULTIPLIER,
                 self.boost_multiplier + (BOOST_MAX_MULTIPLIER - 1.0) * dt / BOOST_RAMP_TIME,
@@ -57,7 +60,11 @@ class Motorcycle:
             self.boost_multiplier = 1.0
 
         if forward_pressed and not reverse_pressed:
-            self._accelerate(1, FORWARD_ACCEL * self.boost_multiplier, dt)
+            if not boost_active and self.speed > FORWARD_MAX_SPEED:
+                # 부스트 해제 후 W를 유지해도 기본 최고속도까지 점차 감속한다.
+                self.speed = max(FORWARD_MAX_SPEED, self.speed - NATURAL_DECEL * dt)
+            else:
+                self._accelerate(1, FORWARD_ACCEL * self.boost_multiplier, dt)
         elif reverse_pressed and not forward_pressed:
             self._accelerate(-1, REVERSE_ACCEL, dt)
         elif self.speed > 0.0:
@@ -65,7 +72,12 @@ class Motorcycle:
         elif self.speed < 0.0:
             self.speed = min(0.0, self.speed + NATURAL_DECEL * dt)
 
-        self.speed = max(-REVERSE_MAX_SPEED, min(FORWARD_MAX_SPEED, self.speed))
+        if boost_active:
+            forward_limit = FORWARD_MAX_SPEED * BOOST_SPEED_MULTIPLIER
+        else:
+            # 이미 얻은 부스트 속도는 입력에 따른 감속으로 줄이고 순간 절단하지 않는다.
+            forward_limit = max(FORWARD_MAX_SPEED, previous_speed)
+        self.speed = max(-REVERSE_MAX_SPEED, min(forward_limit, self.speed))
         turn_input = int(SDLK_a in self.pressed_keys) - int(SDLK_d in self.pressed_keys)
         self.angle = (self.angle + turn_input * TURN_RATE * dt) % tau
         self.x += cos(self.angle) * self.speed * dt
