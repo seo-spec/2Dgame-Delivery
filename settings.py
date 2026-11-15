@@ -4,6 +4,7 @@
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 STAGE_1_TIME_LIMIT = 150.0  # 화물 수령부터의 전체 배송 제한시간. 단위: 초.
+STAGE_1_TARGET_REVENUE = 2500  # 1단계 전량 배송 시 필요한 수익. 단위: 원.
 
 WORLD_WIDTH = 3600
 WORLD_HEIGHT = 2700
