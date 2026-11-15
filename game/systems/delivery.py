@@ -31,6 +31,18 @@ def select_delivery_buildings(buildings, count):
     return sample(candidates, count)
 
 
+def select_delivery_target(delivery_houses, cargo_list, player_x, player_y):
+    """구역 안의 미배송 집 중 거리·건물 ID 순으로 한 곳만 선택한다."""
+    available_cargo_ids = {cargo.cargo_id for cargo in cargo_list if not cargo.delivered}
+    candidates = (
+        house for house in delivery_houses
+        if house.can_deliver(player_x, player_y) and house.cargo_id in available_cargo_ids
+    )
+    return min(candidates, key=lambda house: (
+        (house.x - player_x) ** 2 + (house.y - player_y) ** 2, house.house_id,
+    ), default=None)
+
+
 class DeliveryHouse:
     def __init__(self, house_id, x, y, cargo_id, zone_offset, zone_size,
                  base_fee, deadline, label=None):

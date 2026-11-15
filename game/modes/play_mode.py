@@ -29,7 +29,9 @@ from game.world.camera import Camera
 from game.objects.cargo import Cargo
 from game.config.cargo_types import CARGO_TYPES
 from game.systems.collision import move_circle
-from game.systems.delivery import DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings
+from game.systems.delivery import (
+    DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings, select_delivery_target,
+)
 from game.objects.motorcycle import Motorcycle
 from game.ui.minimap import MiniMap
 from game.world.road_map import RoadMap, create_decorations
@@ -272,20 +274,17 @@ def update():
             cargo_debug_text.prepare_cargo_icons(motorcycle.cargo_list)
             controller.start_delivery()
             print(f'[화물 수령 완료] 적재={len(motorcycle.cargo_list)}개, 배송 시작')
-        for house in delivery_houses:
-            if not was_delivering or not is_delivery_time_available():
-                break
-            if house.try_deliver(motorcycle.x, motorcycle.y, motorcycle.cargo_list,
-                                 controller.elapsed_time):
-                # 배송 성공 전환에서만 확정 보상을 반영한다. 0원도 정상 정산이다.
-                total_revenue += house.reward
-                print(
-                    f'[배송 완료] 배송지={house.house_id}, 화물={house.cargo_id}, '
-                    f'경과시간={controller.elapsed_time:.3f}초, '
-                    f'고객 기분={house.delivered_mood}, 보상={house.reward}원, '
-                    f'누적 수익={total_revenue}원'
-                )
-                break
+        house = current_delivery_target() if was_delivering else None
+        if house is not None and house.try_deliver(
+                motorcycle.x, motorcycle.y, motorcycle.cargo_list, controller.elapsed_time):
+            # 선택한 한 집만 완료·정산한다. 완료된 집은 다음 선택에서 제외한다.
+            total_revenue += house.reward
+            print(
+                f'[배송 완료] 배송지={house.house_id}, 화물={house.cargo_id}, '
+                f'경과시간={controller.elapsed_time:.3f}초, '
+                f'고객 기분={house.delivered_mood}, 보상={house.reward}원, '
+                f'누적 수익={total_revenue}원'
+            )
     previous_state = controller.state
     controller.evaluate(delivery_houses, total_revenue, motorcycle.cargo_list)
     if controller.state != previous_state:
@@ -325,11 +324,8 @@ def draw():
                        round(screen_right), round(screen_top), 255, 100, 220)
         cargo_debug_text.draw_house_label(house, round(screen_left), round(screen_top) + 8)
     cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, controller)
-    show_delivery_hint = is_delivery_time_available() and any(
-        not house.delivered and house.contains_position(motorcycle.x, motorcycle.y)
-        for house in delivery_houses
-    )
-    cargo_debug_text.draw_delivery_hint(show_delivery_hint)
+    target = current_delivery_target()
+    cargo_debug_text.draw_delivery_hint(target)
     cargo_debug_text.draw_pickup_hint(controller.state == StageState.WAITING and in_pickup_zone())
     if controller.state == StageState.CLEAR:
         cargo_debug_text.draw_clear_result(delivery_houses, total_revenue, controller.target_revenue)
@@ -349,6 +345,14 @@ def in_pickup_zone():
 def is_delivery_time_available():
     # 표시용 반올림·0 하한 대신 갱신된 실제 경과시간으로 경계를 비교한다.
     return controller.can_deliver()
+
+
+def current_delivery_target():
+    if not is_delivery_time_available():
+        return None
+    return select_delivery_target(
+        delivery_houses, motorcycle.cargo_list, motorcycle.x, motorcycle.y,
+    )
 
 
 def set_paused(value):

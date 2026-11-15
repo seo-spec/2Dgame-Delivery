@@ -145,9 +145,9 @@ class CargoDebugText:
         self._box(center - half, y - 12, center + half, y + 24, NAVY)
         self._text(text, center - half + 12, y, WHITE)
 
-    def draw_delivery_hint(self, visible):
-        if visible:
-            self._notice('Space: 배달')
+    def draw_delivery_hint(self, target):
+        if target is not None:
+            self._notice(f'Space: {target.label} 배달')
 
     def draw_house_label(self, house, x, y):
         text = f'{house.label} 완료' if house.delivered else house.label
