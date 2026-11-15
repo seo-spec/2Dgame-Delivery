@@ -1,4 +1,4 @@
-"""화물별 독립 상태. 흔들림·손상·배송 계산은 다음 단계에서 추가한다."""
+"""화물별 독립 상태와 회전 주행에 따른 흔들림 증가."""
 
 
 # 개발 확인용 초기값이며 확정된 게임 밸런스 수치가 아니다.
@@ -6,6 +6,8 @@ INITIAL_MAX_DURABILITY = 100.0
 INITIAL_SHAKE = 0.0
 INITIAL_SENSITIVITY = 1.0
 INITIAL_DAMAGE_THRESHOLD = 50.0
+MAX_SHAKE = 100.0
+SHAKE_INCREASE_FACTOR = 0.1
 
 
 class Cargo:
@@ -19,3 +21,9 @@ class Cargo:
         self.sensitivity = sensitivity
         self.damage_threshold = damage_threshold
         self.delivered = False
+
+    def increase_shake(self, speed, turn_input, dt):
+        if self.delivered or self.current_durability <= 0.0:
+            return
+        increase = abs(speed) * abs(turn_input) * self.sensitivity * SHAKE_INCREASE_FACTOR * dt
+        self.shake = min(MAX_SHAKE, max(0.0, self.shake + increase))

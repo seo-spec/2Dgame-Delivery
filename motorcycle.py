@@ -41,6 +41,7 @@ class Motorcycle:
         self.angle = pi / 2
         self.pressed_keys = set()
         self.cargo_list = []
+        self.turn_input = 0
 
     def handle_event(self, event):
         if event.key not in (SDLK_w, SDLK_s, SDLK_a, SDLK_d, SDLK_LSHIFT, SDLK_RSHIFT):
@@ -85,8 +86,8 @@ class Motorcycle:
             # 이미 얻은 부스트 속도는 입력에 따른 감속으로 줄이고 순간 절단하지 않는다.
             forward_limit = max(FORWARD_MAX_SPEED, previous_speed)
         self.speed = max(-REVERSE_MAX_SPEED, min(forward_limit, self.speed))
-        turn_input = int(SDLK_a in self.pressed_keys) - int(SDLK_d in self.pressed_keys)
-        self.angle = (self.angle + turn_input * TURN_RATE * dt) % tau
+        self.turn_input = int(SDLK_a in self.pressed_keys) - int(SDLK_d in self.pressed_keys)
+        self.angle = (self.angle + self.turn_input * TURN_RATE * dt) % tau
         self.x += cos(self.angle) * self.speed * dt
         self.y += sin(self.angle) * self.speed * dt
 

@@ -91,6 +91,9 @@ def update():
         # 이미 충돌한 장애물은 실제로 떨어질 때까지 접촉 상태를 유지한다.
         contact_obstacles.update(hits)
         contact_obstacles.intersection_update(contacts)
+    # 이동·충돌 후 속도를 사용해 화물을 프레임당 한 번만 갱신한다.
+    for cargo in motorcycle.cargo_list:
+        cargo.increase_shake(motorcycle.speed, motorcycle.turn_input, game_framework.frame_time)
     # 이번 프레임의 이동을 반영한 뒤 출력할 카메라 위치를 결정한다.
     camera.follow(motorcycle.x, motorcycle.y)
 
