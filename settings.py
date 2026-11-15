@@ -9,13 +9,13 @@ STAGE_1_TARGET_REVENUE = 2500  # 1단계 전량 배송 시 필요한 수익. 단
 WORLD_WIDTH = 3600
 WORLD_HEIGHT = 2700
 
-# 향후 오른쪽 배송 패널용. 현재는 표시하거나 영역을 비워 두지 않는다.
+# 오른쪽 배송 패널은 플레이 뷰포트와 분리한다.
 DELIVERY_PANEL_WIDTH = 280
 PLANNED_PLAY_WIDTH = WINDOW_WIDTH - DELIVERY_PANEL_WIDTH
 PLANNED_PLAY_HEIGHT = WINDOW_HEIGHT
 
-# 패널 구현 전에는 창 전체를 플레이 영역으로 사용한다.
+# 오른쪽 패널을 제외한 영역을 카메라 추적 기준으로 사용한다.
 VIEWPORT_LEFT = 0
 VIEWPORT_BOTTOM = 0
-VIEWPORT_WIDTH = WINDOW_WIDTH
+VIEWPORT_WIDTH = PLANNED_PLAY_WIDTH
 VIEWPORT_HEIGHT = WINDOW_HEIGHT

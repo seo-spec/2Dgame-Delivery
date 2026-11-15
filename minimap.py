@@ -5,12 +5,13 @@ from math import cos, sin, hypot, sqrt, tau
 from pico2d import draw_line, draw_rectangle, get_canvas_width, get_canvas_height
 
 from road_geometry import ROAD_WIDTH_RATIO
+import settings
 
 
-MINIMAP_RADIUS = 120
+MINIMAP_RADIUS = 104
 MINIMAP_MARGIN = 16
 MINIMAP_RESERVED_WIDTH = MINIMAP_RADIUS * 2 + MINIMAP_MARGIN * 2
-CONTENT_PADDING = 38  # 지도 모서리 밖의 마커·글자도 원 안에 남도록 확보한다.
+MAP_CONTENT_RADIUS = 82  # 기존 반경 120 - 여백 38의 지도 축척을 유지한다.
 
 
 class MiniMap:
@@ -18,7 +19,7 @@ class MiniMap:
         self.font = font
         self.width, self.height = road_map.width, road_map.height
         self.config = road_map.config
-        self.scale = (MINIMAP_RADIUS - CONTENT_PADDING) / hypot(self.width / 2, self.height / 2)
+        self.scale = MAP_CONTENT_RADIUS / hypot(self.width / 2, self.height / 2)
         self.roads = []
         tile = road_map.tile_size
         half = tile * ROAD_WIDTH_RATIO / 2
@@ -34,11 +35,11 @@ class MiniMap:
 
     @property
     def center_x(self):
-        return get_canvas_width() - MINIMAP_MARGIN - MINIMAP_RADIUS
+        return settings.VIEWPORT_LEFT + settings.VIEWPORT_WIDTH - MINIMAP_MARGIN - MINIMAP_RADIUS
 
     @property
     def center_y(self):
-        return get_canvas_height() - MINIMAP_MARGIN - MINIMAP_RADIUS
+        return get_canvas_height() - 80 - MINIMAP_RADIUS
 
     def _rectangle(self, bounds, color):
         left, bottom = self.world_to_minimap(bounds[0], bounds[1])
@@ -46,6 +47,13 @@ class MiniMap:
         draw_rectangle(round(left), round(bottom), round(right), round(top), *color, filled=True)
 
     def _text(self, text, x, y, color):
+        # 테두리 근처 글자도 전체가 원 안에 들어오도록 위치를 보정한다.
+        width = sum(18 if ord(char) > 127 else 10 for char in text)
+        y = max(self.center_y - MINIMAP_RADIUS + 20,
+                min(self.center_y + MINIMAP_RADIUS - 22, y))
+        extent = max(abs(y - 5 - self.center_y), abs(y + 20 - self.center_y))
+        half = sqrt(max(0, (MINIMAP_RADIUS - 3) ** 2 - extent ** 2))
+        x = max(self.center_x - half + 2, min(self.center_x + half - width - 2, x))
         self.font.draw(round(x + 1), round(y - 1), text, (0, 0, 0))
         self.font.draw(round(x), round(y), text, color)
 

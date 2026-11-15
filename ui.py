@@ -1,127 +1,149 @@
-"""화물 상태를 확인하기 위한 임시 화면 고정 텍스트."""
+"""상단 진행 정보·하단 화물 상태·오른쪽 배송 마감 HUD."""
 
 import os
-import debug_view
 from pathlib import Path
+from math import ceil
 
-from pico2d import get_canvas_height, get_canvas_width, load_font
+from pico2d import get_canvas_height, load_font, draw_rectangle
+import debug_view
+import settings
 from stage import StageState
-from minimap import MINIMAP_RESERVED_WIDTH
-
 
 FONT_PATH = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts' / 'malgun.ttf'
 FONT_SIZE = 18
-TEXT_LEFT = 16
-TEXT_TOP_MARGIN = 30
 LINE_SPACING = 26
-CARD_COLUMNS = 3
-CARD_TOP_MARGIN = 190
-CARD_ROW_SPACING = 208
+NAVY = (25, 40, 57)
+WHITE = (245, 248, 249)
+MUTED = (112, 132, 146)
+GREEN = (137, 226, 179)
+RED = (239, 132, 108)
+YELLOW = (255, 205, 104)
 
 
 class CargoDebugText:
     def __init__(self):
-        # Windows 기본 한글 폰트. 플레이 초기화 시 한 번만 불러온다.
         self.font = load_font(str(FONT_PATH), FONT_SIZE)
 
-    def draw(self, cargo_list, total_revenue, delivery_houses, controller):
-        elapsed_time = controller.elapsed_time
-        remaining_time = max(0.0, controller.time_limit - elapsed_time)
-        if controller.state == StageState.WAITING:
-            time_status = '배달소에서 화물을 수령하세요'
-        elif controller.state == StageState.RETURNING:
-            time_status = '배달소로 돌아가세요'
-        elif controller.state == StageState.FAILED:
-            time_status = f'실패: {controller.failure_reason}'
-        elif controller.state == StageState.CLEAR:
-            time_status = '배달소 복귀 완료'
-        else:
-            time_status = '화물 수령 완료'
-        lines = [
-            f'누적 수익: {total_revenue:,}원 / 목표: {controller.target_revenue:,}원',
-            f'배송: {sum(house.delivered for house in delivery_houses)} / {len(delivery_houses)}',
-            f'남은 시간: {remaining_time:.1f}초',
-            f'현재 상태: {controller.state.value}',
-            time_status,
-        ]
-        if debug_view.enabled:
-            lines.append(f'경과시간: {elapsed_time:.1f}초')
-            if controller.state == StageState.DELIVERING:
-                lines.append(f'남은 최대 예상 수익: {controller.remaining_max_revenue:,}원')
-        self._draw_lines(lines, TEXT_LEFT, get_canvas_height() - TEXT_TOP_MARGIN)
-        cargo_by_id = {cargo.cargo_id: cargo for cargo in cargo_list}
-        column_width = (get_canvas_width() - MINIMAP_RESERVED_WIDTH - TEXT_LEFT * 2) / CARD_COLUMNS
-        for index, house in enumerate(delivery_houses):
-            label = house.label
-            lines = [f'[{label}]']
-            if debug_view.enabled:
-                lines[0] += f' ({house.x}, {house.y})'
-            cargo = cargo_by_id.get(house.cargo_id)
-            if cargo is not None:
-                if cargo.delivered:
-                    status = '배송 완료'
-                else:
-                    status = '파손' if cargo.current_durability <= 0.0 else '정상'
-                lines.append(f'{status} | 내구도: '
-                             f'{cargo.current_durability:.1f}/{cargo.max_durability:.1f}')
-                if debug_view.enabled:
-                    lines.extend((f'화물 ID: {cargo.cargo_id}', f'흔들림: {cargo.shake:.1f}'))
-            else:
-                lines.append('상태: 수령 대기')
-                if debug_view.enabled:
-                    lines.append(f'화물 ID: {house.cargo_id}')
-            if house.delivered:
-                mood_text = f'{label} 배송 시 기분: {house.delivered_mood}'
-            elif controller.state != StageState.WAITING:
-                mood_text = f'{label} 고객 기분: {house.get_customer_mood(elapsed_time)}'
-            else:
-                mood_text = f'{label} 고객 기분: 배송 시작 전'
-            lines.append(mood_text)
-            column, row = index % CARD_COLUMNS, index // CARD_COLUMNS
-            left = round(TEXT_LEFT + column * column_width)
-            top_margin = CARD_TOP_MARGIN if debug_view.enabled else 140
-            row_spacing = CARD_ROW_SPACING if debug_view.enabled else 104
-            top = get_canvas_height() - TEXT_TOP_MARGIN - top_margin - row * row_spacing
-            self._draw_lines(lines, left, top)
+    def _box(self, left, bottom, right, top, color):
+        draw_rectangle(round(left), round(bottom), round(right), round(top), *color, filled=True)
+
+    def _text(self, text, x, y, color=WHITE):
+        self.font.draw(round(x), round(y), text, color)
 
     def _draw_lines(self, lines, left, top):
         for index, text in enumerate(lines):
-            y = top - index * LINE_SPACING
-            # 밝은 지형에서도 읽을 수 있도록 작은 검은 그림자만 추가한다.
-            self.font.draw(left + 1, y - 1, text, (0, 0, 0))
-            self.font.draw(left, y, text, (255, 255, 255))
+            self._text(text, left, top - index * LINE_SPACING)
+
+    def _bar(self, x, y, width, ratio, color):
+        self._box(x, y, x + width, y + 8, (218, 226, 230))
+        fill = max(0.0, min(1.0, ratio)) * width
+        if fill > 0:
+            self._box(x, y, x + fill, y + 8, color)
+
+    def draw(self, cargo_list, total_revenue, delivery_houses, controller):
+        width, height = settings.VIEWPORT_WIDTH, get_canvas_height()
+        elapsed = controller.elapsed_time
+        waiting = controller.state == StageState.WAITING
+        completed = sum(house.delivered for house in delivery_houses)
+        remaining = max(0, ceil(controller.time_limit - elapsed))
+        self._box(12, height - 64, width - 12, height - 12, NAVY)
+        self._text(f'TIME {remaining // 60:02d}:{remaining % 60:02d}', 28, height - 44)
+        self._text(f'배송 {completed} / {len(delivery_houses)}', 225, height - 44)
+        self._text(f'{total_revenue:,} / {controller.target_revenue:,}원', 420, height - 44, YELLOW)
+        self._text(controller.state.value, width - 125, height - 44, GREEN)
+
+        # 주행 중앙은 비워 두고, 화물 상태는 하단의 얕은 한 줄 패널에 모은다.
+        self._box(12, 12, width - 12, 108, NAVY)
+        cargo_by_id = {cargo.cargo_id: cargo for cargo in cargo_list}
+        card_width = (width - 48) / max(1, len(delivery_houses))
+        for index, house in enumerate(delivery_houses):
+            x = 24 + index * card_width
+            cargo = cargo_by_id.get(house.cargo_id)
+            if cargo is None:
+                state, ratio, color = '수령 대기', 0.0, MUTED
+                value = '--'
+            else:
+                ratio = cargo.current_durability / cargo.max_durability
+                state = '완료' if cargo.delivered else ('파손' if ratio <= 0 else '적재')
+                color = GREEN if ratio >= 0.5 else RED
+                value = f'{ratio * 100:.0f}%'
+            self._text(f'{house.label.removesuffix("집")}  내구 {value}', x, 83)
+            self._bar(x, 56, card_width - 22, ratio, color)
+            self._text(state, x, 31, color)
+
+        # 월드가 그려진 뒤 밝은 패널로 덮어, 플레이 뷰포트와 시각적으로 분리한다.
+        panel_x = settings.VIEWPORT_LEFT + width
+        self._box(panel_x, 0, settings.WINDOW_WIDTH, height, (242, 246, 246))
+        self._box(panel_x + 8, 12, settings.WINDOW_WIDTH - 8, height - 12, (255, 255, 255))
+        self._text('배송지별 남은 시간', panel_x + 24, height - 43, NAVY)
+        self._text('출발 기준 마감 / 고객 기분', panel_x + 24, height - 69, MUTED)
+        for index, house in enumerate(delivery_houses):
+            y = height - 110 - index * 102
+            if waiting:
+                message, mood, ratio, color = '수령 대기', '배송 시작 전', 0.0, MUTED
+            elif house.delivered:
+                message, mood, ratio, color = '배송 완료', house.delivered_mood, 1.0, GREEN
+            else:
+                late = elapsed > house.deadline
+                seconds = ceil(elapsed - house.deadline) if late else ceil(house.deadline - elapsed)
+                message = f'! {seconds}초 초과' if late else f'마감까지 {seconds}초'
+                mood = house.get_customer_mood(elapsed)
+                ratio = elapsed / house.deadline
+                color = RED if late else (GREEN if mood == '만족' else YELLOW)
+            self._text(house.label.removesuffix('집'), panel_x + 26, y, NAVY)
+            self._text(message, panel_x + 60, y, RED if message.startswith('!') else NAVY)
+            self._bar(panel_x + 24, y - 26, settings.DELIVERY_PANEL_WIDTH - 48, ratio, color)
+            self._text(f'기분: {mood}', panel_x + 24, y - 52, MUTED)
+        self._text('지각: ! 표시와 초과시간', panel_x + 24, 29, RED)
+
+        if controller.state == StageState.RETURNING:
+            self._notice('배달소로 돌아가세요')
+        elif controller.state == StageState.FAILED:
+            reason = controller.failure_reason
+            if len(reason) > 24:
+                self._notice('실패: 화물 손상 또는 수익 부족', 158)
+                self._notice('목표 수익 달성 불가', 130)
+            else:
+                self._notice(f'실패: {reason}')
+        elif waiting:
+            self._notice('배달소에서 화물을 수령하세요')
+
+        if debug_view.enabled:
+            lines = [f'경과시간: {elapsed:.2f}초',
+                     f'남은 최대 예상 수익: {controller.remaining_max_revenue:,}원']
+            for house in delivery_houses:
+                cargo = cargo_by_id.get(house.cargo_id)
+                shake = f'{cargo.shake:.1f}' if cargo else '--'
+                lines.append(f'{house.label} ({house.x}, {house.y}) {house.cargo_id} 흔들림 {shake}')
+            self._box(12, height - 276, 680, height - 78, NAVY)
+            self._draw_lines(lines, 24, height - 104)
+
+    def _notice(self, text, y=130):
+        center = settings.VIEWPORT_WIDTH / 2
+        half = max(260, len(text) * 9)
+        self._box(center - half, y - 12, center + half, y + 24, NAVY)
+        self._text(text, center - half + 12, y, WHITE)
 
     def draw_delivery_hint(self, visible):
-        if not visible:
-            return
-        text = 'Space: 배달'
-        x, y = get_canvas_width() // 2 - 55, 40
-        self.font.draw(x + 1, y - 1, text, (0, 0, 0))
-        self.font.draw(x, y, text, (255, 255, 255))
+        if visible:
+            self._notice('Space: 배달')
 
     def draw_house_label(self, house, x, y):
-        text = f'{house.label} 배송 완료' if house.delivered else house.label
+        text = f'{house.label} 완료' if house.delivered else house.label
         self.font.draw(x + 1, y - 1, text, (0, 0, 0))
-        self.font.draw(x, y, text, (255, 255, 255))
+        self.font.draw(x, y, text, WHITE)
 
     def draw_pickup_hint(self, visible):
         if visible:
-            text = 'Space: 화물 수령'
-            x, y = get_canvas_width() // 2 - 75, 40
-            self.font.draw(x + 1, y - 1, text, (0, 0, 0))
-            self.font.draw(x, y, text, (255, 255, 255))
+            self._notice('Space: 화물 수령')
 
     def draw_clear_result(self, delivery_houses, total_revenue, target_revenue):
         completed = sum(house.delivered for house in delivery_houses)
-        lines = (
-            'STAGE CLEAR',
-            f'최종 배송: {completed} / {len(delivery_houses)}',
-            f'최종 수익: {total_revenue:,}원',
-            f'목표 수익: {target_revenue:,}원 / '
-            + ('달성' if total_revenue >= target_revenue else '미달성'),
-        )
-        # 기존 화물 정보 아래의 빈 공간에 결과를 화면 좌표로 표시한다.
-        self._draw_lines(lines, get_canvas_width() // 2 - 180, 130)
+        self._box(270, 264, settings.VIEWPORT_WIDTH - 270, 442, NAVY)
+        self._draw_lines(('STAGE CLEAR', f'최종 배송: {completed} / {len(delivery_houses)}',
+                          f'최종 수익: {total_revenue:,}원',
+                          f'목표 {target_revenue:,}원: ' + ('달성' if total_revenue >= target_revenue else '미달성')),
+                         292, 409)
 
     def draw_restart_hint(self):
-        self._draw_lines(('R: 다시 시작',), get_canvas_width() // 2 - 75, 25)
+        self._notice('R: 다시 시작', 190)
