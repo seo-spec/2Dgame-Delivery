@@ -97,7 +97,8 @@ class RoadMap:
 class MapDecoration:
     """건물·도시 소품·신호등의 이미지 표시만 담당하는 월드 객체."""
 
-    def __init__(self, camera, image, position, size, collision=None, object_id=None):
+    def __init__(self, camera, image, position, size, collision=None, object_id=None,
+                 is_building=False):
         self.camera = camera
         self.image = image
         self.x, self.y = position
@@ -105,6 +106,7 @@ class MapDecoration:
         # 이미지 크기와 독립적인 월드 단위 오프셋·크기. 지정된 건물만 사용한다.
         self.collision = collision
         self.object_id = object_id
+        self.is_building = is_building
 
     def get_collision_bounds(self):
         if self.collision is None:
@@ -152,14 +154,15 @@ def create_decorations(camera, config):
     }
     images = {}
 
-    def add_decoration(item, asset):
+    def add_decoration(item, asset, is_building=False):
         if asset not in images:
             images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
         decorations.append(MapDecoration(camera, images[asset], item['position'], item['size'],
-                                         collision=item.get('collision'), object_id=item.get('id')))
+                                         collision=item.get('collision'), object_id=item.get('id'),
+                                         is_building=is_building))
 
     for item in config['buildings']:
-        add_decoration(item, item.get('asset', 'building'))
+        add_decoration(item, item.get('asset', 'building'), is_building=True)
     for item in config.get('props', []):
         add_decoration(item, item['asset'])
     for item in config['signals']:
