@@ -30,6 +30,7 @@ def init():
     game_world.add_object(TemporaryMap(camera), game_world.BACKGROUND)
     motorcycle = Motorcycle(get_canvas_width() / 2, get_canvas_height() / 2, camera)
     game_world.add_object(motorcycle, game_world.ACTORS)
+    camera.follow(motorcycle.x, motorcycle.y)
 
 
 def finish():
@@ -53,6 +54,8 @@ def handle_events():
 
 def update():
     game_world.update()
+    # 이번 프레임의 이동을 반영한 뒤 출력할 카메라 위치를 결정한다.
+    camera.follow(motorcycle.x, motorcycle.y)
 
 
 def draw():
