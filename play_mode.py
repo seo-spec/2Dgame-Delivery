@@ -81,7 +81,8 @@ def init():
     )
     delivery_house_b = DeliveryHouse(
         house_b_config['id'], *house_b_config['position'], cargo_b.cargo_id,
-        zone_offset=None, zone_size=None,
+        zone_offset=house_b_config['delivery_zone']['offset'],
+        zone_size=house_b_config['delivery_zone']['size'],
         base_fee=INITIAL_B_BASE_FEE, deadline=INITIAL_B_DEADLINE,
     )
     delivery_houses.append(delivery_house_b)

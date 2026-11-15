@@ -19,29 +19,36 @@ class CargoDebugText:
         self.font = load_font(str(FONT_PATH), FONT_SIZE)
 
     def draw(self, cargo_list, total_revenue, delivery_houses, elapsed_time):
-        if not cargo_list:
-            return
-        cargo = cargo_list[0]
-        if cargo.delivered:
-            status = '배송 완료'
-        else:
-            status = '파손' if cargo.current_durability <= 0.0 else '정상'
-        lines = (
-            f'화물 ID: {cargo.cargo_id}',
-            f'상태: {status}',
-            f'내구도: {cargo.current_durability:.1f} / {cargo.max_durability:.1f}',
-            f'흔들림: {cargo.shake:.1f}',
+        lines = [
             f'누적 수익: {total_revenue:,}원',
             f'배송: {sum(house.delivered for house in delivery_houses)} / {len(delivery_houses)}',
             f'경과시간: {elapsed_time:.1f}초',
-        )
-        if delivery_houses:
-            house = delivery_houses[0]
+        ]
+        cargo_by_id = {cargo.cargo_id: cargo for cargo in cargo_list}
+        house_labels = {
+            'collision_preview_house': 'A집',
+            'delivery_house_b': 'B집',
+        }
+        for house in delivery_houses:
+            label = house_labels.get(house.house_id, house.house_id)
+            lines.append(f'[{label}]')
+            cargo = cargo_by_id.get(house.cargo_id)
+            if cargo is not None:
+                if cargo.delivered:
+                    status = '배송 완료'
+                else:
+                    status = '파손' if cargo.current_durability <= 0.0 else '정상'
+                lines.extend((
+                    f'화물 ID: {cargo.cargo_id}',
+                    f'상태: {status}',
+                    f'내구도: {cargo.current_durability:.1f} / {cargo.max_durability:.1f}',
+                    f'흔들림: {cargo.shake:.1f}',
+                ))
             if house.delivered:
-                mood_text = f'A집 배송 시 기분: {house.delivered_mood}'
+                mood_text = f'{label} 배송 시 기분: {house.delivered_mood}'
             else:
-                mood_text = f'A집 고객 기분: {house.get_customer_mood(elapsed_time)}'
-            lines += (mood_text,)
+                mood_text = f'{label} 고객 기분: {house.get_customer_mood(elapsed_time)}'
+            lines.append(mood_text)
         top = get_canvas_height() - TEXT_TOP_MARGIN
         for index, text in enumerate(lines):
             y = top - index * LINE_SPACING
