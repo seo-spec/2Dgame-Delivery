@@ -91,6 +91,10 @@ def update():
         )
         collided = bool(hits)
         if hits - contact_obstacles:
+            # 직접 피해는 충돌 감속 전 속도로 화물마다 한 번만 계산한다.
+            impact_speed = motorcycle.speed
+            for cargo in motorcycle.cargo_list:
+                cargo.apply_collision_damage(impact_speed)
             # 같은 프레임에 여러 장애물을 처음 접촉해도 감속은 한 번만 적용한다.
             motorcycle.apply_collision_slowdown()
         # 이미 충돌한 장애물은 실제로 떨어질 때까지 접촉 상태를 유지한다.

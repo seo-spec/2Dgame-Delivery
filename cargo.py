@@ -10,6 +10,7 @@ MAX_SHAKE = 100.0
 SHAKE_INCREASE_FACTOR = 0.1
 SHAKE_RECOVERY_RATE = 20.0  # 초당 회복량. 최대 흔들림 100에서 직진·정지 시 약 5초.
 SHAKE_DAMAGE_FACTOR = 0.2  # 임계치 초과 흔들림 50에서 초당 내구도 10 감소.
+COLLISION_DAMAGE_FACTOR = 0.1  # 충돌 속도 180픽셀/초에서 내구도 18 감소.
 
 
 class Cargo:
@@ -39,4 +40,11 @@ class Cargo:
             return
         excess_shake = max(0.0, self.shake - self.damage_threshold)
         damage = excess_shake * SHAKE_DAMAGE_FACTOR * dt
+        self.current_durability = max(0.0, self.current_durability - damage)
+
+    def apply_collision_damage(self, impact_speed):
+        if self.delivered or self.current_durability <= 0.0:
+            return
+        # 접촉 시작 이벤트의 피해이므로 프레임 경과시간을 곱하지 않는다.
+        damage = abs(impact_speed) * COLLISION_DAMAGE_FACTOR
         self.current_durability = max(0.0, self.current_durability - damage)

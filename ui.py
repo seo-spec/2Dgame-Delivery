@@ -22,8 +22,10 @@ class CargoDebugText:
         if not cargo_list:
             return
         cargo = cargo_list[0]
+        status = '파손' if cargo.current_durability <= 0.0 else '정상'
         lines = (
             f'화물 ID: {cargo.cargo_id}',
+            f'상태: {status}',
             f'내구도: {cargo.current_durability:.1f} / {cargo.max_durability:.1f}',
             f'흔들림: {cargo.shake:.1f}',
         )
