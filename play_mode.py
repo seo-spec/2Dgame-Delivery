@@ -15,6 +15,7 @@ import game_world
 from camera import Camera
 from cargo import Cargo
 from collision import move_circle
+from delivery import DeliveryHouse
 from motorcycle import Motorcycle
 from road_map import RoadMap, create_decorations
 from ui import CargoDebugText
@@ -25,6 +26,7 @@ camera = None
 cargo_debug_text = None
 solid_obstacles = []
 contact_obstacles = set()
+delivery_houses = []
 
 
 def init():
@@ -32,6 +34,7 @@ def init():
     game_world.clear()
     solid_obstacles.clear()
     contact_obstacles.clear()
+    delivery_houses.clear()
     camera = Camera()
     road_map = RoadMap(camera)
     game_world.add_object(road_map, game_world.BACKGROUND)
@@ -43,11 +46,25 @@ def init():
     motorcycle = Motorcycle(*road_map.spawn, camera)
     sample_cargo = Cargo('sample_cargo_01')
     motorcycle.cargo_list.append(sample_cargo)
+    # 기존 건물 데이터를 참조해 위치를 중복 정의하지 않는다.
+    house_config = next(
+        house for house in road_map.config['buildings']
+        if house.get('id') == 'collision_preview_house'
+    )
+    delivery_house = DeliveryHouse(
+        house_config['id'], *house_config['position'], sample_cargo.cargo_id,
+    )
+    delivery_houses.append(delivery_house)
     print(
         f'[초기 확인용 화물] ID={sample_cargo.cargo_id}, '
         f'내구도={sample_cargo.current_durability}/{sample_cargo.max_durability}, '
         f'흔들림={sample_cargo.shake}, 민감도={sample_cargo.sensitivity}, '
         f'손상 임계치={sample_cargo.damage_threshold}, 배송 완료={sample_cargo.delivered}'
+    )
+    print(
+        f'[배송지 연결] ID={delivery_house.house_id}, '
+        f'월드 위치=({delivery_house.x}, {delivery_house.y}), '
+        f'지정 화물={delivery_house.cargo_id}, 배송 완료={delivery_house.delivered}'
     )
     game_world.add_object(motorcycle, game_world.ACTORS)
     camera.follow(motorcycle.x, motorcycle.y)
@@ -62,6 +79,7 @@ def finish():
     cargo_debug_text = None
     solid_obstacles.clear()
     contact_obstacles.clear()
+    delivery_houses.clear()
 
 
 def handle_events():
