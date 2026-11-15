@@ -32,12 +32,14 @@ delivery_houses = []
 space_pressed = False
 delivery_requested = False
 elapsed_time = 0.0
+total_revenue = 0
 
 
 def init():
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
-    global elapsed_time
+    global elapsed_time, total_revenue
     elapsed_time = 0.0
+    total_revenue = 0
     space_pressed = False
     delivery_requested = False
     game_world.clear()
@@ -87,8 +89,9 @@ def init():
 
 def finish():
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
-    global elapsed_time
+    global elapsed_time, total_revenue
     elapsed_time = 0.0
+    total_revenue = 0
     space_pressed = False
     delivery_requested = False
     game_world.clear()
@@ -121,7 +124,7 @@ def handle_events():
 
 
 def update():
-    global delivery_requested, elapsed_time
+    global delivery_requested, elapsed_time, total_revenue
     # 출발부터의 시뮬레이션 시간. 배송은 이번 프레임의 갱신된 시간으로 판정한다.
     elapsed_time += game_framework.frame_time
     previous_x, previous_y = motorcycle.x, motorcycle.y
@@ -160,10 +163,13 @@ def update():
         for house in delivery_houses:
             if house.try_deliver(motorcycle.x, motorcycle.y, motorcycle.cargo_list,
                                  elapsed_time):
+                # 배송 성공 전환에서만 확정 보상을 반영한다. 0원도 정상 정산이다.
+                total_revenue += house.reward
                 print(
                     f'[배송 완료] 배송지={house.house_id}, 화물={house.cargo_id}, '
                     f'경과시간={elapsed_time:.3f}초, '
-                    f'고객 기분={house.delivered_mood}, 보상={house.reward}원'
+                    f'고객 기분={house.delivered_mood}, 보상={house.reward}원, '
+                    f'누적 수익={total_revenue}원'
                 )
                 break
     # 이번 프레임의 이동을 반영한 뒤 출력할 카메라 위치를 결정한다.
