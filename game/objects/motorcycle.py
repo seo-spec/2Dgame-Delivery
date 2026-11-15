@@ -1,14 +1,20 @@
-"""차체 방향에 따른 임시 오토바이 주행과 회전."""
+"""연속 각도로 주행하고 같은 차체 그림을 부드럽게 회전해 표시하는 오토바이."""
 
-from math import cos, pi, sin, tau
+from math import cos, pi, sin, tau, radians
 
 from pico2d import (
     SDL_KEYDOWN, SDL_KEYUP, SDLK_LSHIFT, SDLK_RSHIFT,
-    SDLK_a, SDLK_d, SDLK_s, SDLK_w, draw_line,
+    SDLK_a, SDLK_d, SDLK_s, SDLK_w, draw_line, load_image,
 )
 
 from game.core import game_framework
 from game.core import debug_view
+from game.config.motorcycle_sprite import (
+    SPRITE_PATH, SPRITE_COLUMNS, SPRITE_DIRECTION_COUNT,
+    SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, SPRITE_DRAW_SIZE,
+    SPRITE_CENTER_OFFSET, SPRITE_REFERENCE_RADIUS, SPRITE_FRAME_METRICS,
+    SPRITE_RENDER_MODE, SPRITE_BASE_FRAME,
+)
 # 초기 주행 확인용 수치. 속도는 픽셀/초, 가감속은 픽셀/초².
 FORWARD_MAX_SPEED = 210.0
 REVERSE_MAX_SPEED = 60.0
@@ -22,8 +28,7 @@ NATURAL_DECEL = 100.0
 COLLISION_SPEED_REDUCTION = 0.5  # 새 건물 충돌 시 현재 속도 크기의 50% 감소.
 # 라디안/초. 초기값은 초당 180도 회전이다.
 TURN_RATE = pi
-# 가장 먼 앞부분 꼭짓점 (36, 6)의 거리 약 36.5픽셀까지 감싼다.
-# 방향에 무관하게 차체 전체가 원 안에 있어야 건물 안으로 들어가지 않는다.
+# 스프라이트 전체도 이 반경 안에 맞춘다. 기존 충돌 크기는 유지한다.
 COLLISION_RADIUS = 37.0
 COLLISION_CIRCLE_SEGMENTS = 32
 
@@ -31,6 +36,7 @@ COLLISION_CIRCLE_SEGMENTS = 32
 class Motorcycle:
     def __init__(self, x, y, camera):
         self.camera = camera
+        self.sprite_sheet = load_image(str(SPRITE_PATH))
         self.x = x
         self.y = y
         self.speed = 0.0
@@ -107,9 +113,31 @@ class Motorcycle:
         self.speed += direction * acceleration * dt
 
     def draw(self):
-        # 도형 내부 좌표의 X 양의 방향을 차체 정면으로 사용한다.
-        self._draw_outline(((-24, -12), (24, -12), (24, 12), (-24, 12)))
-        self._draw_outline(((24, -6), (36, -6), (36, 6), (24, 6)))
+        step = tau / SPRITE_DIRECTION_COUNT
+        if SPRITE_RENDER_MODE == 'continuous':
+            index = SPRITE_BASE_FRAME
+            display_angle = self.angle
+        else:
+            index = int((self.angle % tau) / step + 0.5) % SPRITE_DIRECTION_COUNT
+            display_angle = index * step
+        row, column = divmod(index, SPRITE_COLUMNS)
+        center_x, center_y, source_degrees, source_radius = SPRITE_FRAME_METRICS[index]
+        size = SPRITE_DRAW_SIZE * SPRITE_REFERENCE_RADIUS / source_radius
+        scale = size / SPRITE_FRAME_WIDTH
+        # 같은 그림과 중심을 유지하면 방향 전환 시 형태·크기가 바뀌지 않는다.
+        # 후진도 차체 각도를 그대로 쓰며 주행 계산과는 독립적으로 출력한다.
+        correction = display_angle - radians(source_degrees)
+        local_x = (center_x - SPRITE_FRAME_WIDTH / 2) * scale
+        local_y = (SPRITE_FRAME_HEIGHT / 2 - center_y) * scale
+        screen_x, screen_y = self.camera.world_to_screen(self.x, self.y)
+        draw_x = screen_x + SPRITE_CENTER_OFFSET[0] - local_x * cos(correction) + local_y * sin(correction)
+        draw_y = screen_y + SPRITE_CENTER_OFFSET[1] - local_x * sin(correction) - local_y * cos(correction)
+        self.sprite_sheet.clip_composite_draw(
+            column * SPRITE_FRAME_WIDTH,
+            self.sprite_sheet.h - (row + 1) * SPRITE_FRAME_HEIGHT,
+            SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, correction, '',
+            draw_x, draw_y, size, size,
+        )
         if debug_view.enabled:
             self._draw_collision_circle()
 
@@ -123,18 +151,3 @@ class Motorcycle:
         for index, start in enumerate(points):
             end = points[(index + 1) % len(points)]
             draw_line(*start, *end, 255, 230, 80)
-
-    def _draw_outline(self, points):
-        forward_x = cos(self.angle)
-        forward_y = sin(self.angle)
-        screen_x, screen_y = self.camera.world_to_screen(self.x, self.y)
-        screen_points = [
-            (
-                round(screen_x + local_x * forward_x - local_y * forward_y),
-                round(screen_y + local_x * forward_y + local_y * forward_x),
-            )
-            for local_x, local_y in points
-        ]
-        for index, start in enumerate(screen_points):
-            end = screen_points[(index + 1) % len(screen_points)]
-            draw_line(start[0], start[1], end[0], end[1])
