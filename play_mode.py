@@ -3,14 +3,20 @@
 from pico2d import (
     SDL_KEYDOWN,
     SDL_KEYUP,
+    SDL_MOUSEBUTTONDOWN,
+    SDL_MOUSEMOTION,
     SDL_QUIT,
     SDLK_ESCAPE,
     SDLK_F1,
     SDLK_SPACE,
     SDLK_r,
+    SDLK_UP,
+    SDLK_DOWN,
+    SDLK_RETURN,
     clear_canvas,
     draw_rectangle,
     get_events,
+    get_canvas_height,
     update_canvas,
 )
 
@@ -45,6 +51,8 @@ pickup_bounds = None
 held_keys = set()
 blocked_keys = set()
 restart_frame = False
+paused = False
+pause_selection = 0
 
 
 def init():
@@ -52,7 +60,9 @@ def init():
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     global controller, total_revenue
     global pickup_bounds
-    global restart_frame
+    global restart_frame, paused, pause_selection
+    paused = False
+    pause_selection = 0
     held_keys.clear()
     blocked_keys.clear()
     restart_frame = False
@@ -129,15 +139,19 @@ def finish():
 
 
 def handle_events():
-    global space_pressed, delivery_requested, restart_frame
+    global space_pressed, delivery_requested, restart_frame, paused, pause_selection
     restart_requested = False
     for event in get_events():
         if event.type == SDL_QUIT:
             game_framework.quit()
             return
-        if event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
-            game_framework.quit()
-            return
+        if paused and not restart_requested and event.type in (SDL_MOUSEMOTION, SDL_MOUSEBUTTONDOWN):
+            selected = cargo_debug_text.pause_button_at(event.x, get_canvas_height() - 1 - event.y)
+            if selected is not None:
+                pause_selection = selected
+                if event.type == SDL_MOUSEBUTTONDOWN and event.button == 1:
+                    restart_requested = activate_pause_selection()
+            continue
         # 결과 상태에서도 눌림을 추적해, 이전부터 유지한 키의 반복 입력을 배제한다.
         if event.type == SDL_KEYDOWN:
             fresh_press = event.key not in held_keys
@@ -151,6 +165,19 @@ def handle_events():
         if event.key in blocked_keys:
             if event.type == SDL_KEYUP:
                 blocked_keys.discard(event.key)
+            continue
+        if event.key == SDLK_ESCAPE:
+            if event.type == SDL_KEYDOWN and fresh_press:
+                set_paused(not paused)
+            continue
+        if paused:
+            if event.type == SDL_KEYDOWN and fresh_press:
+                if event.key == SDLK_UP:
+                    pause_selection = (pause_selection - 1) % 3
+                elif event.key == SDLK_DOWN:
+                    pause_selection = (pause_selection + 1) % 3
+                elif event.key == SDLK_RETURN:
+                    restart_requested = activate_pause_selection()
             continue
         if event.key == SDLK_F1:
             if event.type == SDL_KEYDOWN and fresh_press:
@@ -188,6 +215,8 @@ def update():
     if restart_frame:
         # 리소스 재초기화에 걸린 시간을 새 플레이의 이동에 적용하지 않는다.
         restart_frame = False
+        return
+    if paused:
         return
     # 출발부터의 시뮬레이션 시간. 배송은 이번 프레임의 갱신된 시간으로 판정한다.
     if controller.state in (StageState.FAILED, StageState.CLEAR):
@@ -297,6 +326,8 @@ def draw():
     if controller.state in (StageState.CLEAR, StageState.FAILED):
         cargo_debug_text.draw_restart_hint()
     minimap.draw(motorcycle, delivery_houses)
+    if paused:
+        cargo_debug_text.draw_pause_menu(pause_selection)
     update_canvas()
 
 
@@ -308,3 +339,27 @@ def in_pickup_zone():
 def is_delivery_time_available():
     # 표시용 반올림·0 하한 대신 갱신된 실제 경과시간으로 경계를 비교한다.
     return controller.can_deliver()
+
+
+def set_paused(value):
+    global paused, pause_selection, delivery_requested, space_pressed, restart_frame
+    paused = value
+    delivery_requested = False
+    space_pressed = False
+    motorcycle.pressed_keys.clear()
+    if value:
+        pause_selection = 0
+    else:
+        # 메뉴에서 유지한 주행·배달 키는 해제 후 다시 눌러야 적용한다.
+        blocked_keys.update(held_keys)
+        restart_frame = True
+
+
+def activate_pause_selection():
+    if pause_selection == 0:
+        set_paused(False)
+    elif pause_selection == 1:
+        return True
+    else:
+        game_framework.quit()
+    return False

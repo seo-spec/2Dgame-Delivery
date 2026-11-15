@@ -9,7 +9,10 @@ import debug_view
 import settings
 from stage import StageState
 
-FONT_PATH = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts' / 'malgun.ttf'
+FONT_DIRECTORY = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts'
+FONT_PATH = next((FONT_DIRECTORY / name for name in (
+    'Hancom Gothic Bold.ttf', 'malgunbd.ttf', 'malgun.ttf',
+) if (FONT_DIRECTORY / name).is_file()))
 FONT_SIZE = 18
 LINE_SPACING = 26
 NAVY = (25, 40, 57)
@@ -23,6 +26,8 @@ YELLOW = (255, 205, 104)
 class CargoDebugText:
     def __init__(self):
         self.font = load_font(str(FONT_PATH), FONT_SIZE)
+        menu_path = FONT_DIRECTORY / 'bahnschrift.ttf'
+        self.menu_font = load_font(str(menu_path if menu_path.is_file() else FONT_PATH), 30)
 
     def _box(self, left, bottom, right, top, color):
         draw_rectangle(round(left), round(bottom), round(right), round(top), *color, filled=True)
@@ -147,3 +152,31 @@ class CargoDebugText:
 
     def draw_restart_hint(self):
         self._notice('R: 다시 시작', 190)
+
+    def pause_button_bounds(self, index):
+        center_x, center_y = settings.WINDOW_WIDTH / 2, get_canvas_height() / 2
+        top = center_y + 75 - index * 76
+        return center_x - 160, top - 56, center_x + 160, top
+
+    def pause_button_at(self, x, y):
+        for index in range(3):
+            left, bottom, right, top = self.pause_button_bounds(index)
+            if left <= x <= right and bottom <= y <= top:
+                return index
+        return None
+
+    def draw_pause_menu(self, selected):
+        width, height = settings.WINDOW_WIDTH, get_canvas_height()
+        # 현재 화면 위에 얇은 빗금과 중앙 메뉴를 겹쳐 표시한다.
+        for y in range(0, height, 3):
+            self._box(0, y, width, y + 1, (12, 22, 32))
+        cx, cy = width / 2, height / 2
+        self._box(cx - 205, cy - 215, cx + 205, cy + 190, NAVY)
+        self._box(cx - 205, cy + 183, cx + 205, cy + 190, GREEN)
+        self.menu_font.draw(round(cx - 63), round(cy + 135), 'PAUSED', WHITE)
+        for index, text in enumerate(('Resume', 'Restart', 'Exit')):
+            left, bottom, right, top = self.pause_button_bounds(index)
+            active = index == selected
+            self._box(left, bottom, right, top, GREEN if active else (43, 61, 77))
+            self.menu_font.draw(round(left + 28), round(bottom + 18), text, NAVY if active else WHITE)
+        self._text('↑↓ 선택 · Enter 확인 · Esc 재개', cx - 165, cy - 190, WHITE)
