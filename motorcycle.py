@@ -1,6 +1,8 @@
-"""위쪽을 바라보는 임시 오토바이 도형과 Y축 주행."""
+"""차체 방향에 따른 임시 오토바이 주행과 회전."""
 
-from pico2d import SDL_KEYDOWN, SDL_KEYUP, SDLK_s, SDLK_w, draw_rectangle
+from math import cos, pi, sin, tau
+
+from pico2d import SDL_KEYDOWN, SDL_KEYUP, SDLK_a, SDLK_d, SDLK_s, SDLK_w, draw_line
 
 import game_framework
 
@@ -11,6 +13,8 @@ REVERSE_MAX_SPEED = 90.0
 FORWARD_ACCEL = 120.0
 BRAKE_ACCEL = 180.0
 NATURAL_DECEL = 100.0
+# 라디안/초. 초기값은 초당 180도 회전이다.
+TURN_RATE = pi
 
 
 class Motorcycle:
@@ -18,10 +22,12 @@ class Motorcycle:
         self.x = x
         self.y = y
         self.speed = 0.0
+        # 0은 오른쪽, 양의 각도는 반시계 방향. 시작은 위쪽이다.
+        self.angle = pi / 2
         self.pressed_keys = set()
 
     def handle_event(self, event):
-        if event.key not in (SDLK_w, SDLK_s):
+        if event.key not in (SDLK_w, SDLK_s, SDLK_a, SDLK_d):
             return
         if event.type == SDL_KEYDOWN:
             self.pressed_keys.add(event.key)
@@ -43,9 +49,26 @@ class Motorcycle:
             self.speed = min(0.0, self.speed + NATURAL_DECEL * dt)
 
         self.speed = max(-REVERSE_MAX_SPEED, min(FORWARD_MAX_SPEED, self.speed))
-        self.y += self.speed * dt
+        turn_input = int(SDLK_a in self.pressed_keys) - int(SDLK_d in self.pressed_keys)
+        self.angle = (self.angle + turn_input * TURN_RATE * dt) % tau
+        self.x += cos(self.angle) * self.speed * dt
+        self.y += sin(self.angle) * self.speed * dt
 
     def draw(self):
-        # 긴 차체와 위쪽으로 돌출된 앞부분으로 정면을 구분한다.
-        draw_rectangle(self.x - 12, self.y - 24, self.x + 12, self.y + 24)
-        draw_rectangle(self.x - 6, self.y + 24, self.x + 6, self.y + 36)
+        # 도형 내부 좌표의 X 양의 방향을 차체 정면으로 사용한다.
+        self._draw_outline(((-24, -12), (24, -12), (24, 12), (-24, 12)))
+        self._draw_outline(((24, -6), (36, -6), (36, 6), (24, 6)))
+
+    def _draw_outline(self, points):
+        forward_x = cos(self.angle)
+        forward_y = sin(self.angle)
+        screen_points = [
+            (
+                round(self.x + local_x * forward_x - local_y * forward_y),
+                round(self.y + local_x * forward_y + local_y * forward_x),
+            )
+            for local_x, local_y in points
+        ]
+        for index, start in enumerate(screen_points):
+            end = screen_points[(index + 1) % len(screen_points)]
+            draw_line(start[0], start[1], end[0], end[1])
