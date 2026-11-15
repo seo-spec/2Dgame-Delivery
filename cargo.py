@@ -16,8 +16,9 @@ COLLISION_DAMAGE_FACTOR = 0.05  # 충돌 속도 180픽셀/초에서 내구도 9 
 class Cargo:
     def __init__(self, cargo_id, max_durability=INITIAL_MAX_DURABILITY,
                  sensitivity=INITIAL_SENSITIVITY,
-                 damage_threshold=INITIAL_DAMAGE_THRESHOLD):
+                 damage_threshold=INITIAL_DAMAGE_THRESHOLD, cargo_type=None):
         self.cargo_id = cargo_id
+        self.cargo_type = cargo_type
         self.max_durability = max_durability
         self.current_durability = max_durability
         self.shake = INITIAL_SHAKE

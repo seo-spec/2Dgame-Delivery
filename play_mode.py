@@ -1,5 +1,7 @@
 """플레이 객체 구성, 게임 월드 호출, 종료 입력 처리."""
 
+from random import sample
+
 from pico2d import (
     SDL_KEYDOWN,
     SDL_KEYUP,
@@ -25,6 +27,7 @@ import debug_view
 import game_world
 from camera import Camera
 from cargo import Cargo
+from cargo_types import CARGO_TYPES
 from collision import move_circle
 from delivery import DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings
 from motorcycle import Motorcycle
@@ -259,7 +262,14 @@ def update():
         delivery_requested = False
         was_delivering = controller.state == StageState.DELIVERING
         if controller.state == StageState.WAITING and in_pickup_zone():
-            motorcycle.cargo_list.extend(Cargo(house.cargo_id) for house in delivery_houses)
+            selected_types = sample(CARGO_TYPES, len(delivery_houses))
+            motorcycle.cargo_list.extend(
+                Cargo(house.cargo_id, cargo_type=cargo_type)
+                for house, cargo_type in zip(delivery_houses, selected_types)
+            )
+            for house, cargo in zip(delivery_houses, motorcycle.cargo_list):
+                print(f'[화물 종류] {house.label}: {cargo.cargo_type.name} ({cargo.cargo_id})')
+            cargo_debug_text.prepare_cargo_icons(motorcycle.cargo_list)
             controller.start_delivery()
             print(f'[화물 수령 완료] 적재={len(motorcycle.cargo_list)}개, 배송 시작')
         for house in delivery_houses:

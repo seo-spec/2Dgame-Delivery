@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from math import ceil
 
-from pico2d import get_canvas_height, load_font, draw_rectangle
+from pico2d import get_canvas_height, load_font, load_image, draw_rectangle
 import debug_view
 import settings
 from stage import StageState
@@ -28,6 +28,14 @@ class CargoDebugText:
         self.font = load_font(str(FONT_PATH), FONT_SIZE)
         menu_path = FONT_DIRECTORY / 'bahnschrift.ttf'
         self.menu_font = load_font(str(menu_path if menu_path.is_file() else FONT_PATH), 30)
+        self.cargo_icons = {}
+
+    def prepare_cargo_icons(self, cargo_list):
+        # 수령 시 한 번 불러오고 draw에서는 캐시만 사용한다. 수령 전에는 읽지 않는다.
+        for cargo in cargo_list:
+            cargo_type = cargo.cargo_type
+            if cargo_type is not None and cargo_type.type_id not in self.cargo_icons:
+                self.cargo_icons[cargo_type.type_id] = load_image(str(cargo_type.icon_path))
 
     def _box(self, left, bottom, right, top, color):
         draw_rectangle(round(left), round(bottom), round(right), round(top), *color, filled=True)
@@ -58,7 +66,7 @@ class CargoDebugText:
         self._text(controller.state.value, width - 125, height - 44, GREEN)
 
         # 주행 중앙은 비워 두고, 화물 상태는 하단의 얕은 한 줄 패널에 모은다.
-        self._box(12, 12, width - 12, 108, NAVY)
+        self._box(12, 12, width - 12, 120, NAVY)
         cargo_by_id = {cargo.cargo_id: cargo for cargo in cargo_list}
         card_width = (width - 48) / max(1, len(delivery_houses))
         for index, house in enumerate(delivery_houses):
@@ -72,9 +80,13 @@ class CargoDebugText:
                 state = '완료' if cargo.delivered else ('파손' if ratio <= 0 else '적재')
                 color = GREEN if ratio >= 0.5 else RED
                 value = f'{ratio * 100:.0f}%'
-            self._text(f'{house.label.removesuffix("집")}  내구 {value}', x, 83)
-            self._bar(x, 56, card_width - 22, ratio, color)
-            self._text(state, x, 31, color)
+            self._text(f'{house.label.removesuffix("집")}  내구 {value}', x, 98)
+            if cargo is not None and cargo.cargo_type is not None:
+                icon = self.cargo_icons[cargo.cargo_type.type_id]
+                icon.draw(round(x + 20), 74, 48, 48)
+                self._text(cargo.cargo_type.name, x + 44, 74)
+            self._bar(x, 46, card_width - 22, ratio, color)
+            self._text(state, x, 23, color)
 
         # 월드가 그려진 뒤 밝은 패널로 덮어, 플레이 뷰포트와 시각적으로 분리한다.
         panel_x = settings.VIEWPORT_LEFT + width
@@ -99,6 +111,10 @@ class CargoDebugText:
             self._text(message, panel_x + 60, y, RED if message.startswith('!') else NAVY)
             self._bar(panel_x + 24, y - 26, settings.DELIVERY_PANEL_WIDTH - 48, ratio, color)
             self._text(f'기분: {mood}', panel_x + 24, y - 52, MUTED)
+            cargo = cargo_by_id.get(house.cargo_id)
+            if cargo is not None and cargo.cargo_type is not None:
+                self._text(cargo.cargo_type.name, panel_x + 24, y - 76, NAVY)
+                self.cargo_icons[cargo.cargo_type.type_id].draw(panel_x + 226, y - 63, 40, 40)
         self._text('지각: ! 표시와 초과시간', panel_x + 24, 29, RED)
 
         if controller.state == StageState.RETURNING:
