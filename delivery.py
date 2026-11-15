@@ -1,9 +1,14 @@
 """배송지와 지정 화물 연결 데이터 및 배송 완료 처리."""
 
+from math import floor
+
 
 INITIAL_A_BASE_FEE = 500  # PRD 6.2 A집 초기 배달비. 단위: 원.
 INITIAL_A_DEADLINE = 45.0  # 스테이지 출발 기준 마감. 단위: 초.
 SATISFIED_DEADLINE_RATIO = 0.7
+SATISFIED_REWARD_MULTIPLIER = 1.2
+NORMAL_REWARD_MULTIPLIER = 1.0
+DISSATISFIED_REWARD_MULTIPLIER = 0.7
 
 
 class DeliveryHouse:
@@ -16,6 +21,8 @@ class DeliveryHouse:
         self.delivered = False
         self.base_fee = base_fee
         self.deadline = deadline
+        self.reward = None  # 미정산과 0원 배송을 구분한다.
+        self.delivered_mood = None
         # 건물 중심 기준 월드 단위 오프셋과 크기. 충돌 영역과는 별도다.
         self.zone_offset = tuple(zone_offset)
         self.zone_size = tuple(zone_size)
@@ -42,13 +49,25 @@ class DeliveryHouse:
         return (not self.delivered
                 and self.contains_position(player_x, player_y))
 
-    def try_deliver(self, player_x, player_y, cargo_list):
+    def try_deliver(self, player_x, player_y, cargo_list, elapsed_time):
         if not self.can_deliver(player_x, player_y):
             return False
         cargo = next((cargo for cargo in cargo_list
                       if cargo.cargo_id == self.cargo_id and not cargo.delivered), None)
         if cargo is None:
             return False
+        mood = self.get_customer_mood(elapsed_time)
+        multiplier = {
+            '만족': SATISFIED_REWARD_MULTIPLIER,
+            '보통': NORMAL_REWARD_MULTIPLIER,
+            '불만': DISSATISFIED_REWARD_MULTIPLIER,
+        }[mood]
+        # 손상 갱신 후의 내구도로 최종 금액만 버림한다. 완료 후 재정산하지 않는다.
+        reward = 0 if cargo.current_durability <= 0.0 else floor(
+            self.base_fee * multiplier * cargo.current_durability / cargo.max_durability
+        )
+        self.reward = reward
+        self.delivered_mood = mood
         # 파손 여부와 무관하게 지정 화물과 배송지를 함께 완료한다. 화물은 보관한다.
         cargo.delivered = True
         self.delivered = True

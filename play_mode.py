@@ -158,11 +158,12 @@ def update():
     if delivery_requested:
         delivery_requested = False
         for house in delivery_houses:
-            if house.try_deliver(motorcycle.x, motorcycle.y, motorcycle.cargo_list):
+            if house.try_deliver(motorcycle.x, motorcycle.y, motorcycle.cargo_list,
+                                 elapsed_time):
                 print(
                     f'[배송 완료] 배송지={house.house_id}, 화물={house.cargo_id}, '
                     f'경과시간={elapsed_time:.3f}초, '
-                    f'고객 기분={house.get_customer_mood(elapsed_time)}'
+                    f'고객 기분={house.delivered_mood}, 보상={house.reward}원'
                 )
                 break
     # 이번 프레임의 이동을 반영한 뒤 출력할 카메라 위치를 결정한다.
