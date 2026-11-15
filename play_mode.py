@@ -14,25 +14,29 @@ from pico2d import (
 
 import game_framework
 import game_world
+from camera import Camera
 from motorcycle import Motorcycle
 from temporary_map import TemporaryMap
 
 
 motorcycle = None
+camera = None
 
 
 def init():
-    global motorcycle
+    global motorcycle, camera
     game_world.clear()
-    game_world.add_object(TemporaryMap(), game_world.BACKGROUND)
-    motorcycle = Motorcycle(get_canvas_width() / 2, get_canvas_height() / 2)
+    camera = Camera()
+    game_world.add_object(TemporaryMap(camera), game_world.BACKGROUND)
+    motorcycle = Motorcycle(get_canvas_width() / 2, get_canvas_height() / 2, camera)
     game_world.add_object(motorcycle, game_world.ACTORS)
 
 
 def finish():
-    global motorcycle
+    global motorcycle, camera
     game_world.clear()
     motorcycle = None
+    camera = None
 
 
 def handle_events():

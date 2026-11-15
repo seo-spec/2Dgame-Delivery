@@ -24,7 +24,8 @@ TURN_RATE = pi
 
 
 class Motorcycle:
-    def __init__(self, x, y):
+    def __init__(self, x, y, camera):
+        self.camera = camera
         self.x = x
         self.y = y
         self.speed = 0.0
@@ -90,10 +91,11 @@ class Motorcycle:
     def _draw_outline(self, points):
         forward_x = cos(self.angle)
         forward_y = sin(self.angle)
+        screen_x, screen_y = self.camera.world_to_screen(self.x, self.y)
         screen_points = [
             (
-                round(self.x + local_x * forward_x - local_y * forward_y),
-                round(self.y + local_x * forward_y + local_y * forward_x),
+                round(screen_x + local_x * forward_x - local_y * forward_y),
+                round(screen_y + local_x * forward_y + local_y * forward_x),
             )
             for local_x, local_y in points
         ]
