@@ -6,6 +6,7 @@ from pico2d import (
     SDL_QUIT,
     SDLK_ESCAPE,
     clear_canvas,
+    draw_rectangle,
     get_events,
     update_canvas,
 )
@@ -53,6 +54,8 @@ def init():
     )
     delivery_house = DeliveryHouse(
         house_config['id'], *house_config['position'], sample_cargo.cargo_id,
+        zone_offset=house_config['delivery_zone']['offset'],
+        zone_size=house_config['delivery_zone']['size'],
     )
     delivery_houses.append(delivery_house)
     print(
@@ -132,5 +135,12 @@ def update():
 def draw():
     clear_canvas()
     game_world.render()
+    for house in delivery_houses:
+        left, bottom, right, top = house.get_zone_bounds()
+        screen_left, screen_bottom = camera.world_to_screen(left, bottom)
+        screen_right, screen_top = camera.world_to_screen(right, top)
+        # 청록색 충돌 영역과 구분되는 분홍색 배송 구역. 통행을 막지 않는다.
+        draw_rectangle(round(screen_left), round(screen_bottom),
+                       round(screen_right), round(screen_top), 255, 100, 220)
     cargo_debug_text.draw(motorcycle.cargo_list)
     update_canvas()
