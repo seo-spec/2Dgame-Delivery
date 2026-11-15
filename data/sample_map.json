@@ -1,6 +1,9 @@
 {
   "tile_size": 300,
   "spawn": [750, 450],
+  "access_paths": [
+    {"bounds": [690, 260, 810, 390], "curb_width": 6}
+  ],
   "road_segments": [
     [[1, 1], [6, 1]],
     [[6, 1], [6, 4]],
@@ -12,7 +15,34 @@
   "buildings": [
     {"position": [150, 750], "size": [240, 240]},
     {"position": [750, 900], "size": [280, 280]},
-    {"position": [1450, 1050], "size": [280, 280]}
+    {"position": [1450, 1050], "size": [280, 280]},
+    {"id": "delivery_depot", "asset": "delivery_depot", "position": [750, 150], "size": [320, 320]},
+    {"asset": "blue_house", "position": [150, 150], "size": [280, 280]},
+    {"asset": "blue_house", "position": [750, 1650], "size": [300, 300]},
+    {"asset": "shop", "position": [1450, 1650], "size": [320, 320]},
+    {"asset": "shop", "position": [2250, 1050], "size": [280, 280]},
+    {"asset": "blue_house", "position": [2250, 1650], "size": [280, 280]}
+  ],
+  "props": [
+    {"asset": "tree", "position": [750, 650], "size": [110, 110]},
+    {"asset": "tree", "position": [150, 1050], "size": [140, 140]},
+    {"asset": "tree", "position": [150, 1500], "size": [130, 130]},
+    {"asset": "tree", "position": [1300, 1000], "size": [110, 110]},
+    {"asset": "tree", "position": [1650, 1650], "size": [130, 130]},
+    {"asset": "tree", "position": [1250, 150], "size": [110, 110]},
+    {"asset": "tree", "position": [1650, 1050], "size": [110, 110]},
+    {"asset": "tree", "position": [2150, 150], "size": [120, 120]},
+    {"asset": "bus_stop", "position": [1450, 570], "size": [230, 154]},
+    {"asset": "bus_stop", "position": [1450, 1230], "size": [230, 154]},
+    {"asset": "bench", "position": [630, 580], "size": [110, 110]},
+    {"asset": "bench", "position": [1650, 930], "size": [110, 110]},
+    {"asset": "bench", "position": [750, 1170], "size": [110, 110]},
+    {"asset": "bench", "position": [2150, 1450], "size": [110, 110]},
+    {"asset": "recycling_bin", "position": [700, 580], "size": [32, 32]},
+    {"asset": "recycling_bin", "position": [1600, 570], "size": [32, 32]},
+    {"asset": "recycling_bin", "position": [1600, 1230], "size": [32, 32]},
+    {"asset": "recycling_bin", "position": [810, 1170], "size": [32, 32]},
+    {"asset": "recycling_bin", "position": [2220, 1450], "size": [32, 32]}
   ],
   "signals": [
     {"position": [1140, 540], "size": [48, 72], "state": "red"},

@@ -6,7 +6,7 @@ from pathlib import Path
 from pico2d import draw_rectangle, load_image
 
 import settings
-from road_geometry import GRASS_COLOR, RoadGeometry
+from road_geometry import ASPHALT_COLOR, GRASS_COLOR, SIDEWALK_COLOR, RoadGeometry
 
 
 ROOT = Path(__file__).resolve().parent
@@ -70,6 +70,21 @@ class RoadMap:
                 continue
             tile_left, tile_bottom = self.camera.world_to_screen(x * size, y * size)
             self.geometry.draw(mask, tile_left, tile_bottom)
+        self._draw_access_paths()
+
+    def _draw_access_paths(self):
+        # 건물 입구와 도로를 연결하는 진입로. 건물 이미지보다 먼저 출력한다.
+        for path in self.config.get('access_paths', []):
+            left, bottom, right, top = path['bounds']
+            curb = path['curb_width']
+            for x1, x2, color in (
+                (left, right, SIDEWALK_COLOR),
+                (left + curb, right - curb, ASPHALT_COLOR),
+            ):
+                sx1, sy1 = self.camera.world_to_screen(x1, bottom)
+                sx2, sy2 = self.camera.world_to_screen(x2, top)
+                draw_rectangle(round(sx1), round(sy1), round(sx2) - 1, round(sy2),
+                               *color, filled=True)
 
     def _visible(self, x, y, width, height):
         camera = self.camera
@@ -80,7 +95,7 @@ class RoadMap:
 
 
 class MapDecoration:
-    """건물·신호등의 이미지 표시만 담당하는 월드 객체."""
+    """건물·도시 소품·신호등의 이미지 표시만 담당하는 월드 객체."""
 
     def __init__(self, camera, image, position, size):
         self.camera = camera
@@ -98,16 +113,29 @@ class MapDecoration:
 
 def create_decorations(camera, config):
     decorations = []
-    images = {
-        name: load_image(str(ROOT / 'assets/images' / filename))
-        for name, filename in (
-            ('building', 'building_sample.png'),
-            ('red', 'traffic_signal_red.png'),
-            ('green', 'traffic_signal_green.png'),
-        )
+    filenames = {
+        'building': 'building_sample.png',
+        'shop': 'building_shop.png',
+        'blue_house': 'building_blue_house.png',
+        'delivery_depot': 'building_delivery_depot.png',
+        'tree': 'tree.png',
+        'bus_stop': 'bus_stop.png',
+        'bench': 'bench.png',
+        'recycling_bin': 'recycling_bin.png',
+        'red': 'traffic_signal_red.png',
+        'green': 'traffic_signal_green.png',
     }
+    images = {}
+
+    def add_decoration(item, asset):
+        if asset not in images:
+            images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
+        decorations.append(MapDecoration(camera, images[asset], item['position'], item['size']))
+
     for item in config['buildings']:
-        decorations.append(MapDecoration(camera, images['building'], item['position'], item['size']))
+        add_decoration(item, item.get('asset', 'building'))
+    for item in config.get('props', []):
+        add_decoration(item, item['asset'])
     for item in config['signals']:
-        decorations.append(MapDecoration(camera, images[item['state']], item['position'], item['size']))
+        add_decoration(item, item['state'])
     return decorations
