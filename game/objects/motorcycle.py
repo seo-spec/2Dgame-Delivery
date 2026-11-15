@@ -7,10 +7,8 @@ from pico2d import (
     SDLK_a, SDLK_d, SDLK_s, SDLK_w, draw_line,
 )
 
-import game_framework
-import debug_view
-
-
+from game.core import game_framework
+from game.core import debug_view
 # 초기 주행 확인용 수치. 속도는 픽셀/초, 가감속은 픽셀/초².
 FORWARD_MAX_SPEED = 210.0
 REVERSE_MAX_SPEED = 60.0

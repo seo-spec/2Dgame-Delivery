@@ -2,9 +2,9 @@
 
 from pico2d import close_canvas, open_canvas
 
-import game_framework
-import play_mode
-import settings
+from game.core import game_framework
+from game.modes import play_mode
+from game.config import settings
 
 
 def main():

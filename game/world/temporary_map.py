@@ -2,9 +2,7 @@
 
 from pico2d import draw_line, draw_rectangle
 
-import settings
-
-
+from game.config import settings
 GRID_SPACING = 100
 MARKER_COLUMNS = 4
 MARKER_ROWS = 3

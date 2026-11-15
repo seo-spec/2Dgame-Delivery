@@ -22,20 +22,20 @@ from pico2d import (
     update_canvas,
 )
 
-import game_framework
-import debug_view
-import game_world
-from camera import Camera
-from cargo import Cargo
-from cargo_types import CARGO_TYPES
-from collision import move_circle
-from delivery import DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings
-from motorcycle import Motorcycle
-from minimap import MiniMap
-from road_map import RoadMap, create_decorations
-from settings import WORLD_WIDTH, WORLD_HEIGHT
-from stage import GameController, StageState
-from ui import CargoDebugText
+from game.core import game_framework
+from game.core import debug_view
+from game.core import game_world
+from game.world.camera import Camera
+from game.objects.cargo import Cargo
+from game.config.cargo_types import CARGO_TYPES
+from game.systems.collision import move_circle
+from game.systems.delivery import DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings
+from game.objects.motorcycle import Motorcycle
+from game.ui.minimap import MiniMap
+from game.world.road_map import RoadMap, create_decorations
+from game.config.settings import WORLD_WIDTH, WORLD_HEIGHT
+from game.systems.stage import GameController, StageState
+from game.ui.hud import CargoDebugText
 
 
 motorcycle = None

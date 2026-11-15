@@ -3,8 +3,8 @@
 from enum import Enum
 from math import floor
 
-from delivery import SATISFIED_REWARD_MULTIPLIER
-from settings import STAGE_1_TARGET_REVENUE, STAGE_1_TIME_LIMIT
+from game.systems.delivery import SATISFIED_REWARD_MULTIPLIER
+from game.config.settings import STAGE_1_TARGET_REVENUE, STAGE_1_TIME_LIMIT
 
 
 class StageState(Enum):

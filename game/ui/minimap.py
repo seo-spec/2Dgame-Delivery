@@ -4,10 +4,8 @@ from math import cos, sin, hypot, sqrt, tau
 
 from pico2d import draw_line, draw_rectangle, get_canvas_width, get_canvas_height
 
-from road_geometry import ROAD_WIDTH_RATIO
-import settings
-
-
+from game.world.road_geometry import ROAD_WIDTH_RATIO
+from game.config import settings
 MINIMAP_RADIUS = 104
 MINIMAP_MARGIN = 16
 MINIMAP_RESERVED_WIDTH = MINIMAP_RADIUS * 2 + MINIMAP_MARGIN * 2

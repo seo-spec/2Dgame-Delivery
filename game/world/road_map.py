@@ -5,12 +5,12 @@ from pathlib import Path
 
 from pico2d import draw_rectangle, load_image
 
-import settings
-import debug_view
-from road_geometry import ASPHALT_COLOR, GRASS_COLOR, SIDEWALK_COLOR, RoadGeometry
+from game.config import settings
+from game.core import debug_view
+from game.world.road_geometry import ASPHALT_COLOR, GRASS_COLOR, SIDEWALK_COLOR, RoadGeometry
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]
 # 북·동·남·서 연결 비트.
 DIRECTIONS = ((0, 1, 1), (1, 0, 2), (0, -1, 4), (-1, 0, 8))
 
@@ -20,7 +20,7 @@ class RoadMap:
         self.camera = camera
         self.width = settings.WORLD_WIDTH
         self.height = settings.WORLD_HEIGHT
-        self.config = json.loads((ROOT / 'data/sample_map.json').read_text(encoding='utf-8'))
+        self.config = json.loads((ROOT / 'data/maps/sample_map.json').read_text(encoding='utf-8'))
         self.tile_size = self.config['tile_size']
         if self.width % self.tile_size or self.height % self.tile_size:
             raise ValueError('World dimensions must be multiples of sample tile_size')

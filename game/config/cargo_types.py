@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-ICON_DIRECTORY = Path(__file__).resolve().parent / 'assets' / 'images' / 'cargo'
+ICON_DIRECTORY = Path(__file__).resolve().parents[2] / 'assets' / 'images' / 'cargo'
 
 
 @dataclass(frozen=True)

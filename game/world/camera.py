@@ -1,8 +1,6 @@
 """뷰포트 중앙 추적과 월드→화면 좌표 변환을 담당하는 카메라."""
 
-import settings
-
-
+from game.config import settings
 class Camera:
     def __init__(self, x=0.0, y=0.0):
         # 보이는 월드 영역의 왼쪽 아래 위치.

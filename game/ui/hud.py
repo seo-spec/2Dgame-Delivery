@@ -5,9 +5,9 @@ from pathlib import Path
 from math import ceil
 
 from pico2d import get_canvas_height, load_font, load_image, draw_rectangle
-import debug_view
-import settings
-from stage import StageState
+from game.core import debug_view
+from game.config import settings
+from game.systems.stage import StageState
 
 FONT_DIRECTORY = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts'
 FONT_PATH = next((FONT_DIRECTORY / name for name in (
