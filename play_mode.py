@@ -119,7 +119,7 @@ def handle_events():
         if event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             game_framework.quit()
             return
-        if controller.state == StageState.FAILED:
+        if controller.state in (StageState.FAILED, StageState.CLEAR):
             continue
         if event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
             # 구역 밖에서도 눌림을 기록해, 유지한 채 진입하는 입력을 배제한다.
@@ -135,7 +135,7 @@ def handle_events():
 def update():
     global delivery_requested, total_revenue
     # 출발부터의 시뮬레이션 시간. 배송은 이번 프레임의 갱신된 시간으로 판정한다.
-    if controller.state == StageState.FAILED:
+    if controller.state in (StageState.FAILED, StageState.CLEAR):
         delivery_requested = False
         return
     controller.advance_time(game_framework.frame_time)
@@ -198,6 +198,11 @@ def update():
     if controller.state != previous_state:
         print(f'[진행 상태] {controller.state.value}'
               + (f': {controller.failure_reason}' if controller.failure_reason else ''))
+    # 이동·충돌과 배송 상태 판정 후, 복귀 중일 때만 중심 좌표로 도착을 판정한다.
+    if controller.check_return(motorcycle.x, motorcycle.y, pickup_bounds):
+        completed = sum(house.delivered for house in delivery_houses)
+        print(f'[STAGE CLEAR] 배송={completed}/{len(delivery_houses)}, '
+              f'최종 수익={total_revenue}원, 목표={controller.target_revenue}원')
     # 이번 프레임의 이동을 반영한 뒤 출력할 카메라 위치를 결정한다.
     camera.follow(motorcycle.x, motorcycle.y)
 
@@ -210,6 +215,11 @@ def draw():
         left, bottom = camera.world_to_screen(left, bottom)
         right, top = camera.world_to_screen(right, top)
         draw_rectangle(round(left), round(bottom), round(right), round(top), 255, 200, 60)
+    elif controller.state == StageState.RETURNING:
+        left, bottom, right, top = pickup_bounds
+        left, bottom = camera.world_to_screen(left, bottom)
+        right, top = camera.world_to_screen(right, top)
+        draw_rectangle(round(left), round(bottom), round(right), round(top), 100, 255, 120)
     for house in delivery_houses:
         bounds = house.get_zone_bounds()
         if bounds is None:
@@ -228,6 +238,8 @@ def draw():
     )
     cargo_debug_text.draw_delivery_hint(show_delivery_hint)
     cargo_debug_text.draw_pickup_hint(controller.state == StageState.WAITING and in_pickup_zone())
+    if controller.state == StageState.CLEAR:
+        cargo_debug_text.draw_clear_result(delivery_houses, total_revenue, controller.target_revenue)
     update_canvas()
 
 

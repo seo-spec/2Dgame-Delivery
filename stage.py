@@ -9,6 +9,7 @@ class StageState(Enum):
     WAITING = '수령 대기'
     DELIVERING = '배송 중'
     RETURNING = '복귀 중'
+    CLEAR = '클리어'
     FAILED = '실패'
 
 
@@ -48,3 +49,12 @@ class GameController:
         elif self.elapsed_time > self.time_limit:
             self.failure_reason = '배송 시간 초과'
             self.state = StageState.FAILED
+
+    def check_return(self, player_x, player_y, return_bounds):
+        if self.state != StageState.RETURNING:
+            return False
+        left, bottom, right, top = return_bounds
+        if left <= player_x <= right and bottom <= player_y <= top:
+            self.state = StageState.CLEAR
+            return True
+        return False

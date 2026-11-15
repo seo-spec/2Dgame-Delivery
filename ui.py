@@ -31,6 +31,8 @@ class CargoDebugText:
             time_status = '배달소로 돌아가세요'
         elif controller.state == StageState.FAILED:
             time_status = f'실패: {controller.failure_reason}'
+        elif controller.state == StageState.CLEAR:
+            time_status = '배달소 복귀 완료'
         else:
             time_status = '화물 수령 완료'
         lines = [
@@ -99,3 +101,15 @@ class CargoDebugText:
             x, y = get_canvas_width() // 2 - 75, 40
             self.font.draw(x + 1, y - 1, text, (0, 0, 0))
             self.font.draw(x, y, text, (255, 255, 255))
+
+    def draw_clear_result(self, delivery_houses, total_revenue, target_revenue):
+        completed = sum(house.delivered for house in delivery_houses)
+        lines = (
+            'STAGE CLEAR',
+            f'최종 배송: {completed} / {len(delivery_houses)}',
+            f'최종 수익: {total_revenue:,}원',
+            f'목표 수익: {target_revenue:,}원 / '
+            + ('달성' if total_revenue >= target_revenue else '미달성'),
+        )
+        # 기존 화물 정보 아래의 빈 공간에 결과를 화면 좌표로 표시한다.
+        self._draw_lines(lines, get_canvas_width() // 2 - 180, 130)
