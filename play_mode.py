@@ -7,8 +7,6 @@ from pico2d import (
     SDLK_ESCAPE,
     clear_canvas,
     get_events,
-    get_canvas_width,
-    get_canvas_height,
     update_canvas,
 )
 
@@ -16,7 +14,7 @@ import game_framework
 import game_world
 from camera import Camera
 from motorcycle import Motorcycle
-from temporary_map import TemporaryMap
+from road_map import RoadMap, create_decorations
 
 
 motorcycle = None
@@ -27,8 +25,11 @@ def init():
     global motorcycle, camera
     game_world.clear()
     camera = Camera()
-    game_world.add_object(TemporaryMap(camera), game_world.BACKGROUND)
-    motorcycle = Motorcycle(get_canvas_width() / 2, get_canvas_height() / 2, camera)
+    road_map = RoadMap(camera)
+    game_world.add_object(road_map, game_world.BACKGROUND)
+    for decoration in create_decorations(camera, road_map.config):
+        game_world.add_object(decoration, game_world.BACKGROUND)
+    motorcycle = Motorcycle(*road_map.spawn, camera)
     game_world.add_object(motorcycle, game_world.ACTORS)
     camera.follow(motorcycle.x, motorcycle.y)
 
