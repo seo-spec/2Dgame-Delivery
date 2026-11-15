@@ -32,7 +32,16 @@ def _separate_circle(x, y, radius, bounds):
     return min(candidates, key=lambda point: hypot(point[0] - x, point[1] - y))
 
 
-def _separate_from_buildings(x, y, radius, buildings, hits):
+def _clamp_to_world(x, y, radius, world_size):
+    if world_size is None:
+        return x, y
+    width, height = world_size
+    return (max(radius, min(width - radius, x)),
+            max(radius, min(height - radius, y)))
+
+
+def _separate_from_buildings(x, y, radius, buildings, hits, world_size):
+    x, y = _clamp_to_world(x, y, radius, world_size)
     # 한 건물의 보정으로 다른 건물과 겹칠 수 있으므로 전체를 다시 확인한다.
     for _ in range(MAX_SEPARATION_PASSES):
         for index, bounds in enumerate(buildings):
@@ -40,24 +49,30 @@ def _separate_from_buildings(x, y, radius, buildings, hits):
             if (corrected_x, corrected_y) != (x, y):
                 hits.add(index)
             x, y = corrected_x, corrected_y
+        # 건물 보정 후에도 월드 안에 머물도록 두 제약을 함께 만족시킨다.
+        x, y = _clamp_to_world(x, y, radius, world_size)
         if not any(_overlaps_circle(x, y, radius, bounds) for bounds in buildings):
             return x, y
     return None
 
 
-def move_circle(start_x, start_y, target_x, target_y, radius, buildings):
+def move_circle(start_x, start_y, target_x, target_y, radius, buildings, world_size=None):
     """보정 위치, 이동 중 충돌 건물 번호, 최종 접촉 건물 번호를 반환한다."""
     buildings = tuple(buildings)
-    if not buildings:
-        return target_x, target_y, set(), set()
+    start_x, start_y = _clamp_to_world(start_x, start_y, radius, world_size)
+    target_x, target_y = _clamp_to_world(target_x, target_y, radius, world_size)
     hits = set()
     dx, dy = target_x - start_x, target_y - start_y
     # 프레임 지연이나 고속 이동에서도 건물을 한 번에 관통하지 않게 한다.
     steps = max(1, ceil(hypot(dx, dy) / (radius / 2)))
     step_x, step_y = dx / steps, dy / steps
-    x, y = _separate_from_buildings(start_x, start_y, radius, buildings, hits) or (start_x, start_y)
+    x, y = _separate_from_buildings(
+        start_x, start_y, radius, buildings, hits, world_size,
+    ) or (start_x, start_y)
     for _ in range(steps):
-        resolved = _separate_from_buildings(x + step_x, y + step_y, radius, buildings, hits)
+        resolved = _separate_from_buildings(
+            x + step_x, y + step_y, radius, buildings, hits, world_size,
+        )
         if resolved is not None:
             x, y = resolved
             continue
@@ -65,6 +80,7 @@ def move_circle(start_x, start_y, target_x, target_y, radius, buildings):
         # 한 축만 이동할 수 있다면 벽을 따라 빠져나가는 것은 허용한다.
         candidates = ((x + step_x, y), (x, y + step_y))
         for candidate_x, candidate_y in candidates:
+            candidate_x, candidate_y = _clamp_to_world(candidate_x, candidate_y, radius, world_size)
             if not any(_overlaps_circle(candidate_x, candidate_y, radius, bounds)
                        for bounds in buildings):
                 x, y = candidate_x, candidate_y

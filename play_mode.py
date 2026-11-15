@@ -20,6 +20,7 @@ from collision import move_circle
 from delivery import DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings
 from motorcycle import Motorcycle
 from road_map import RoadMap, create_decorations
+from settings import WORLD_WIDTH, WORLD_HEIGHT
 from stage import GameController, StageState
 from ui import CargoDebugText
 
@@ -144,25 +145,24 @@ def update():
     game_world.update()
     # 충돌 감속을 제외한 조작·자연 감속에 의한 빠르기 감소만 판단한다.
     is_decelerating = abs(motorcycle.speed) < abs(previous_speed)
-    collided = False
-    if solid_obstacles:
-        motorcycle.x, motorcycle.y, hits, contacts = move_circle(
-            previous_x, previous_y, motorcycle.x, motorcycle.y,
-            motorcycle.collision_radius,
-            (obstacle.get_collision_bounds() for obstacle in solid_obstacles),
-        )
-        collided = bool(hits)
-        if hits - contact_obstacles:
-            # 직접 피해는 충돌 감속 전 속도로 화물마다 한 번만 계산한다.
-            impact_speed = motorcycle.speed
-            if controller.state == StageState.DELIVERING:
-                for cargo in motorcycle.cargo_list:
-                    cargo.apply_collision_damage(impact_speed)
-            # 같은 프레임에 여러 장애물을 처음 접촉해도 감속은 한 번만 적용한다.
-            motorcycle.apply_collision_slowdown()
-        # 이미 충돌한 장애물은 실제로 떨어질 때까지 접촉 상태를 유지한다.
-        contact_obstacles.update(hits)
-        contact_obstacles.intersection_update(contacts)
+    motorcycle.x, motorcycle.y, hits, contacts = move_circle(
+        previous_x, previous_y, motorcycle.x, motorcycle.y,
+        motorcycle.collision_radius,
+        (obstacle.get_collision_bounds() for obstacle in solid_obstacles),
+        world_size=(WORLD_WIDTH, WORLD_HEIGHT),
+    )
+    collided = bool(hits)
+    if hits - contact_obstacles:
+        # 직접 피해는 충돌 감속 전 속도로 화물마다 한 번만 계산한다.
+        impact_speed = motorcycle.speed
+        if controller.state == StageState.DELIVERING:
+            for cargo in motorcycle.cargo_list:
+                cargo.apply_collision_damage(impact_speed)
+        # 같은 프레임에 여러 장애물을 처음 접촉해도 감속은 한 번만 적용한다.
+        motorcycle.apply_collision_slowdown()
+    # 이미 충돌한 장애물은 실제로 떨어질 때까지 접촉 상태를 유지한다.
+    contact_obstacles.update(hits)
+    contact_obstacles.intersection_update(contacts)
     # 이동·충돌 후 속도를 사용해 화물을 프레임당 한 번만 갱신한다.
     if controller.state == StageState.DELIVERING:
         for cargo in motorcycle.cargo_list:

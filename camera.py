@@ -14,9 +14,11 @@ class Camera:
         self.viewport_height = settings.VIEWPORT_HEIGHT
 
     def follow(self, target_x, target_y):
-        # 경계 제한과 보간 없이 대상의 월드 위치를 뷰포트 중앙에 맞춘다.
-        self.x = target_x - self.viewport_width / 2
-        self.y = target_y - self.viewport_height / 2
+        # 가장자리에서는 카메라만 멈춘다. 월드보다 큰 뷰포트의 축은 0에 고정한다.
+        self.x = max(0.0, min(target_x - self.viewport_width / 2,
+                             max(0.0, settings.WORLD_WIDTH - self.viewport_width)))
+        self.y = max(0.0, min(target_y - self.viewport_height / 2,
+                             max(0.0, settings.WORLD_HEIGHT - self.viewport_height)))
 
     def world_to_screen(self, world_x, world_y):
         return (
