@@ -4,15 +4,11 @@ from pico2d import close_canvas, open_canvas
 
 import game_framework
 import play_mode
-
-
-# 초기 개발용 크기. 최종 해상도는 추후 결정한다.
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+import settings
 
 
 def main():
-    open_canvas(WINDOW_WIDTH, WINDOW_HEIGHT, sync=True)
+    open_canvas(settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT, sync=True)
     try:
         game_framework.run(play_mode)
     finally:
