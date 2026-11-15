@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from pico2d import get_canvas_height, load_font
+from pico2d import get_canvas_height, get_canvas_width, load_font
 
 
 FONT_PATH = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts' / 'malgun.ttf'
@@ -35,3 +35,11 @@ class CargoDebugText:
             # 밝은 지형에서도 읽을 수 있도록 작은 검은 그림자만 추가한다.
             self.font.draw(TEXT_LEFT + 1, y - 1, text, (0, 0, 0))
             self.font.draw(TEXT_LEFT, y, text, (255, 255, 255))
+
+    def draw_delivery_hint(self, visible):
+        if not visible:
+            return
+        text = 'Space: 배달'
+        x, y = get_canvas_width() // 2 - 55, 40
+        self.font.draw(x + 1, y - 1, text, (0, 0, 0))
+        self.font.draw(x, y, text, (255, 255, 255))

@@ -31,7 +31,7 @@
       "id": "collision_preview_house",
       "position": [750, 900],
       "size": [280, 280],
-      "delivery_zone": {"offset": [0, -140], "size": [120, 40]},
+      "delivery_zone": {"offset": [0, -165], "size": [180, 90]},
       "collision": {"offset": [0, -3], "size": [210, 146]}
     },
     {
@@ -107,7 +107,7 @@
     {"asset": "apartment", "position": [3150, 2550], "size": [280, 280], "collision": {"offset": [0, -3], "size": [246, 182]}}
   ],
   "props": [
-    {"asset": "tree", "position": [750, 650], "size": [110, 110], "collision": {"offset": [0, 0], "size": [92, 92]}},
+    {"asset": "tree", "position": [900, 600], "size": [110, 110], "collision": {"offset": [0, 0], "size": [92, 92]}},
     {"asset": "tree", "position": [150, 1050], "size": [140, 140], "collision": {"offset": [0, 0], "size": [118, 118]}},
     {"asset": "tree", "position": [150, 1500], "size": [130, 130], "collision": {"offset": [0, 0], "size": [110, 110]}},
     {"asset": "tree", "position": [1250, 1000], "size": [110, 110], "collision": {"offset": [0, 0], "size": [92, 92]}},
@@ -129,7 +129,7 @@
     {"asset": "mailbox", "position": [620, 330], "size": [64, 64], "collision": {"offset": [0, 0], "size": [34, 32]}},
     {"asset": "mailbox", "position": [2100, 960], "size": [64, 64], "collision": {"offset": [0, 0], "size": [34, 32]}},
     {"asset": "planter", "position": [620, 280], "size": [100, 100], "collision": {"offset": [0, 0], "size": [90, 30]}},
-    {"asset": "planter", "position": [600, 680], "size": [120, 120], "collision": {"offset": [0, 0], "size": [110, 36]}},
+    {"asset": "planter", "position": [570, 650], "size": [120, 120], "collision": {"offset": [0, 0], "size": [110, 36]}},
     {"asset": "planter", "position": [1600, 1170], "size": [120, 120], "collision": {"offset": [0, 0], "size": [110, 36]}},
     {"asset": "fountain", "position": [2850, 1950], "size": [230, 230], "collision": {"offset": [-2, -1], "size": [188, 188]}},
     {"asset": "bench", "position": [2700, 1950], "size": [100, 100], "collision": {"offset": [0, 0], "size": [92, 41]}},
