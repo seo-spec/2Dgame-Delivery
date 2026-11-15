@@ -11,6 +11,9 @@ FONT_SIZE = 18
 TEXT_LEFT = 16
 TEXT_TOP_MARGIN = 30
 LINE_SPACING = 26
+CARD_COLUMNS = 3
+CARD_TOP_MARGIN = 110
+CARD_ROW_SPACING = 208
 
 
 class CargoDebugText:
@@ -24,14 +27,12 @@ class CargoDebugText:
             f'배송: {sum(house.delivered for house in delivery_houses)} / {len(delivery_houses)}',
             f'경과시간: {elapsed_time:.1f}초',
         ]
+        self._draw_lines(lines, TEXT_LEFT, get_canvas_height() - TEXT_TOP_MARGIN)
         cargo_by_id = {cargo.cargo_id: cargo for cargo in cargo_list}
-        house_labels = {
-            'collision_preview_house': 'A집',
-            'delivery_house_b': 'B집',
-        }
-        for house in delivery_houses:
-            label = house_labels.get(house.house_id, house.house_id)
-            lines.append(f'[{label}]')
+        column_width = (get_canvas_width() - TEXT_LEFT * 2) / CARD_COLUMNS
+        for index, house in enumerate(delivery_houses):
+            label = house.label
+            lines = [f'[{label}]']
             cargo = cargo_by_id.get(house.cargo_id)
             if cargo is not None:
                 if cargo.delivered:
@@ -49,12 +50,17 @@ class CargoDebugText:
             else:
                 mood_text = f'{label} 고객 기분: {house.get_customer_mood(elapsed_time)}'
             lines.append(mood_text)
-        top = get_canvas_height() - TEXT_TOP_MARGIN
+            column, row = index % CARD_COLUMNS, index // CARD_COLUMNS
+            left = round(TEXT_LEFT + column * column_width)
+            top = get_canvas_height() - TEXT_TOP_MARGIN - CARD_TOP_MARGIN - row * CARD_ROW_SPACING
+            self._draw_lines(lines, left, top)
+
+    def _draw_lines(self, lines, left, top):
         for index, text in enumerate(lines):
             y = top - index * LINE_SPACING
             # 밝은 지형에서도 읽을 수 있도록 작은 검은 그림자만 추가한다.
-            self.font.draw(TEXT_LEFT + 1, y - 1, text, (0, 0, 0))
-            self.font.draw(TEXT_LEFT, y, text, (255, 255, 255))
+            self.font.draw(left + 1, y - 1, text, (0, 0, 0))
+            self.font.draw(left, y, text, (255, 255, 255))
 
     def draw_delivery_hint(self, visible):
         if not visible:

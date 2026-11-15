@@ -55,21 +55,27 @@
       "collision": {"offset": [0, 0], "size": [250, 144]}
     },
     {
+      "id": "delivery_house_c",
       "asset": "blue_house",
       "position": [750, 1650],
       "size": [300, 300],
+      "delivery_zone": {"offset": [0, -170], "size": [180, 90]},
       "collision": {"offset": [0, 0], "size": [268, 154]}
     },
     {
+      "id": "delivery_house_d",
       "asset": "shop",
       "position": [1450, 1650],
       "size": [320, 320],
+      "delivery_zone": {"offset": [0, -170], "size": [180, 90]},
       "collision": {"offset": [0, 0], "size": [272, 168]}
     },
     {
+      "id": "delivery_house_e",
       "asset": "shop",
       "position": [2250, 1050],
       "size": [280, 280],
+      "delivery_zone": {"offset": [0, -165], "size": [180, 90]},
       "collision": {"offset": [0, 0], "size": [238, 148]}
     },
     {

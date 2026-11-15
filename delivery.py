@@ -7,6 +7,14 @@ INITIAL_A_BASE_FEE = 500  # PRD 6.2 A집 초기 배달비. 단위: 원.
 INITIAL_A_DEADLINE = 45.0  # 스테이지 출발 기준 마감. 단위: 초.
 INITIAL_B_BASE_FEE = 550
 INITIAL_B_DEADLINE = 65.0
+# (건물 ID, 표시 이름, 지정 화물 ID, 기본비, 출발 기준 마감)
+INITIAL_DELIVERY_SETTINGS = (
+    ('collision_preview_house', 'A집', 'sample_cargo_01', INITIAL_A_BASE_FEE, INITIAL_A_DEADLINE),
+    ('delivery_house_b', 'B집', 'sample_cargo_02', INITIAL_B_BASE_FEE, INITIAL_B_DEADLINE),
+    ('delivery_house_c', 'C집', 'sample_cargo_03', 600, 90.0),
+    ('delivery_house_d', 'D집', 'sample_cargo_04', 650, 115.0),
+    ('delivery_house_e', 'E집', 'sample_cargo_05', 700, 140.0),
+)
 SATISFIED_DEADLINE_RATIO = 0.7
 SATISFIED_REWARD_MULTIPLIER = 1.2
 NORMAL_REWARD_MULTIPLIER = 1.0
@@ -15,8 +23,9 @@ DISSATISFIED_REWARD_MULTIPLIER = 0.7
 
 class DeliveryHouse:
     def __init__(self, house_id, x, y, cargo_id, zone_offset, zone_size,
-                 base_fee, deadline):
+                 base_fee, deadline, label=None):
         self.house_id = house_id
+        self.label = label if label is not None else house_id
         self.x = x
         self.y = y
         self.cargo_id = cargo_id

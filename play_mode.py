@@ -17,10 +17,7 @@ import game_world
 from camera import Camera
 from cargo import Cargo
 from collision import move_circle
-from delivery import (
-    DeliveryHouse, INITIAL_A_BASE_FEE, INITIAL_A_DEADLINE,
-    INITIAL_B_BASE_FEE, INITIAL_B_DEADLINE,
-)
+from delivery import DeliveryHouse, INITIAL_DELIVERY_SETTINGS
 from motorcycle import Motorcycle
 from road_map import RoadMap, create_decorations
 from ui import CargoDebugText
@@ -58,51 +55,33 @@ def init():
         if decoration.get_collision_bounds() is not None:
             solid_obstacles.append(decoration)
     motorcycle = Motorcycle(*road_map.spawn, camera)
-    sample_cargo = Cargo('sample_cargo_01')
-    motorcycle.cargo_list.append(sample_cargo)
-    # 기존 건물 데이터를 참조해 위치를 중복 정의하지 않는다.
-    house_config = next(
-        house for house in road_map.config['buildings']
-        if house.get('id') == 'collision_preview_house'
-    )
-    delivery_house = DeliveryHouse(
-        house_config['id'], *house_config['position'], sample_cargo.cargo_id,
-        zone_offset=house_config['delivery_zone']['offset'],
-        zone_size=house_config['delivery_zone']['size'],
-        base_fee=INITIAL_A_BASE_FEE,
-        deadline=INITIAL_A_DEADLINE,
-    )
-    delivery_houses.append(delivery_house)
-    cargo_b = Cargo('sample_cargo_02')
-    motorcycle.cargo_list.append(cargo_b)
-    house_b_config = next(
-        house for house in road_map.config['buildings']
-        if house.get('id') == 'delivery_house_b'
-    )
-    delivery_house_b = DeliveryHouse(
-        house_b_config['id'], *house_b_config['position'], cargo_b.cargo_id,
-        zone_offset=house_b_config['delivery_zone']['offset'],
-        zone_size=house_b_config['delivery_zone']['size'],
-        base_fee=INITIAL_B_BASE_FEE, deadline=INITIAL_B_DEADLINE,
-    )
-    delivery_houses.append(delivery_house_b)
-    print(
-        f'[배송지 연결] PRD=B집, ID={delivery_house_b.house_id}, '
-        f'지정 화물={delivery_house_b.cargo_id}, '
-        f'기본비={delivery_house_b.base_fee}원, 마감={delivery_house_b.deadline}초'
-    )
-    print(
-        f'[초기 확인용 화물] ID={sample_cargo.cargo_id}, '
-        f'내구도={sample_cargo.current_durability}/{sample_cargo.max_durability}, '
-        f'흔들림={sample_cargo.shake}, 민감도={sample_cargo.sensitivity}, '
-        f'손상 임계치={sample_cargo.damage_threshold}, 배송 완료={sample_cargo.delivered}'
-    )
-    print(
-        f'[배송지 연결] ID={delivery_house.house_id}, '
-        f'월드 위치=({delivery_house.x}, {delivery_house.y}), '
-        f'지정 화물={delivery_house.cargo_id}, 배송 완료={delivery_house.delivered}, '
-        f'PRD=A집, 기본비={delivery_house.base_fee}원, 마감={delivery_house.deadline}초'
-    )
+    # 기존 건물 위치·구역은 맵에서, 화물·요금·마감은 배송 설정에서 읽는다.
+    buildings_by_id = {
+        building['id']: building for building in road_map.config['buildings']
+        if 'id' in building
+    }
+    for house_id, label, cargo_id, base_fee, deadline in INITIAL_DELIVERY_SETTINGS:
+        cargo = Cargo(cargo_id)
+        motorcycle.cargo_list.append(cargo)
+        building = buildings_by_id[house_id]
+        house = DeliveryHouse(
+            house_id, *building['position'], cargo_id,
+            zone_offset=building['delivery_zone']['offset'],
+            zone_size=building['delivery_zone']['size'],
+            base_fee=base_fee, deadline=deadline, label=label,
+        )
+        delivery_houses.append(house)
+        print(
+            f'[초기 확인용 화물] ID={cargo.cargo_id}, '
+            f'내구도={cargo.current_durability}/{cargo.max_durability}, '
+            f'흔들림={cargo.shake}, 민감도={cargo.sensitivity}, '
+            f'손상 임계치={cargo.damage_threshold}, 배송 완료={cargo.delivered}'
+        )
+        print(
+            f'[배송지 연결] PRD={label}, ID={house.house_id}, '
+            f'월드 위치=({house.x}, {house.y}), 지정 화물={house.cargo_id}, '
+            f'기본비={house.base_fee}원, 마감={house.deadline}초'
+        )
     game_world.add_object(motorcycle, game_world.ACTORS)
     camera.follow(motorcycle.x, motorcycle.y)
     cargo_debug_text = CargoDebugText()
