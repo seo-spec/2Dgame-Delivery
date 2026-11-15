@@ -12,7 +12,7 @@ TEXT_LEFT = 16
 TEXT_TOP_MARGIN = 30
 LINE_SPACING = 26
 CARD_COLUMNS = 3
-CARD_TOP_MARGIN = 110
+CARD_TOP_MARGIN = 140
 CARD_ROW_SPACING = 208
 
 
@@ -21,12 +21,21 @@ class CargoDebugText:
         # Windows 기본 한글 폰트. 플레이 초기화 시 한 번만 불러온다.
         self.font = load_font(str(FONT_PATH), FONT_SIZE)
 
-    def draw(self, cargo_list, total_revenue, delivery_houses, elapsed_time, cargo_received):
+    def draw(self, cargo_list, total_revenue, delivery_houses, elapsed_time, cargo_received,
+             time_limit):
+        remaining_time = max(0.0, time_limit - elapsed_time)
+        if not cargo_received:
+            time_status = '배달소에서 화물을 수령하세요'
+        elif elapsed_time > time_limit:
+            time_status = '배송 시간 초과'
+        else:
+            time_status = '화물 수령 완료'
         lines = [
             f'누적 수익: {total_revenue:,}원',
             f'배송: {sum(house.delivered for house in delivery_houses)} / {len(delivery_houses)}',
             f'경과시간: {elapsed_time:.1f}초',
-            '화물 수령 완료' if cargo_received else '배달소에서 화물을 수령하세요',
+            f'남은 시간: {remaining_time:.1f}초',
+            time_status,
         ]
         self._draw_lines(lines, TEXT_LEFT, get_canvas_height() - TEXT_TOP_MARGIN)
         cargo_by_id = {cargo.cargo_id: cargo for cargo in cargo_list}

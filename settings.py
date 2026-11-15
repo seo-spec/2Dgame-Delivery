@@ -1,8 +1,9 @@
-"""초기 개발용 화면·월드 크기. 단위는 픽셀."""
+"""초기 개발용 화면·월드 크기 및 플레이 설정."""
 
 
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
+STAGE_1_TIME_LIMIT = 150.0  # 화물 수령부터의 전체 배송 제한시간. 단위: 초.
 
 WORLD_WIDTH = 3600
 WORLD_HEIGHT = 2700

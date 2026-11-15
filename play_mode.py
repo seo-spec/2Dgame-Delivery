@@ -20,6 +20,7 @@ from collision import move_circle
 from delivery import DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings
 from motorcycle import Motorcycle
 from road_map import RoadMap, create_decorations
+from settings import STAGE_1_TIME_LIMIT
 from ui import CargoDebugText
 
 
@@ -176,7 +177,7 @@ def update():
             elapsed_time = 0.0
             print(f'[화물 수령 완료] 적재={len(motorcycle.cargo_list)}개, 배송 시작')
         for house in delivery_houses:
-            if not was_received:
+            if not was_received or not is_delivery_time_available():
                 break
             if house.try_deliver(motorcycle.x, motorcycle.y, motorcycle.cargo_list,
                                  elapsed_time):
@@ -213,8 +214,8 @@ def draw():
                        round(screen_right), round(screen_top), 255, 100, 220)
         cargo_debug_text.draw_house_label(house, round(screen_left), round(screen_top) + 8)
     cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, elapsed_time,
-                          cargo_received)
-    show_delivery_hint = cargo_received and any(
+                          cargo_received, STAGE_1_TIME_LIMIT)
+    show_delivery_hint = is_delivery_time_available() and any(
         not house.delivered and house.contains_position(motorcycle.x, motorcycle.y)
         for house in delivery_houses
     )
@@ -226,3 +227,8 @@ def draw():
 def in_pickup_zone():
     left, bottom, right, top = pickup_bounds
     return left <= motorcycle.x <= right and bottom <= motorcycle.y <= top
+
+
+def is_delivery_time_available():
+    # 표시용 반올림·0 하한 대신 갱신된 실제 경과시간으로 경계를 비교한다.
+    return cargo_received and elapsed_time <= STAGE_1_TIME_LIMIT
