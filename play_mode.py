@@ -2,6 +2,7 @@
 
 from pico2d import (
     SDL_KEYDOWN,
+    SDL_KEYUP,
     SDL_QUIT,
     SDLK_ESCAPE,
     clear_canvas,
@@ -16,14 +17,20 @@ import game_world
 from motorcycle import Motorcycle
 
 
+motorcycle = None
+
+
 def init():
+    global motorcycle
     game_world.clear()
     motorcycle = Motorcycle(get_canvas_width() / 2, get_canvas_height() / 2)
     game_world.add_object(motorcycle, game_world.ACTORS)
 
 
 def finish():
+    global motorcycle
     game_world.clear()
+    motorcycle = None
 
 
 def handle_events():
@@ -34,6 +41,8 @@ def handle_events():
         if event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             game_framework.quit()
             return
+        if event.type in (SDL_KEYDOWN, SDL_KEYUP):
+            motorcycle.handle_event(event)
 
 
 def update():
