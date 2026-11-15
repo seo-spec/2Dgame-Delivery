@@ -136,7 +136,11 @@ class CargoDebugText:
                 cargo = cargo_by_id.get(house.cargo_id)
                 shake = f'{cargo.shake:.1f}' if cargo else '--'
                 lines.append(f'{house.label} ({house.x}, {house.y}) {house.cargo_id} 흔들림 {shake}')
-            self._box(12, height - 276, 680, height - 78, NAVY)
+                if cargo is not None:
+                    name = cargo.cargo_type.name if cargo.cargo_type else '일반 화물'
+                    lines.append(f'  {name} | 흔들림 손상 x{cargo.shake_damage_multiplier:.1f}'
+                                 f' / 충돌 피해 x{cargo.collision_damage_multiplier:.1f}')
+            self._box(12, height - 98 - len(lines) * LINE_SPACING, 680, height - 78, NAVY)
             self._draw_lines(lines, 24, height - 104)
 
     def _notice(self, text, y=130):
