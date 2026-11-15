@@ -2,7 +2,10 @@
 
 from math import cos, pi, sin, tau
 
-from pico2d import SDL_KEYDOWN, SDL_KEYUP, SDLK_a, SDLK_d, SDLK_s, SDLK_w, draw_line
+from pico2d import (
+    SDL_KEYDOWN, SDL_KEYUP, SDLK_LSHIFT, SDLK_RSHIFT,
+    SDLK_a, SDLK_d, SDLK_s, SDLK_w, draw_line,
+)
 
 import game_framework
 
@@ -11,6 +14,8 @@ import game_framework
 FORWARD_MAX_SPEED = 180.0
 REVERSE_MAX_SPEED = 60.0
 FORWARD_ACCEL = 120.0
+BOOST_MAX_MULTIPLIER = 1.5
+BOOST_RAMP_TIME = 1.0  # 기본 배율에서 최대 배율까지 걸리는 초.
 REVERSE_ACCEL = 40.0
 BRAKE_ACCEL = 180.0
 NATURAL_DECEL = 100.0
@@ -23,12 +28,13 @@ class Motorcycle:
         self.x = x
         self.y = y
         self.speed = 0.0
+        self.boost_multiplier = 1.0
         # 0은 오른쪽, 양의 각도는 반시계 방향. 시작은 위쪽이다.
         self.angle = pi / 2
         self.pressed_keys = set()
 
     def handle_event(self, event):
-        if event.key not in (SDLK_w, SDLK_s, SDLK_a, SDLK_d):
+        if event.key not in (SDLK_w, SDLK_s, SDLK_a, SDLK_d, SDLK_LSHIFT, SDLK_RSHIFT):
             return
         if event.type == SDL_KEYDOWN:
             self.pressed_keys.add(event.key)
@@ -40,8 +46,17 @@ class Motorcycle:
         forward_pressed = SDLK_w in self.pressed_keys
         reverse_pressed = SDLK_s in self.pressed_keys
 
+        shift_pressed = bool(self.pressed_keys & {SDLK_LSHIFT, SDLK_RSHIFT})
+        if shift_pressed and forward_pressed and not reverse_pressed and self.speed >= 0.0:
+            self.boost_multiplier = min(
+                BOOST_MAX_MULTIPLIER,
+                self.boost_multiplier + (BOOST_MAX_MULTIPLIER - 1.0) * dt / BOOST_RAMP_TIME,
+            )
+        else:
+            self.boost_multiplier = 1.0
+
         if forward_pressed and not reverse_pressed:
-            self._accelerate(1, FORWARD_ACCEL, dt)
+            self._accelerate(1, FORWARD_ACCEL * self.boost_multiplier, dt)
         elif reverse_pressed and not forward_pressed:
             self._accelerate(-1, REVERSE_ACCEL, dt)
         elif self.speed > 0.0:
