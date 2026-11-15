@@ -13,20 +13,59 @@
     [[3, 2], [7, 2]]
   ],
   "buildings": [
-    {"position": [150, 750], "size": [240, 240]},
+    {
+      "position": [150, 750],
+      "size": [240, 240],
+      "collision": {"offset": [0, -2], "size": [180, 124]}
+    },
     {
       "id": "collision_preview_house",
       "position": [750, 900],
       "size": [280, 280],
       "collision": {"offset": [0, -3], "size": [210, 146]}
     },
-    {"position": [1450, 1050], "size": [280, 280]},
-    {"id": "delivery_depot", "asset": "delivery_depot", "position": [750, 150], "size": [320, 320]},
-    {"asset": "blue_house", "position": [150, 150], "size": [280, 280]},
-    {"asset": "blue_house", "position": [750, 1650], "size": [300, 300]},
-    {"asset": "shop", "position": [1450, 1650], "size": [320, 320]},
-    {"asset": "shop", "position": [2250, 1050], "size": [280, 280]},
-    {"asset": "blue_house", "position": [2250, 1650], "size": [280, 280]}
+    {
+      "position": [1450, 1050],
+      "size": [280, 280],
+      "collision": {"offset": [0, -3], "size": [210, 146]}
+    },
+    {
+      "id": "delivery_depot",
+      "asset": "delivery_depot",
+      "position": [750, 150],
+      "size": [320, 320],
+      "collision": {"offset": [0, -15], "size": [286, 238]}
+    },
+    {
+      "asset": "blue_house",
+      "position": [150, 150],
+      "size": [280, 280],
+      "collision": {"offset": [0, 0], "size": [250, 144]}
+    },
+    {
+      "asset": "blue_house",
+      "position": [750, 1650],
+      "size": [300, 300],
+      "collision": {"offset": [0, 0], "size": [268, 154]}
+    },
+    {
+      "asset": "shop",
+      "position": [1450, 1650],
+      "size": [320, 320],
+      "collision": {"offset": [0, 0], "size": [272, 168]}
+    },
+    {
+      "asset": "shop",
+      "position": [2250, 1050],
+      "size": [280, 280],
+      "collision": {"offset": [0, 0], "size": [238, 148]}
+    },
+    {
+      "asset": "blue_house",
+      "position": [2250, 1650],
+      "size": [280, 280],
+      "collision": {"offset": [0, 0], "size": [250, 144]}
+    }
   ],
   "props": [
     {"asset": "tree", "position": [750, 650], "size": [110, 110]},
