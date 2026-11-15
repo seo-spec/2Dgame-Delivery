@@ -1,24 +1,34 @@
 """배송지와 지정 화물 연결 데이터 및 배송 완료 처리."""
 
 from math import floor
+from random import sample
 
 
 INITIAL_A_BASE_FEE = 500  # PRD 6.2 A집 초기 배달비. 단위: 원.
 INITIAL_A_DEADLINE = 45.0  # 스테이지 출발 기준 마감. 단위: 초.
 INITIAL_B_BASE_FEE = 550
 INITIAL_B_DEADLINE = 65.0
-# (건물 ID, 표시 이름, 지정 화물 ID, 기본비, 출발 기준 마감)
+# (표시 이름, 지정 화물 ID, 기본비, 출발 기준 마감). 건물은 시작 시 별도 추첨한다.
 INITIAL_DELIVERY_SETTINGS = (
-    ('collision_preview_house', 'A집', 'sample_cargo_01', INITIAL_A_BASE_FEE, INITIAL_A_DEADLINE),
-    ('delivery_house_b', 'B집', 'sample_cargo_02', INITIAL_B_BASE_FEE, INITIAL_B_DEADLINE),
-    ('delivery_house_c', 'C집', 'sample_cargo_03', 600, 90.0),
-    ('delivery_house_d', 'D집', 'sample_cargo_04', 650, 115.0),
-    ('delivery_house_e', 'E집', 'sample_cargo_05', 700, 140.0),
+    ('A집', 'sample_cargo_01', INITIAL_A_BASE_FEE, INITIAL_A_DEADLINE),
+    ('B집', 'sample_cargo_02', INITIAL_B_BASE_FEE, INITIAL_B_DEADLINE),
+    ('C집', 'sample_cargo_03', 600, 90.0),
+    ('D집', 'sample_cargo_04', 650, 115.0),
+    ('E집', 'sample_cargo_05', 700, 140.0),
 )
 SATISFIED_DEADLINE_RATIO = 0.7
 SATISFIED_REWARD_MULTIPLIER = 1.2
 NORMAL_REWARD_MULTIPLIER = 1.0
 DISSATISFIED_REWARD_MULTIPLIER = 0.7
+
+
+def select_delivery_buildings(buildings, count):
+    candidates = [building for building in buildings
+                  if building.get('id') != 'delivery_depot'
+                  and building.get('id') and building.get('delivery_zone')]
+    if len(candidates) < count:
+        raise ValueError(f'배송 후보 건물이 부족합니다: 필요 {count}, 후보 {len(candidates)}')
+    return sample(candidates, count)
 
 
 class DeliveryHouse:

@@ -17,7 +17,7 @@ import game_world
 from camera import Camera
 from cargo import Cargo
 from collision import move_circle
-from delivery import DeliveryHouse, INITIAL_DELIVERY_SETTINGS
+from delivery import DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings
 from motorcycle import Motorcycle
 from road_map import RoadMap, create_decorations
 from ui import CargoDebugText
@@ -70,10 +70,13 @@ def init():
     center_x, center_y = depot['position'][0] + offset_x, depot['position'][1] + offset_y
     pickup_bounds = (center_x - width / 2, center_y - height / 2,
                      center_x + width / 2, center_y + height / 2)
-    for house_id, label, cargo_id, base_fee, deadline in INITIAL_DELIVERY_SETTINGS:
-        building = buildings_by_id[house_id]
+    selected_buildings = select_delivery_buildings(
+        road_map.config['buildings'], len(INITIAL_DELIVERY_SETTINGS),
+    )
+    for building, (label, cargo_id, base_fee, deadline) in zip(
+            selected_buildings, INITIAL_DELIVERY_SETTINGS):
         house = DeliveryHouse(
-            house_id, *building['position'], cargo_id,
+            building['id'], *building['position'], cargo_id,
             zone_offset=building['delivery_zone']['offset'],
             zone_size=building['delivery_zone']['size'],
             base_fee=base_fee, deadline=deadline, label=label,
@@ -208,6 +211,7 @@ def draw():
         # 청록색 충돌 영역과 구분되는 분홍색 배송 구역. 통행을 막지 않는다.
         draw_rectangle(round(screen_left), round(screen_bottom),
                        round(screen_right), round(screen_top), 255, 100, 220)
+        cargo_debug_text.draw_house_label(house, round(screen_left), round(screen_top) + 8)
     cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, elapsed_time,
                           cargo_received)
     show_delivery_hint = cargo_received and any(

@@ -33,7 +33,7 @@ class CargoDebugText:
         column_width = (get_canvas_width() - TEXT_LEFT * 2) / CARD_COLUMNS
         for index, house in enumerate(delivery_houses):
             label = house.label
-            lines = [f'[{label}]']
+            lines = [f'[{label}] ({house.x}, {house.y})']
             cargo = cargo_by_id.get(house.cargo_id)
             if cargo is not None:
                 if cargo.delivered:
@@ -72,6 +72,11 @@ class CargoDebugText:
             return
         text = 'Space: 배달'
         x, y = get_canvas_width() // 2 - 55, 40
+        self.font.draw(x + 1, y - 1, text, (0, 0, 0))
+        self.font.draw(x, y, text, (255, 255, 255))
+
+    def draw_house_label(self, house, x, y):
+        text = f'{house.label} 배송 완료' if house.delivered else house.label
         self.font.draw(x + 1, y - 1, text, (0, 0, 0))
         self.font.draw(x, y, text, (255, 255, 255))
 
