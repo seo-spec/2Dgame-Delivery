@@ -78,13 +78,18 @@ def handle_events():
 
 def update():
     previous_x, previous_y = motorcycle.x, motorcycle.y
+    previous_speed = motorcycle.speed
     game_world.update()
+    # 충돌 감속을 제외한 조작·자연 감속에 의한 빠르기 감소만 판단한다.
+    is_decelerating = abs(motorcycle.speed) < abs(previous_speed)
+    collided = False
     if solid_obstacles:
         motorcycle.x, motorcycle.y, hits, contacts = move_circle(
             previous_x, previous_y, motorcycle.x, motorcycle.y,
             motorcycle.collision_radius,
             (obstacle.get_collision_bounds() for obstacle in solid_obstacles),
         )
+        collided = bool(hits)
         if hits - contact_obstacles:
             # 같은 프레임에 여러 장애물을 처음 접촉해도 감속은 한 번만 적용한다.
             motorcycle.apply_collision_slowdown()
@@ -93,7 +98,10 @@ def update():
         contact_obstacles.intersection_update(contacts)
     # 이동·충돌 후 속도를 사용해 화물을 프레임당 한 번만 갱신한다.
     for cargo in motorcycle.cargo_list:
-        cargo.increase_shake(motorcycle.speed, motorcycle.turn_input, game_framework.frame_time)
+        cargo.update_shake(
+            motorcycle.speed, motorcycle.turn_input, game_framework.frame_time,
+            is_decelerating=is_decelerating, collided=collided,
+        )
     # 이번 프레임의 이동을 반영한 뒤 출력할 카메라 위치를 결정한다.
     camera.follow(motorcycle.x, motorcycle.y)
 

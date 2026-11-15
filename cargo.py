@@ -1,4 +1,4 @@
-"""화물별 독립 상태와 회전 주행에 따른 흔들림 증가."""
+"""화물별 독립 상태와 주행에 따른 흔들림 증가·회복."""
 
 
 # 개발 확인용 초기값이며 확정된 게임 밸런스 수치가 아니다.
@@ -8,6 +8,7 @@ INITIAL_SENSITIVITY = 1.0
 INITIAL_DAMAGE_THRESHOLD = 50.0
 MAX_SHAKE = 100.0
 SHAKE_INCREASE_FACTOR = 0.1
+SHAKE_RECOVERY_RATE = 20.0  # 초당 회복량. 최대 흔들림 100에서 직진·정지 시 약 5초.
 
 
 class Cargo:
@@ -22,8 +23,12 @@ class Cargo:
         self.damage_threshold = damage_threshold
         self.delivered = False
 
-    def increase_shake(self, speed, turn_input, dt):
+    def update_shake(self, speed, turn_input, dt, is_decelerating=False, collided=False):
         if self.delivered or self.current_durability <= 0.0:
             return
         increase = abs(speed) * abs(turn_input) * self.sensitivity * SHAKE_INCREASE_FACTOR * dt
-        self.shake = min(MAX_SHAKE, max(0.0, self.shake + increase))
+        recovery = 0.0
+        if not collided and (turn_input == 0 or is_decelerating):
+            # 직진과 감속 조건을 모두 만족해도 회복은 한 번만 적용한다.
+            recovery = SHAKE_RECOVERY_RATE * dt
+        self.shake = min(MAX_SHAKE, max(0.0, self.shake + increase - recovery))
