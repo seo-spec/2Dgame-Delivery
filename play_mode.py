@@ -102,6 +102,7 @@ def update():
             motorcycle.speed, motorcycle.turn_input, game_framework.frame_time,
             is_decelerating=is_decelerating, collided=collided,
         )
+        cargo.apply_shake_damage(game_framework.frame_time)
     # 이번 프레임의 이동을 반영한 뒤 출력할 카메라 위치를 결정한다.
     camera.follow(motorcycle.x, motorcycle.y)
 

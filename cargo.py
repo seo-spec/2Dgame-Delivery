@@ -9,6 +9,7 @@ INITIAL_DAMAGE_THRESHOLD = 50.0
 MAX_SHAKE = 100.0
 SHAKE_INCREASE_FACTOR = 0.1
 SHAKE_RECOVERY_RATE = 20.0  # 초당 회복량. 최대 흔들림 100에서 직진·정지 시 약 5초.
+SHAKE_DAMAGE_FACTOR = 0.2  # 임계치 초과 흔들림 50에서 초당 내구도 10 감소.
 
 
 class Cargo:
@@ -32,3 +33,10 @@ class Cargo:
             # 직진과 감속 조건을 모두 만족해도 회복은 한 번만 적용한다.
             recovery = SHAKE_RECOVERY_RATE * dt
         self.shake = min(MAX_SHAKE, max(0.0, self.shake + increase - recovery))
+
+    def apply_shake_damage(self, dt):
+        if self.delivered or self.current_durability <= 0.0:
+            return
+        excess_shake = max(0.0, self.shake - self.damage_threshold)
+        damage = excess_shake * SHAKE_DAMAGE_FACTOR * dt
+        self.current_durability = max(0.0, self.current_durability - damage)
