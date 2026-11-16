@@ -1,16 +1,14 @@
-"""운석 수령 전 안내와 첫 묶음 경고. 표시는 운석 시뮬레이션 시계만 사용한다."""
+"""미니맵 아래의 간단한 운석 경고와 첫 묶음 효과음."""
 
 from pathlib import Path
 
 from pico2d import (
-    draw_rectangle, get_canvas_height, load_wav,
+    draw_line, draw_rectangle, load_wav,
     Mix_HaltChannel, Mix_Pause, Mix_PlayChannel, Mix_Playing, Mix_Resume,
 )
 
 from game.config import meteor as config
-from game.config import settings
 from game.systems.stage import StageState
-from game.ui.minimap import MINIMAP_RESERVED_WIDTH
 
 SOUND_PATH = Path(__file__).resolve().parents[2] / 'assets/sounds/meteor_warning.wav'
 
@@ -60,49 +58,28 @@ class MeteorNotices:
         self.seen_alert = 0
         self.sound = None
 
-    def _alert_active(self, controller, meteor_system):
-        if controller.state in (StageState.WAITING, StageState.FAILED, StageState.CLEAR):
-            return False
+    def _warning_active(self, controller, meteor_system):
+        return (controller.state not in (StageState.FAILED, StageState.CLEAR)
+                and bool(meteor_system.meteors))
+
+    def draw(self, controller, meteor_system, minimap):
+        if self._warning_active(controller, meteor_system):
+            self._draw_warning(meteor_system, minimap)
+
+    def _draw_warning(self, meteor_system, minimap):
+        left, bottom, right, top = minimap.warning_bounds()
+        falling = any(item.state == 'FALLING' for item in meteor_system.meteors)
         started = meteor_system.alert_started_at
-        duration = (config.FIRST_ALERT_DURATION if meteor_system.alert_serial == 1
-                    else config.REPEAT_ALERT_DURATION)
-        return started is not None and 0 <= meteor_system.clock - started < duration
-
-    def reserved_height(self, controller, meteor_system):
-        if controller.state == StageState.WAITING:
-            return 126
-        return 54 if self._alert_active(controller, meteor_system) else 0
-
-    def bounds(self, controller, meteor_system):
-        reserved = self.reserved_height(controller, meteor_system)
-        if not reserved:
-            return None
-        top = get_canvas_height() - 80
-        return (settings.VIEWPORT_LEFT + 12, top - reserved + 6,
-                settings.VIEWPORT_LEFT + settings.VIEWPORT_WIDTH - MINIMAP_RESERVED_WIDTH - 12, top)
-
-    def draw(self, controller, meteor_system):
-        bounds = self.bounds(controller, meteor_system)
-        if bounds is None:
-            return
-        left, bottom, right, top = bounds
-        waiting = controller.state == StageState.WAITING
-        first = meteor_system.alert_serial == 1
-        background = (25, 40, 57) if waiting else (67, 30, 36)
-        draw_rectangle(left, bottom, right, top, *background, filled=True)
-        draw_rectangle(left, bottom, left + 4, top, 240, 95, 75, filled=True)
-        if waiting:
-            lines = (
-                ('운석 주의보 안내', (255, 210, 145)),
-                ('붉은 외곽 = 낙하 위치 / 안쪽 원이 닫히면 착지', (245, 248, 249)),
-                ('크레이터는 3초 차단 / 통행 불가 표지가 사라지면 통과', (245, 248, 249)),
-                ('미니맵: 점멸은 낙하 / 줄어드는 채움은 차단 해제 시간', (180, 215, 235)),
-            )
-            for index, (text, color) in enumerate(lines):
-                self.font.draw(left + 16, top - 24 - index * 25, text, color)
-        else:
-            text = ('운석 주의! 붉은 영역을 피하세요' if first
-                    else f'운석 주의보 · {meteor_system.alert_count}곳 낙하 예고')
-            self.font.draw(left + 16, top - 30, text, (255, 225, 195))
-            if first and int((meteor_system.clock - meteor_system.alert_started_at) * 6) % 2 == 0:
-                draw_rectangle(left, bottom, right, top, 255, 135, 105)
+        emphasis = (meteor_system.alert_serial == 1 and started is not None
+                    and 0 <= meteor_system.clock - started < config.FIRST_ALERT_DURATION)
+        accent = (255, 120, 85) if falling else (255, 193, 95)
+        draw_rectangle(round(left), round(bottom), round(right), round(top), 25, 40, 57, filled=True)
+        if emphasis and int((meteor_system.clock - started) * 6) % 2 == 0:
+            draw_rectangle(round(left), round(bottom), round(right), round(top), *accent)
+        # 작은 삼각 경고 아이콘과 한 줄 상태만 표시한다.
+        x, y = round(left + 18), round((bottom + top) / 2)
+        draw_line(x, y + 10, x - 10, y - 9, *accent)
+        draw_line(x - 10, y - 9, x + 10, y - 9, *accent)
+        draw_line(x + 10, y - 9, x, y + 10, *accent)
+        self.font.draw(x - 3, y - 1, '!', accent)
+        self.font.draw(round(left + 38), y, '운석 주의', accent)

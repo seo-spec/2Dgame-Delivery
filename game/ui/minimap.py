@@ -118,9 +118,14 @@ class MiniMap:
             self._ring(x, y, radius, color)
 
     def overlay_bounds(self):
-        """월드 안내 문구가 피해야 하는 미니맵·범례 화면 영역."""
-        return (self.center_x - MINIMAP_RADIUS - 8, self.center_y - MINIMAP_RADIUS - 76,
+        """월드 문구가 피해야 하는 미니맵·작은 경고 표시 영역."""
+        return (self.center_x - MINIMAP_RADIUS - 8, self.center_y - MINIMAP_RADIUS - 56,
                 self.center_x + MINIMAP_RADIUS + 8, self.center_y + MINIMAP_RADIUS + 8)
+
+    def warning_bounds(self):
+        """미니맵 바로 아래에 예약한 작은 운석 상태 표시 영역."""
+        top = self.center_y - MINIMAP_RADIUS - 10
+        return self.center_x - 70, top - 36, self.center_x + 70, top
 
     def draw(self, motorcycle, delivery_houses, meteor_system=None, returning=False):
         cx, cy = self.center_x, self.center_y
@@ -175,8 +180,3 @@ class MiniMap:
             draw_line(round(cx + cos(angle) * radius), round(cy + sin(angle) * radius),
                       round(cx + cos(next_angle) * radius), round(cy + sin(next_angle) * radius),
                       220, 235, 225)
-        if meteor_system is not None:
-            legend_x, legend_y = cx - radius, cy - radius - 22
-            self.font.draw(round(legend_x), round(legend_y), '점멸 원: 낙하', WARNING_RED)
-            self.font.draw(round(legend_x), round(legend_y - 22), '채움: 해제까지', (255, 186, 165))
-            self.font.draw(round(legend_x), round(legend_y - 44), '가로선: 수동 차단', (225, 220, 210))

@@ -20,7 +20,6 @@ from pico2d import (
     SDLK_DOWN,
     SDLK_RETURN,
     clear_canvas,
-    draw_rectangle,
     get_events,
     get_canvas_height,
     update_canvas,
@@ -45,6 +44,7 @@ from game.config.simulation import MAX_FRAME_TIME, MAX_STEP_TIME
 from game.systems.stage import GameController, StageState
 from game.ui.hud import CargoDebugText
 from game.ui.meteor_notices import MeteorNotices
+from game.ui.delivery_markers import ZoneMarkers
 
 
 motorcycle = None
@@ -132,6 +132,9 @@ def init():
             f'월드 위치=({house.x}, {house.y}), 지정 화물={house.cargo_id}, '
             f'기본비={house.base_fee}원, 마감={house.deadline}초'
         )
+    # 건물·바닥 다음, 오토바이보다 먼저 그려 실제 바닥 표시처럼 보이게 한다.
+    game_world.add_object(ZoneMarkers(camera, motorcycle, controller, delivery_houses, pickup_bounds),
+                          game_world.BACKGROUND)
     game_world.add_object(motorcycle, game_world.ACTORS)
     camera.follow(motorcycle.x, motorcycle.y)
     cargo_debug_text = CargoDebugText()
@@ -413,7 +416,6 @@ def draw():
     draw_started = perf_counter()
     clear_canvas()
     game_world.render()
-    reserved_height = meteor_notices.reserved_height(controller, meteor_system)
     label_reserved = [
         (camera.viewport_left, 0, camera.viewport_left + camera.viewport_width, 158),
         (camera.viewport_left, get_canvas_height() - 78,
@@ -424,39 +426,21 @@ def draw():
     player_margin = motorcycle.collision_radius + 12
     label_reserved.append((player_sx - player_margin, player_sy - player_margin,
                            player_sx + player_margin, player_sy + player_margin))
-    notice_bounds = meteor_notices.bounds(controller, meteor_system)
-    if notice_bounds is not None:
-        label_reserved.append(notice_bounds)
     if debug_view.enabled:
         label_reserved.extend(((12, 158, camera.viewport_width - 12, 267),
-                               (12, 280, 680, get_canvas_height() - 78 - reserved_height)))
+                               (12, 280, 680, get_canvas_height() - 78)))
     if controller.state in (StageState.FAILED, StageState.CLEAR):
         label_reserved.append((0, 0, camera.viewport_width, get_canvas_height()))
     meteor_system.draw(camera, cargo_debug_text.font, debug_view.enabled, label_reserved)
-    if controller.state == StageState.WAITING:
-        left, bottom, right, top = pickup_bounds
-        left, bottom = camera.world_to_screen(left, bottom)
-        right, top = camera.world_to_screen(right, top)
-        draw_rectangle(round(left), round(bottom), round(right), round(top), 255, 200, 60)
-    elif controller.state == StageState.RETURNING:
-        left, bottom, right, top = pickup_bounds
-        left, bottom = camera.world_to_screen(left, bottom)
-        right, top = camera.world_to_screen(right, top)
-        draw_rectangle(round(left), round(bottom), round(right), round(top), 100, 255, 120)
+    target = current_delivery_target()
     for house in delivery_houses:
         bounds = house.get_zone_bounds()
         if bounds is None:
             continue
         left, bottom, right, top = bounds
-        screen_left, screen_bottom = camera.world_to_screen(left, bottom)
-        screen_right, screen_top = camera.world_to_screen(right, top)
-        # 청록색 충돌 영역과 구분되는 분홍색 배송 구역. 통행을 막지 않는다.
-        draw_rectangle(round(screen_left), round(screen_bottom),
-                       round(screen_right), round(screen_top), 255, 100, 220)
+        screen_left, screen_top = camera.world_to_screen(left, top)
         cargo_debug_text.draw_house_label(house, round(screen_left), round(screen_top) + 8)
-    cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, controller,
-                          top_reserved_height=reserved_height)
-    target = current_delivery_target()
+    cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, controller)
     cargo_debug_text.draw_delivery_hint(target)
     cargo_debug_text.draw_pickup_hint(controller.state == StageState.WAITING and in_pickup_zone())
     if controller.state == StageState.CLEAR:
@@ -465,7 +449,7 @@ def draw():
         cargo_debug_text.draw_restart_hint()
     minimap.draw(motorcycle, delivery_houses, meteor_system,
                  returning=controller.state == StageState.RETURNING)
-    meteor_notices.draw(controller, meteor_system)
+    meteor_notices.draw(controller, meteor_system, minimap)
     if debug_view.enabled:
         meteor_system.draw_help(camera, cargo_debug_text.font)
     if paused:
