@@ -118,6 +118,8 @@ class RoadGeometry:
                 dash = (center - 1, self.size - 32, center + 1, self.size - 13)
                 shapes.append((self._rotate_rect(dash, turns), MARKING_COLOR))
                 if mask == 15:
+                    stop_line = (center - half + 5, self.size - 30, center - 5, self.size - 26)
+                    shapes.append((self._rotate_rect(stop_line, turns), MARKING_COLOR))
                     for x in range(round(center - half + 6), round(center + half - 6), 12):
                         stripe = (x, self.size - 62, x + 5, self.size - 39)
                         shapes.append((self._rotate_rect(stripe, turns), MARKING_COLOR))

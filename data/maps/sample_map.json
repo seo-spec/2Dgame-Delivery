@@ -154,14 +154,5 @@
     {"asset": "tree", "position": [3250, 1950], "size": [110, 110], "collision": {"offset": [0, 0], "size": [92, 92]}},
     {"asset": "tree", "position": [3350, 750], "size": [110, 110], "collision": {"offset": [0, 0], "size": [92, 92]}},
     {"asset": "planter", "position": [3450, 1350], "size": [120, 120], "collision": {"offset": [0, 0], "size": [110, 36]}}
-  ],
-  "signals": [
-    {"position": [1140, 540], "size": [48, 72], "state": "red", "collision": {"offset": [0, -2], "size": [26, 62]}},
-    {"position": [960, 360], "size": [48, 72], "state": "green", "collision": {"offset": [0, -2], "size": [26, 62]}},
-    {"position": [1140, 1440], "size": [48, 72], "state": "red", "collision": {"offset": [0, -2], "size": [26, 62]}},
-    {"position": [2640, 1440], "size": [48, 72], "state": "red", "collision": {"offset": [0, -2], "size": [26, 62]}},
-    {"position": [2460, 1260], "size": [48, 72], "state": "green", "collision": {"offset": [0, -2], "size": [26, 62]}},
-    {"position": [2640, 840], "size": [48, 72], "state": "green", "collision": {"offset": [0, -2], "size": [26, 62]}},
-    {"position": [2040, 2340], "size": [48, 72], "state": "red", "collision": {"offset": [0, -2], "size": [26, 62]}}
   ]
 }

@@ -7,6 +7,7 @@ from pico2d import draw_rectangle, load_image
 
 from game.config import settings
 from game.core import debug_view
+from game.world.traffic_signal import TrafficSignal
 from game.world.road_geometry import ASPHALT_COLOR, GRASS_COLOR, SIDEWALK_COLOR, RoadGeometry
 from game.world.road_surface import RoadSurface
 
@@ -155,7 +156,7 @@ class MapDecoration:
                            round(screen_right), round(screen_top), 0, 255, 255)
 
 
-def create_decorations(camera, config):
+def create_decorations(camera, config, roads):
     decorations = []
     filenames = {
         'building': 'building_sample.png',
@@ -171,8 +172,6 @@ def create_decorations(camera, config):
         'recycling_bin': 'recycling_bin.png',
         'mailbox': 'mailbox.png',
         'planter': 'planter.png',
-        'red': 'traffic_signal_red.png',
-        'green': 'traffic_signal_green.png',
     }
     images = {}
 
@@ -187,6 +186,13 @@ def create_decorations(camera, config):
         add_decoration(item, item.get('asset', 'building'), is_building=True)
     for item in config.get('props', []):
         add_decoration(item, item['asset'])
-    for item in config['signals']:
-        add_decoration(item, item['state'])
+    # 북·동·남·서가 모두 연결된 타일의 네 모서리에만 배치한다.
+    intersections = [(x, y) for (x, y), mask in roads.items() if mask == 15]
+    tile = config['tile_size']
+    geometry = RoadGeometry(tile)
+    for x, y in intersections:
+        center = ((x + 0.5) * tile, (y + 0.5) * tile)
+        for direction in ((1, 0), (0, 1), (-1, 0), (0, -1)):
+            decorations.append(TrafficSignal(
+                camera, center, direction, geometry.road_width, geometry.sidewalk_width))
     return decorations

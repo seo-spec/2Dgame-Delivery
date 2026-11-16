@@ -39,6 +39,7 @@ from game.systems.delivery import (
 from game.objects.motorcycle import Motorcycle
 from game.ui.minimap import MiniMap
 from game.world.road_map import RoadMap, create_decorations
+from game.world.traffic_signal import TrafficSignal
 from game.config.settings import WORLD_WIDTH, WORLD_HEIGHT
 from game.config.simulation import MAX_FRAME_TIME, MAX_STEP_TIME
 from game.systems.stage import GameController, StageState
@@ -96,8 +97,9 @@ def init():
     road_map = RoadMap(camera)
     meteor_system = MeteorSystem(road_map)
     game_world.add_object(road_map, game_world.BACKGROUND)
-    for decoration in create_decorations(camera, road_map.config):
-        game_world.add_object(decoration, game_world.BACKGROUND)
+    for decoration in create_decorations(camera, road_map.config, road_map.roads):
+        layer = game_world.FOREGROUND if isinstance(decoration, TrafficSignal) else game_world.BACKGROUND
+        game_world.add_object(decoration, layer)
         # 충돌 영역을 명시한 건물·소품만 장애물로 등록한다.
         if decoration.get_collision_bounds() is not None:
             solid_obstacles.append(decoration)
