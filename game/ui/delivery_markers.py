@@ -32,8 +32,11 @@ class ZoneMarkers:
         image = self.images[kind]
         alpha = 145 if kind == 'complete' else 255 if active else 215
         SDL_SetTextureAlphaMod(image.texture, alpha)
-        image.clip_draw(*MARKER_SPRITES[kind][1], (sx + ex) / 2, (sy + ey) / 2,
-                        right - left, top - bottom)
+        clip = MARKER_SPRITES[kind][1]
+        # 세로로 긴 배송 구역에서도 원형 아이콘과 모서리가 눌리지 않게 비율을 유지한다.
+        scale = min((right - left) / clip[2], (top - bottom) / clip[3])
+        image.clip_draw(*clip, (sx + ex) / 2, (sy + ey) / 2,
+                        clip[2] * scale, clip[3] * scale)
 
     def draw(self):
         state = self.controller.state

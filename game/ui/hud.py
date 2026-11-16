@@ -10,6 +10,7 @@ from game.core import debug_view
 from game.core import game_framework
 from game.config import settings
 from game.systems.stage import StageState
+from game.systems.traffic_penalties import FINE_AMOUNT
 
 FONT_DIRECTORY = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts'
 FONT_PATH = next((FONT_DIRECTORY / name for name in (
@@ -60,7 +61,8 @@ class CargoDebugText:
         if fill > 0:
             self._box(x, y, x + fill, y + 8, color)
 
-    def draw(self, cargo_list, total_revenue, delivery_houses, controller, top_reserved_height=0):
+    def draw(self, cargo_list, total_revenue, delivery_houses, controller, top_reserved_height=0,
+             traffic_diagnostics=()):
         width, height = settings.VIEWPORT_WIDTH, get_canvas_height()
         elapsed = controller.elapsed_time
         waiting = controller.state == StageState.WAITING
@@ -141,6 +143,7 @@ class CargoDebugText:
                      f'그리기 {game_framework.render_ms:.1f}ms / 화면대기 {game_framework.present_ms:.1f}ms',
                      f'경과시간: {elapsed:.2f}초',
                      f'남은 최대 예상 수익: {controller.remaining_max_revenue:,}원']
+            lines.extend(traffic_diagnostics)
             for house in delivery_houses:
                 cargo = cargo_by_id.get(house.cargo_id)
                 shake = f'{cargo.shake:.1f}' if cargo else '--'
@@ -170,9 +173,11 @@ class CargoDebugText:
 
     def draw_signal_penalty(self, penalties):
         if penalties.notice_remaining > 0:
-            y = get_canvas_height() - 87
-            self._box(16, y - 14, 235, y + 17, NAVY)
-            self._text('신호 위반  -100원', 28, y, RED)
+            x = settings.VIEWPORT_LEFT + settings.VIEWPORT_WIDTH / 2
+            y = get_canvas_height() - 96
+            self._box(x - 165, y - 21, x + 165, y + 21, NAVY)
+            self._box(x - 165, y - 21, x - 161, y + 21, RED)
+            self._text(f'신호 위반! 벌금 {FINE_AMOUNT}원', x - 135, y, RED)
 
     def draw_delivery_indicator(self, target, motorcycle, camera):
         """실제 배송 입력과 같은 대상 판정으로 차체 위에 작은 느낌표를 표시한다."""

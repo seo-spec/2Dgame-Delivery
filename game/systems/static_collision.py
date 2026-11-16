@@ -98,6 +98,11 @@ def _sweep(x, y, dx, dy, radius, obstacle):
     return min(candidates, key=lambda hit: hit[0], default=None)
 
 
+def sweep_circle_bounds(x, y, target_x, target_y, radius, bounds):
+    """사각 영역에 처음 닿는 시각 비율·법선을 반환한다. 위치와 ID는 변경하지 않는다."""
+    return _sweep(x, y, target_x - x, target_y - y, radius, RectObstacle(bounds, 0))
+
+
 def is_circle_position_clear(x, y, radius, obstacles, world_size):
     """위치의 원 전체를 검사한다. 접촉·관통 위치를 보정 없이 거부한다."""
     width, height = world_size

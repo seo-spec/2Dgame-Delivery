@@ -22,6 +22,15 @@ NORMAL_REWARD_MULTIPLIER = 1.0
 DISSATISFIED_REWARD_MULTIPLIER = 0.7
 
 
+def sample_delivery_settings():
+    """기존 다섯 마감시간을 섞어 A~E의 고정 마감 순서를 없앤다."""
+    deadlines = sample([deadline for _, _, _, deadline in INITIAL_DELIVERY_SETTINGS],
+                       len(INITIAL_DELIVERY_SETTINGS))
+    return tuple((label, cargo_id, base_fee, deadline)
+                 for (label, cargo_id, base_fee, _), deadline
+                 in zip(INITIAL_DELIVERY_SETTINGS, deadlines))
+
+
 def select_delivery_buildings(buildings, count):
     candidates = [building for building in buildings
                   if building.get('id') != 'delivery_depot'

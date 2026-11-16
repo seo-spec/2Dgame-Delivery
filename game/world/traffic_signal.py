@@ -9,12 +9,11 @@ from game.world.effect_shapes import EffectShapes
 class TrafficSignal:
     GREEN_DURATION = 4.0
 
-    def __init__(self, camera, center, direction, road_width, sidewalk_width, tile_size):
+    def __init__(self, camera, center, direction, road_width, sidewalk_width):
         self.camera = camera
         self.center = tuple(center)
-        self.tile_size = tile_size
         self.road_width = road_width
-        self.stop_distance = tile_size / 2 - 28
+        self.entry_distance = road_width / 2
         self.forward_x, self.forward_y = direction
         self.right_x, self.right_y = self.forward_y, -self.forward_x
         self.axis = 'horizontal' if self.forward_x else 'vertical'

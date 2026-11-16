@@ -34,7 +34,7 @@ from game.config.cargo_types import CARGO_TYPES
 from game.systems.static_collision import RectObstacle, move_circle
 from game.systems.meteor_system import MeteorSystem
 from game.systems.delivery import (
-    DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings, select_delivery_target,
+    DeliveryHouse, sample_delivery_settings, select_delivery_buildings, select_delivery_target,
 )
 from game.objects.motorcycle import Motorcycle
 from game.ui.minimap import MiniMap
@@ -124,11 +124,12 @@ def init():
     center_x, center_y = depot['position'][0] + offset_x, depot['position'][1] + offset_y
     pickup_bounds = (center_x - width / 2, center_y - height / 2,
                      center_x + width / 2, center_y + height / 2)
+    delivery_settings = sample_delivery_settings()
     selected_buildings = select_delivery_buildings(
-        road_map.config['buildings'], len(INITIAL_DELIVERY_SETTINGS),
+        road_map.config['buildings'], len(delivery_settings),
     )
     for building, (label, cargo_id, base_fee, deadline) in zip(
-            selected_buildings, INITIAL_DELIVERY_SETTINGS):
+            selected_buildings, delivery_settings):
         house = DeliveryHouse(
             building['id'], *building['position'], cargo_id,
             zone_offset=building['delivery_zone']['offset'],
@@ -455,8 +456,9 @@ def draw():
         screen_left, screen_top = camera.world_to_screen(left, top)
         cargo_debug_text.draw_house_label(house, round(screen_left), round(screen_top) + 8)
     cargo_debug_text.draw_delivery_indicator(target, motorcycle, camera)
-    cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, controller)
-    cargo_debug_text.draw_signal_penalty(traffic_penalties)
+    diagnostics = traffic_penalties.diagnostics(motorcycle) if debug_view.enabled else ()
+    cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, controller,
+                          traffic_diagnostics=diagnostics)
     cargo_debug_text.draw_delivery_hint(target)
     cargo_debug_text.draw_pickup_hint(controller.state == StageState.WAITING and in_pickup_zone())
     if controller.state == StageState.CLEAR:
@@ -468,6 +470,7 @@ def draw():
     meteor_notices.draw(controller, meteor_system, minimap)
     if debug_view.enabled:
         meteor_system.draw_help(camera, cargo_debug_text.font)
+    cargo_debug_text.draw_signal_penalty(traffic_penalties)
     if paused:
         cargo_debug_text.draw_pause_menu(pause_selection)
     present_started = perf_counter()
