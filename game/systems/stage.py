@@ -59,7 +59,7 @@ class GameController:
                 * cargo.current_durability / cargo.max_durability
             )
         if total_revenue + self.remaining_max_revenue < self.target_revenue:
-            self.failure_reason = '화물 손상 또는 배송 수익 부족으로 목표 달성 불가'
+            self.failure_reason = '배송 수익·화물 손상·벌금으로 목표 달성 불가'
             self.state = StageState.FAILED
         elif self.elapsed_time > self.time_limit:
             self.failure_reason = '배송 시간 초과'

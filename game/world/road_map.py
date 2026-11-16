@@ -194,5 +194,5 @@ def create_decorations(camera, config, roads):
         center = ((x + 0.5) * tile, (y + 0.5) * tile)
         for direction in ((1, 0), (0, 1), (-1, 0), (0, -1)):
             decorations.append(TrafficSignal(
-                camera, center, direction, geometry.road_width, geometry.sidewalk_width))
+                camera, center, direction, geometry.road_width, geometry.sidewalk_width, tile))
     return decorations

@@ -129,7 +129,7 @@ class CargoDebugText:
         elif controller.state == StageState.FAILED:
             reason = controller.failure_reason
             if len(reason) > 24:
-                self._notice('실패: 화물 손상 또는 수익 부족', 158)
+                self._notice('실패: 배송 수익·손상·벌금 확인', 158)
                 self._notice('목표 수익 달성 불가', 130)
             else:
                 self._notice(f'실패: {reason}')
@@ -167,6 +167,12 @@ class CargoDebugText:
     def draw_delivery_hint(self, target):
         if target is not None:
             self._notice(f'Space: {target.label} 배달')
+
+    def draw_signal_penalty(self, penalties):
+        if penalties.notice_remaining > 0:
+            y = get_canvas_height() - 87
+            self._box(16, y - 14, 235, y + 17, NAVY)
+            self._text('신호 위반  -100원', 28, y, RED)
 
     def draw_delivery_indicator(self, target, motorcycle, camera):
         """실제 배송 입력과 같은 대상 판정으로 차체 위에 작은 느낌표를 표시한다."""

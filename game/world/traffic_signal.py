@@ -9,8 +9,12 @@ from game.world.effect_shapes import EffectShapes
 class TrafficSignal:
     GREEN_DURATION = 4.0
 
-    def __init__(self, camera, center, direction, road_width, sidewalk_width):
+    def __init__(self, camera, center, direction, road_width, sidewalk_width, tile_size):
         self.camera = camera
+        self.center = tuple(center)
+        self.tile_size = tile_size
+        self.road_width = road_width
+        self.stop_distance = tile_size / 2 - 28
         self.forward_x, self.forward_y = direction
         self.right_x, self.right_y = self.forward_y, -self.forward_x
         self.axis = 'horizontal' if self.forward_x else 'vertical'
@@ -27,9 +31,12 @@ class TrafficSignal:
 
     def update(self):
         self.elapsed = (self.elapsed + game_framework.frame_time) % (self.GREEN_DURATION * 2)
-        horizontal_green = self.elapsed < self.GREEN_DURATION
+        self.state = self.state_at(self.elapsed)
+
+    def state_at(self, elapsed):
+        horizontal_green = elapsed % (self.GREEN_DURATION * 2) < self.GREEN_DURATION
         green = horizontal_green if self.axis == 'horizontal' else not horizontal_green
-        self.state = 'green' if green else 'red'
+        return 'green' if green else 'red'
 
     def _bar(self, shapes, x1, y1, x2, y2, thickness, color):
         x1, y1 = self.camera.world_to_screen(x1, y1)

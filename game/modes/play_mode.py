@@ -40,6 +40,7 @@ from game.objects.motorcycle import Motorcycle
 from game.ui.minimap import MiniMap
 from game.world.road_map import RoadMap, create_decorations
 from game.world.traffic_signal import TrafficSignal
+from game.systems.traffic_penalties import TrafficPenalties
 from game.config.settings import WORLD_WIDTH, WORLD_HEIGHT
 from game.config.simulation import MAX_FRAME_TIME, MAX_STEP_TIME
 from game.systems.stage import GameController, StageState
@@ -56,6 +57,7 @@ solid_obstacles = []
 static_colliders = []
 meteor_system = None
 meteor_notices = None
+traffic_penalties = None
 contact_obstacles = set()
 delivery_houses = []
 space_pressed = False
@@ -72,6 +74,7 @@ pause_selection = 0
 
 
 def init():
+    global traffic_penalties
     global meteor_system, meteor_notices
     global minimap
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
@@ -97,13 +100,17 @@ def init():
     road_map = RoadMap(camera)
     meteor_system = MeteorSystem(road_map)
     game_world.add_object(road_map, game_world.BACKGROUND)
+    signals = []
     for decoration in create_decorations(camera, road_map.config, road_map.roads):
+        if isinstance(decoration, TrafficSignal):
+            signals.append(decoration)
         layer = game_world.FOREGROUND if isinstance(decoration, TrafficSignal) else game_world.BACKGROUND
         game_world.add_object(decoration, layer)
         # 충돌 영역을 명시한 건물·소품만 장애물로 등록한다.
         if decoration.get_collision_bounds() is not None:
             solid_obstacles.append(decoration)
             static_colliders.append(RectObstacle(decoration.get_collision_bounds()))
+    traffic_penalties = TrafficPenalties(signals)
     motorcycle = Motorcycle(*road_map.spawn, camera)
     meteor_system.waves.prepare_navigation(motorcycle, static_colliders)
     # 기존 건물 위치·구역은 맵에서, 화물·요금·마감은 배송 설정에서 읽는다.
@@ -145,6 +152,8 @@ def init():
 
 
 def finish():
+    global traffic_penalties
+    traffic_penalties = None
     global meteor_system, meteor_notices
     if meteor_notices is not None:
         meteor_notices.close()
@@ -374,6 +383,9 @@ def _simulate_step(step_dt, delivery_input, delivery_time, collision_applied):
                 is_decelerating=is_decelerating, collided=collided,
             )
             cargo.apply_shake_damage(game_framework.frame_time)
+    # 운석 밀어내기 이후 실제 주행 경로만 판정하고 벌금까지 반영해 배송·목표를 정산한다.
+    total_revenue -= traffic_penalties.update(
+        step_dt, (previous_x, previous_y), motorcycle, controller.can_deliver())
     # 입력은 이번 프레임의 이동·충돌·손상 결과로 판정하고, 실패해도 소비한다.
     if delivery_input:
         was_delivering = controller.state == StageState.DELIVERING
@@ -444,6 +456,7 @@ def draw():
         cargo_debug_text.draw_house_label(house, round(screen_left), round(screen_top) + 8)
     cargo_debug_text.draw_delivery_indicator(target, motorcycle, camera)
     cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, controller)
+    cargo_debug_text.draw_signal_penalty(traffic_penalties)
     cargo_debug_text.draw_delivery_hint(target)
     cargo_debug_text.draw_pickup_hint(controller.state == StageState.WAITING and in_pickup_zone())
     if controller.state == StageState.CLEAR:
