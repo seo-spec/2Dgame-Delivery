@@ -11,6 +11,7 @@ from pico2d import (
     SDLK_ESCAPE,
     SDLK_F1,
     SDLK_F2,
+    SDLK_F3,
     SDLK_SPACE,
     SDLK_r,
     SDLK_UP,
@@ -232,6 +233,10 @@ def handle_events():
             if debug_view.enabled and event.type == SDL_KEYDOWN and fresh_press:
                 contact_obstacles.difference_update(debug_craters.clear())
             continue
+        if event.key == SDLK_F3:
+            if debug_view.enabled and event.type == SDL_KEYDOWN and fresh_press:
+                debug_craters.toggle_tool()
+            continue
         if event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
             # 구역 밖에서도 눌림을 기록해, 유지한 채 진입하는 입력을 배제한다.
             if not space_pressed:
@@ -265,6 +270,8 @@ def update():
         delivery_requested = False
         return
     controller.advance_time(game_framework.frame_time)
+    # 수동 단일 운석도 게임 시뮬레이션 시간에 맞추며 정지·결과에서는 갱신하지 않는다.
+    debug_craters.update(game_framework.frame_time)
     previous_x, previous_y = motorcycle.x, motorcycle.y
     previous_speed = motorcycle.speed
     game_world.update()
