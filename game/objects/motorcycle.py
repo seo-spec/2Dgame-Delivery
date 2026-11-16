@@ -9,6 +9,7 @@ from pico2d import (
 
 from game.core import game_framework
 from game.core import debug_view
+from game.ui.boost_effect import BoostEffect
 from game.config.motorcycle_sprite import (
     SPRITE_PATH, SPRITE_COLUMNS, SPRITE_DIRECTION_COUNT,
     SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, SPRITE_DRAW_SIZE,
@@ -41,6 +42,7 @@ class Motorcycle:
         self.y = y
         self.speed = 0.0
         self.boost_multiplier = 1.0
+        self.boost_effect = BoostEffect()
         self.collision_radius = COLLISION_RADIUS
         # 0은 오른쪽, 양의 각도는 반시계 방향. 시작은 위쪽이다.
         self.angle = pi / 2
@@ -91,6 +93,7 @@ class Motorcycle:
             # 이미 얻은 부스트 속도는 입력에 따른 감속으로 줄이고 순간 절단하지 않는다.
             forward_limit = max(FORWARD_MAX_SPEED, previous_speed)
         self.speed = max(-REVERSE_MAX_SPEED, min(forward_limit, self.speed))
+        self.boost_effect.update(dt, boost_active)
         self.turn_input = int(SDLK_a in self.pressed_keys) - int(SDLK_d in self.pressed_keys)
         self.angle = (self.angle + self.turn_input * TURN_RATE * dt) % tau
         self.x += cos(self.angle) * self.speed * dt
@@ -132,6 +135,7 @@ class Motorcycle:
         screen_x, screen_y = self.camera.world_to_screen(self.x, self.y)
         draw_x = screen_x + SPRITE_CENTER_OFFSET[0] - local_x * cos(correction) + local_y * sin(correction)
         draw_y = screen_y + SPRITE_CENTER_OFFSET[1] - local_x * sin(correction) - local_y * cos(correction)
+        self.boost_effect.draw(self, display_angle)
         self.sprite_sheet.clip_composite_draw(
             column * SPRITE_FRAME_WIDTH,
             self.sprite_sheet.h - (row + 1) * SPRITE_FRAME_HEIGHT,
