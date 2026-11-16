@@ -168,6 +168,23 @@ class CargoDebugText:
         if target is not None:
             self._notice(f'Space: {target.label} 배달')
 
+    def draw_delivery_indicator(self, target, motorcycle, camera):
+        """실제 배송 입력과 같은 대상 판정으로 차체 위에 작은 느낌표를 표시한다."""
+        if target is None:
+            return
+        x, player_y = camera.world_to_screen(motorcycle.x, motorcycle.y)
+        y = player_y + motorcycle.collision_radius + 28
+        # 월드와 같은 좌표를 사용하고 화면 가장자리에서 다른 UI 영역으로 넘기지 않는다.
+        if (x - 16 < camera.viewport_left
+                or x + 16 > camera.viewport_left + camera.viewport_width
+                or y - 20 < camera.viewport_bottom
+                or y + 20 > camera.viewport_bottom + camera.viewport_height):
+            return
+        self._box(x - 16, y - 20, x + 16, y + 20, NAVY)
+        self._box(x - 13, y - 17, x + 13, y + 17, YELLOW)
+        self._box(x - 2, y - 3, x + 2, y + 11, NAVY)
+        self._box(x - 2, y - 11, x + 2, y - 7, NAVY)
+
     def draw_house_label(self, house, x, y):
         text = f'{house.label} 완료' if house.delivered else house.label
         self.font.draw(x + 1, y - 1, text, (0, 0, 0))

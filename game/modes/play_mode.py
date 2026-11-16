@@ -440,6 +440,7 @@ def draw():
         left, bottom, right, top = bounds
         screen_left, screen_top = camera.world_to_screen(left, top)
         cargo_debug_text.draw_house_label(house, round(screen_left), round(screen_top) + 8)
+    cargo_debug_text.draw_delivery_indicator(target, motorcycle, camera)
     cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, controller)
     cargo_debug_text.draw_delivery_hint(target)
     cargo_debug_text.draw_pickup_hint(controller.state == StageState.WAITING and in_pickup_zone())
