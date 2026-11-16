@@ -206,7 +206,8 @@ class MeteorSystem:
     def draw_help(self, camera, font):
         left, bottom = camera.viewport_left, camera.viewport_bottom
         draw_rectangle(left + 12, bottom + 158, left + camera.viewport_width - 12,
-                       bottom + 241, 25, 40, 57, filled=True)
+                       bottom + 267, 25, 40, 57, filled=True)
+        font.draw(left + 24, bottom + 246, self.waves.diagnostics(), (180, 230, 255))
         font.draw(left + 24, bottom + 220,
                   f'{self.waves.status(self.clock)} / 진행 {len(self.meteors)}개', (180, 230, 255))
         font.draw(left + 24, bottom + 192,

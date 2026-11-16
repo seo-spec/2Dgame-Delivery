@@ -98,6 +98,7 @@ def init():
             solid_obstacles.append(decoration)
             static_colliders.append(RectObstacle(decoration.get_collision_bounds()))
     motorcycle = Motorcycle(*road_map.spawn, camera)
+    meteor_system.waves.prepare_navigation(motorcycle, static_colliders)
     # 기존 건물 위치·구역은 맵에서, 화물·요금·마감은 배송 설정에서 읽는다.
     buildings_by_id = {
         building['id']: building for building in road_map.config['buildings']
