@@ -4,7 +4,8 @@ from math import cos, sin, tau, hypot, sqrt, ceil, floor
 
 from pico2d import draw_line, draw_rectangle
 
-from game.systems.static_collision import CircleObstacle, circle_touches_bounds
+from game.systems.static_collision import CircleObstacle
+from game.systems.meteor_placement import placement_rejection
 
 
 class DebugCraters:
@@ -18,16 +19,10 @@ class DebugCraters:
 
     def create(self, x, y, motorcycle, protected_bounds, buildings):
         radius = self.radius
-        if not self.road_map.is_circle_on_road(x, y, radius):
-            self.message = f'생성 불가: 도로 중앙을 클릭하세요. (테스트 반경 {radius:g})'
-        elif hypot(x - motorcycle.x, y - motorcycle.y) <= radius + motorcycle.collision_radius:
-            self.message = '생성 불가: 오토바이와 겹칩니다.'
-        elif any(circle_touches_bounds(x, y, radius, bounds)
-                 for bounds in (*protected_bounds, *(item.bounds for item in buildings))):
-            self.message = '생성 불가: 건물 또는 수령·복귀·배송 구역과 겹칩니다.'
-        elif any(hypot(x - item.x, y - item.y) <= radius + item.radius
-                 for item in self.obstacles):
-            self.message = '생성 불가: 다른 크레이터와 겹칩니다.'
+        reason = placement_rejection(x, y, radius, self.road_map, motorcycle,
+                                     protected_bounds, buildings, self.obstacles)
+        if reason:
+            self.message = f'생성 불가: {reason}'
         else:
             obstacle = CircleObstacle(x, y, radius)
             self.obstacles.append(obstacle)
