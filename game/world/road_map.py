@@ -8,6 +8,7 @@ from pico2d import draw_rectangle, load_image
 from game.config import settings
 from game.core import debug_view
 from game.world.road_geometry import ASPHALT_COLOR, GRASS_COLOR, SIDEWALK_COLOR, RoadGeometry
+from game.world.road_surface import RoadSurface
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -34,7 +35,27 @@ class RoadMap:
             for y in range(self.rows) for x in range(self.columns)
         ]
         self.geometry = RoadGeometry(self.tile_size)
+        rectangles = [
+            (x * self.tile_size + left, y * self.tile_size + bottom,
+             x * self.tile_size + right + 1, y * self.tile_size + top + 1)
+            for x, y, mask in self.tiles
+            for left, bottom, right, top in self.geometry.road_tiles[mask]
+        ]
+        # 진입로의 아스팔트도 실제 그리는 범위와 동일하게 합친다. 연석 제외.
+        for path in self.config.get('access_paths', []):
+            left, bottom, right, top = path['bounds']
+            curb = path['curb_width']
+            rectangles.append((left + curb, bottom, right - curb, top + 1))
+        self.road_surface = RoadSurface(rectangles)
         self.spawn = self.config['spawn']
+
+    def is_point_on_road(self, x, y):
+        """월드 좌표 점의 도로 포함 여부. 건물 충돌과는 독립적이다."""
+        return self.road_surface.contains_point(x, y)
+
+    def is_circle_on_road(self, x, y, radius):
+        """원 전체가 연결된 도로 형상 합집합 안에 있는지 판정한다."""
+        return self.road_surface.contains_circle(x, y, radius)
 
     def _add_segment(self, start, end):
         x, y = start

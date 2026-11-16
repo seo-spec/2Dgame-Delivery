@@ -23,11 +23,15 @@ class RoadGeometry:
         self.road_width = round(size * ROAD_WIDTH_RATIO)
         self.sidewalk_width = round(size * SIDEWALK_WIDTH_RATIO)
         self.tiles = {}
+        # 렌더링과 판정이 같은 _surface 도형을 공유한다. 좌표는 양 끝 픽셀 포함.
+        self.road_tiles = {}
         for original in (0, 5, 3, 11, 15, 4):
             shapes = self._make_tile(original)
+            road = self._surface(original, self.road_width / 2)
             mask = original
             for turns in range(4):
                 if mask not in self.tiles:
+                    self.road_tiles[mask] = tuple(self._rotate_rect(rect, turns) for rect in road)
                     self.tiles[mask] = [
                         (*self._rotate_rect(rect, turns), color) for rect, color in shapes
                     ]
