@@ -53,7 +53,7 @@ class CargoDebugText:
         if fill > 0:
             self._box(x, y, x + fill, y + 8, color)
 
-    def draw(self, cargo_list, total_revenue, delivery_houses, controller):
+    def draw(self, cargo_list, total_revenue, delivery_houses, controller, top_reserved_height=0):
         width, height = settings.VIEWPORT_WIDTH, get_canvas_height()
         elapsed = controller.elapsed_time
         waiting = controller.state == StageState.WAITING
@@ -140,8 +140,14 @@ class CargoDebugText:
                     name = cargo.cargo_type.name if cargo.cargo_type else '일반 화물'
                     lines.append(f'  {name} | 흔들림 손상 x{cargo.shake_damage_multiplier:.1f}'
                                  f' / 충돌 피해 x{cargo.collision_damage_multiplier:.1f}')
-            self._box(12, height - 98 - len(lines) * LINE_SPACING, 680, height - 78, NAVY)
-            self._draw_lines(lines, 24, height - 104)
+            top = height - 78 - top_reserved_height
+            # 운석 안내·하단 디버그 도구와 겹치면 상세 행 수만 줄인다.
+            max_lines = max(1, int((top - 280 - 14) // LINE_SPACING))
+            if len(lines) > max_lines:
+                lines = lines[:max_lines]
+                lines[-1] = '... 상세 상태는 개발 로그 참고'
+            self._box(12, top - 14 - len(lines) * LINE_SPACING, 680, top, NAVY)
+            self._draw_lines(lines, 24, top - 26)
 
     def _notice(self, text, y=130):
         center = settings.VIEWPORT_WIDTH / 2

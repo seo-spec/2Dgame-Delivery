@@ -41,6 +41,7 @@ from game.world.road_map import RoadMap, create_decorations
 from game.config.settings import WORLD_WIDTH, WORLD_HEIGHT
 from game.systems.stage import GameController, StageState
 from game.ui.hud import CargoDebugText
+from game.ui.meteor_notices import MeteorNotices
 
 
 motorcycle = None
@@ -50,6 +51,7 @@ minimap = None
 solid_obstacles = []
 static_colliders = []
 meteor_system = None
+meteor_notices = None
 contact_obstacles = set()
 delivery_houses = []
 space_pressed = False
@@ -66,7 +68,7 @@ pause_selection = 0
 
 
 def init():
-    global meteor_system
+    global meteor_system, meteor_notices
     global minimap
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     global controller, total_revenue
@@ -131,10 +133,14 @@ def init():
     camera.follow(motorcycle.x, motorcycle.y)
     cargo_debug_text = CargoDebugText()
     minimap = MiniMap(road_map, cargo_debug_text.font)
+    meteor_notices = MeteorNotices(cargo_debug_text.font)
 
 
 def finish():
-    global meteor_system
+    global meteor_system, meteor_notices
+    if meteor_notices is not None:
+        meteor_notices.close()
+    meteor_notices = None
     meteor_system = None
     static_colliders.clear()
     global minimap
@@ -343,13 +349,33 @@ def update():
         print(f'[STAGE CLEAR] 배송={completed}/{len(delivery_houses)}, '
               f'최종 수익={total_revenue}원, 목표={controller.target_revenue}원')
     # 이번 프레임의 이동을 반영한 뒤 출력할 카메라 위치를 결정한다.
+    meteor_notices.sync(meteor_system, controller.state)
     camera.follow(motorcycle.x, motorcycle.y)
 
 
 def draw():
     clear_canvas()
     game_world.render()
-    meteor_system.draw(camera, cargo_debug_text.font, debug_view.enabled)
+    reserved_height = meteor_notices.reserved_height(controller, meteor_system)
+    label_reserved = [
+        (camera.viewport_left, 0, camera.viewport_left + camera.viewport_width, 158),
+        (camera.viewport_left, get_canvas_height() - 78,
+         camera.viewport_left + camera.viewport_width, get_canvas_height()),
+        minimap.overlay_bounds(),
+    ]
+    player_sx, player_sy = camera.world_to_screen(motorcycle.x, motorcycle.y)
+    player_margin = motorcycle.collision_radius + 12
+    label_reserved.append((player_sx - player_margin, player_sy - player_margin,
+                           player_sx + player_margin, player_sy + player_margin))
+    notice_bounds = meteor_notices.bounds(controller, meteor_system)
+    if notice_bounds is not None:
+        label_reserved.append(notice_bounds)
+    if debug_view.enabled:
+        label_reserved.extend(((12, 158, camera.viewport_width - 12, 267),
+                               (12, 280, 680, get_canvas_height() - 78 - reserved_height)))
+    if controller.state in (StageState.FAILED, StageState.CLEAR):
+        label_reserved.append((0, 0, camera.viewport_width, get_canvas_height()))
+    meteor_system.draw(camera, cargo_debug_text.font, debug_view.enabled, label_reserved)
     if controller.state == StageState.WAITING:
         left, bottom, right, top = pickup_bounds
         left, bottom = camera.world_to_screen(left, bottom)
@@ -371,7 +397,8 @@ def draw():
         draw_rectangle(round(screen_left), round(screen_bottom),
                        round(screen_right), round(screen_top), 255, 100, 220)
         cargo_debug_text.draw_house_label(house, round(screen_left), round(screen_top) + 8)
-    cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, controller)
+    cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, controller,
+                          top_reserved_height=reserved_height)
     target = current_delivery_target()
     cargo_debug_text.draw_delivery_hint(target)
     cargo_debug_text.draw_pickup_hint(controller.state == StageState.WAITING and in_pickup_zone())
@@ -379,7 +406,9 @@ def draw():
         cargo_debug_text.draw_clear_result(delivery_houses, total_revenue, controller.target_revenue)
     if controller.state in (StageState.CLEAR, StageState.FAILED):
         cargo_debug_text.draw_restart_hint()
-    minimap.draw(motorcycle, delivery_houses)
+    minimap.draw(motorcycle, delivery_houses, meteor_system,
+                 returning=controller.state == StageState.RETURNING)
+    meteor_notices.draw(controller, meteor_system)
     if debug_view.enabled:
         meteor_system.draw_help(camera, cargo_debug_text.font)
     if paused:
@@ -411,6 +440,7 @@ def set_paused(value):
     delivery_requested = False
     space_pressed = False
     motorcycle.pressed_keys.clear()
+    meteor_notices.set_paused(value)
     if value:
         pause_selection = 0
     else:

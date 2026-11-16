@@ -36,6 +36,10 @@ class Meteor:
         return max(0.0, self.total_duration - self.elapsed)
 
     @property
+    def warning_bright(self):
+        return int(self.elapsed * 6) % 2 == 0
+
+    @property
     def state(self):
         if self.elapsed >= self.total_duration:
             return 'LANDED'
@@ -49,16 +53,20 @@ class Meteor:
     def update_to(self, clock):
         self.elapsed = min(self.total_duration, max(0.0, clock - self.started_at))
 
-    def draw(self, camera, font, debug_enabled):
+    def draw(self, camera, font, debug_enabled, labels=None):
         shapes = EffectShapes(camera)
         # 위험 외곽은 끝까지 같은 반경. 줄어드는 안쪽 원은 착지까지의 시간.
-        color = (255, 75, 65) if int(self.elapsed * 6) % 2 else (255, 160, 90)
+        color = (255, 75, 65) if self.warning_bright else (185, 65, 60)
         shapes.ring(self.x, self.y, self.radius, color)
         shapes.ring(self.x, self.y, self.radius - 2, color)
         fraction = self.remaining / self.total_duration
         shapes.ring(self.x, self.y, self.radius * fraction, (255, 220, 135))
-        shapes.text(font, self.x - 32, self.y + self.radius + 15,
-                    f'{self.remaining:.1f}s', (255, 220, 170))
+        if labels is not None:
+            labels.add(self.x, self.y + self.radius + 15,
+                       f'{self.remaining:.1f}초', (255, 220, 170), (0, self.remaining))
+        else:
+            shapes.text(font, self.x - 32, self.y + self.radius + 15,
+                        f'{self.remaining:.1f}s', (255, 220, 170))
         if self.state == 'FALLING':
             progress = min(1.0, (self.elapsed - self.warning_duration) / self.fall_duration)
             height = config.FALL_HEIGHT * (1 - progress * progress)
@@ -73,5 +81,9 @@ class Meteor:
             shapes.disk(self.x + self.radius * 0.25, body_y - self.radius * 0.3,
                         self.radius * 0.15, (72, 56, 48))
         if debug_enabled:
-            shapes.text(font, self.x - 32, self.y - self.radius - 22,
-                        f'R{self.radius} / {self.fall_duration:.2f}s', (255, 220, 170))
+            if labels is not None:
+                labels.add(self.x, self.y - self.radius - 22,
+                           f'#{self.creation_id} R{self.radius}', (235, 195, 155), (9, 0))
+            else:
+                shapes.text(font, self.x - 32, self.y - self.radius - 22,
+                            f'R{self.radius} / {self.fall_duration:.2f}s', (255, 220, 170))

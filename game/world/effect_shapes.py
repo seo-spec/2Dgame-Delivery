@@ -60,3 +60,40 @@ class EffectShapes:
         # 글자를 잘라 그릴 수 없으므로 전체 문구가 들어오는 위치에서만 표시.
         if self.left <= x and x + len(text) * 18 <= self.right and self.bottom + 20 <= y <= self.top - 20:
             font.draw(round(x), round(y), text, color)
+
+
+class EffectLabels:
+    """효과 문구를 모아 HUD·서로의 문구를 피하는 가까운 위치에 표시한다."""
+
+    def __init__(self, camera, font, reserved=()):
+        self.camera = camera
+        self.font = font
+        self.reserved = list(reserved)
+        self.requests = []
+
+    def add(self, x, y, text, color, priority=(5, 0)):
+        self.requests.append((priority, len(self.requests), x, y, text, color))
+
+    def draw(self):
+        left, bottom = self.camera.viewport_left, self.camera.viewport_bottom
+        right, top = left + self.camera.viewport_width - 1, bottom + self.camera.viewport_height - 1
+        occupied = list(self.reserved)
+        for _, _, x, y, text, color in sorted(self.requests):
+            sx, sy = self.camera.world_to_screen(x, y)
+            if not (left - 60 <= sx <= right + 60 and bottom - 60 <= sy <= top + 60):
+                continue
+            width = sum(18 if ord(char) > 127 else 10 for char in text)
+            if width > right - left - 8:
+                continue
+            for ox, oy in ((-width / 2, 0), (-width / 2, 26), (-width / 2, -26),
+                           (18, 0), (-width - 18, 0), (-width / 2, 52), (-width / 2, -52)):
+                px = max(left + 4, min(right - width - 4, sx + ox))
+                py = max(bottom + 8, min(top - 24, sy + oy))
+                bounds = px - 3, py - 5, px + width + 3, py + 21
+                if any(bounds[0] < r and bounds[2] > l and bounds[1] < t and bounds[3] > b
+                       for l, b, r, t in occupied):
+                    continue
+                self.font.draw(round(px + 1), round(py - 1), text, (10, 15, 18))
+                self.font.draw(round(px), round(py), text, color)
+                occupied.append(bounds)
+                break

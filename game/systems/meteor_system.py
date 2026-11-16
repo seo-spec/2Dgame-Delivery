@@ -11,7 +11,7 @@ from game.systems.meteor_waves import MeteorWaves
 from game.config import meteor as config
 from game.config.meteor import MIN_RADIUS, MAX_RADIUS, sample_radius
 from game.objects.meteor import Meteor
-from game.world.effect_shapes import EffectShapes
+from game.world.effect_shapes import EffectLabels, EffectShapes
 
 
 class MeteorSystem:
@@ -27,6 +27,9 @@ class MeteorSystem:
         self.landing_contacts = set()
         self.protected_bounds = interaction_bounds(road_map.config)
         self.waves = MeteorWaves(road_map, self.protected_bounds)
+        self.alert_serial = 0
+        self.alert_started_at = None
+        self.alert_count = 0
         self.building_footprints = []
         for index, building in enumerate(road_map.config['buildings']):
             x, y = building['position']
@@ -85,6 +88,7 @@ class MeteorSystem:
         self.landing_contacts.clear()
         self.grace_until = 0.0
         self.message = '크레이터·운석 전체 삭제 (자동 발생 주기는 유지)'
+        self.alert_started_at = None
         return removed
 
     def start_waves(self):
@@ -92,6 +96,11 @@ class MeteorSystem:
 
     def stop_waves(self):
         self.waves.stop()
+
+    def crater_remaining(self, obstacle_id):
+        """자동 차단은 잔여 초, 수동 영구 차단은 None. 월드·미니맵이 공유한다."""
+        end = self.expires_at.get(obstacle_id)
+        return None if end is None else max(0.0, end - self.clock)
 
     def suppress_crater_contacts(self, new_contacts):
         if self.clock < self.grace_until:
@@ -125,6 +134,10 @@ class MeteorSystem:
             self.clock, motorcycle, buildings, (*self.obstacles, *self.meteors))
         self.meteors.extend(new_meteors)
         if new_meteors:
+            # 생략된 0개 묶음은 첫 경보를 소비하지 않는다.
+            self.alert_serial += 1
+            self.alert_started_at = self.clock
+            self.alert_count = len(new_meteors)
             self.message = f'자동 묶음 #{self.waves.wave_number}: {len(new_meteors)}개 동시 예고'
         return expired
 
@@ -181,27 +194,30 @@ class MeteorSystem:
               f'착지 시각={landing_time:.3f}, 크레이터 ID={crater.obstacle_id}, 반경={meteor.radius}, '
               f'피격={impacted}, 화물피해={impacted and apply_damage}, 해제={expires:.3f}초')
 
-    def draw(self, camera, font, debug_enabled):
+    def draw(self, camera, font, debug_enabled, reserved=()):
         shapes = EffectShapes(camera)
+        labels = EffectLabels(camera, font, reserved)
         for item in self.obstacles:
             shapes.disk(item.x, item.y, item.radius, (79, 57, 48))
             shapes.disk(item.x, item.y, item.radius * 0.73, (55, 43, 39))
             color = (255, 85, 60) if debug_enabled else (150, 106, 75)
             shapes.ring(item.x, item.y, item.radius, color)
-            if item.obstacle_id in self.expires_at:
-                remaining = max(0.0, self.expires_at[item.obstacle_id] - self.clock)
-                sign_y = item.y + item.radius + 20
-                shapes.disk(item.x, sign_y, 12, (230, 65, 55))
-                shapes.ring(item.x, sign_y, 12, (255, 205, 190))
-                shapes.world_line(item.x - 7, sign_y, item.x + 7, sign_y, (255, 245, 235))
-                shapes.world_line(item.x, sign_y - 12, item.x, item.y + item.radius, (220, 220, 215))
-                shapes.text(font, item.x + 18, sign_y - 4,
-                            f'통행 불가 {remaining:.1f}s', (255, 220, 170))
+            remaining = self.crater_remaining(item.obstacle_id)
+            sign_y = item.y + item.radius + 20
+            shapes.disk(item.x, sign_y, 12, (230, 65, 55))
+            shapes.ring(item.x, sign_y, 12, (255, 205, 190))
+            shapes.world_line(item.x - 7, sign_y, item.x + 7, sign_y, (255, 245, 235))
+            shapes.world_line(item.x, sign_y - 12, item.x, item.y + item.radius, (220, 220, 215))
+            if remaining is None:
+                labels.add(item.x, sign_y + 18, '수동 차단', (225, 205, 180), (3, 0))
+            else:
+                labels.add(item.x, sign_y + 18, f'통행 불가 {remaining:.1f}초',
+                           (255, 220, 170), (1, remaining))
             if debug_enabled:
-                shapes.text(font, item.x - 20, item.y,
-                            f'#{item.obstacle_id} R{item.radius}', (255, 225, 180))
+                labels.add(item.x, item.y, f'#{item.obstacle_id} R{item.radius}', (255, 225, 180), (9, 0))
         for meteor in self.meteors:
-            meteor.draw(camera, font, debug_enabled)
+            meteor.draw(camera, font, debug_enabled, labels)
+        labels.draw()
 
     def draw_help(self, camera, font):
         left, bottom = camera.viewport_left, camera.viewport_bottom
