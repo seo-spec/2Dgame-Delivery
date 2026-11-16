@@ -10,6 +10,7 @@ from pico2d import (
     SDL_QUIT,
     SDLK_ESCAPE,
     SDLK_F1,
+    SDLK_F2,
     SDLK_SPACE,
     SDLK_r,
     SDLK_UP,
@@ -28,7 +29,8 @@ from game.core import game_world
 from game.world.camera import Camera
 from game.objects.cargo import Cargo
 from game.config.cargo_types import CARGO_TYPES
-from game.systems.collision import move_circle
+from game.systems.static_collision import RectObstacle, move_circle
+from game.objects.debug_craters import DebugCraters
 from game.systems.delivery import (
     DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings, select_delivery_target,
 )
@@ -45,6 +47,8 @@ camera = None
 cargo_debug_text = None
 minimap = None
 solid_obstacles = []
+static_colliders = []
+debug_craters = None
 contact_obstacles = set()
 delivery_houses = []
 space_pressed = False
@@ -61,6 +65,7 @@ pause_selection = 0
 
 
 def init():
+    global debug_craters
     global minimap
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     global controller, total_revenue
@@ -78,16 +83,19 @@ def init():
     delivery_requested = False
     game_world.clear()
     solid_obstacles.clear()
+    static_colliders.clear()
     contact_obstacles.clear()
     delivery_houses.clear()
     camera = Camera()
     road_map = RoadMap(camera)
+    debug_craters = DebugCraters(road_map)
     game_world.add_object(road_map, game_world.BACKGROUND)
     for decoration in create_decorations(camera, road_map.config):
         game_world.add_object(decoration, game_world.BACKGROUND)
         # 충돌 영역을 명시한 건물·소품만 장애물로 등록한다.
         if decoration.get_collision_bounds() is not None:
             solid_obstacles.append(decoration)
+            static_colliders.append(RectObstacle(decoration.get_collision_bounds()))
     motorcycle = Motorcycle(*road_map.spawn, camera)
     # 기존 건물 위치·구역은 맵에서, 화물·요금·마감은 배송 설정에서 읽는다.
     buildings_by_id = {
@@ -124,6 +132,9 @@ def init():
 
 
 def finish():
+    global debug_craters
+    debug_craters = None
+    static_colliders.clear()
     global minimap
     minimap = None
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
@@ -156,6 +167,28 @@ def handle_events():
                 pause_selection = selected
                 if event.type == SDL_MOUSEBUTTONDOWN and event.button == 1:
                     restart_requested = activate_pause_selection()
+            continue
+        if (event.type == SDL_MOUSEBUTTONDOWN and debug_view.enabled and not restart_requested
+                and not paused and controller.state not in (StageState.FAILED, StageState.CLEAR)):
+            screen_y = get_canvas_height() - 1 - event.y
+            if (camera.viewport_left <= event.x < camera.viewport_left + camera.viewport_width
+                    and camera.viewport_bottom <= screen_y < camera.viewport_bottom + camera.viewport_height):
+                x = event.x - camera.viewport_left + camera.x
+                y = screen_y - camera.viewport_bottom + camera.y
+                if event.button == 1:
+                    # 완료 여부와 무관하게 맵의 모든 배송 가능 구역을 보호한다.
+                    protected = [pickup_bounds]
+                    for building in debug_craters.road_map.config['buildings']:
+                        zone = building.get('delivery_zone')
+                        if zone:
+                            cx = building['position'][0] + zone['offset'][0]
+                            cy = building['position'][1] + zone['offset'][1]
+                            width, height = zone['size']
+                            protected.append((cx - width / 2, cy - height / 2,
+                                              cx + width / 2, cy + height / 2))
+                    debug_craters.create(x, y, motorcycle, protected, static_colliders)
+                elif event.button == 3:
+                    contact_obstacles.difference_update(debug_craters.remove_at(x, y))
             continue
         # 결과 상태에서도 눌림을 추적해, 이전부터 유지한 키의 반복 입력을 배제한다.
         if event.type == SDL_KEYDOWN:
@@ -194,6 +227,10 @@ def handle_events():
                 restart_requested = True
             continue
         if controller.state in (StageState.FAILED, StageState.CLEAR):
+            continue
+        if event.key == SDLK_F2:
+            if debug_view.enabled and event.type == SDL_KEYDOWN and fresh_press:
+                contact_obstacles.difference_update(debug_craters.clear())
             continue
         if event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
             # 구역 밖에서도 눌림을 기록해, 유지한 채 진입하는 입력을 배제한다.
@@ -236,7 +273,7 @@ def update():
     motorcycle.x, motorcycle.y, hits, contacts = move_circle(
         previous_x, previous_y, motorcycle.x, motorcycle.y,
         motorcycle.collision_radius,
-        (obstacle.get_collision_bounds() for obstacle in solid_obstacles),
+        (*static_colliders, *debug_craters.obstacles),
         world_size=(WORLD_WIDTH, WORLD_HEIGHT),
     )
     collided = bool(hits)
@@ -248,6 +285,9 @@ def update():
                 cargo.apply_collision_damage(impact_speed)
         # 같은 프레임에 여러 장애물을 처음 접촉해도 감속은 한 번만 적용한다.
         motorcycle.apply_collision_slowdown()
+        if debug_view.enabled:
+            print(f'[새 충돌] 장애물 ID={sorted(hits - contact_obstacles)}, '
+                  f'충돌 속도={impact_speed:.2f}, 감속 후={motorcycle.speed:.2f}')
     # 이미 충돌한 장애물은 실제로 떨어질 때까지 접촉 상태를 유지한다.
     contact_obstacles.update(hits)
     contact_obstacles.intersection_update(contacts)
@@ -302,6 +342,7 @@ def update():
 def draw():
     clear_canvas()
     game_world.render()
+    debug_craters.draw(camera, cargo_debug_text.font, debug_view.enabled)
     if controller.state == StageState.WAITING:
         left, bottom, right, top = pickup_bounds
         left, bottom = camera.world_to_screen(left, bottom)
@@ -332,6 +373,8 @@ def draw():
     if controller.state in (StageState.CLEAR, StageState.FAILED):
         cargo_debug_text.draw_restart_hint()
     minimap.draw(motorcycle, delivery_houses)
+    if debug_view.enabled:
+        debug_craters.draw_help(camera, cargo_debug_text.font)
     if paused:
         cargo_debug_text.draw_pause_menu(pause_selection)
     update_canvas()
