@@ -14,6 +14,7 @@ from pico2d import (
     SDLK_F1,
     SDLK_F2,
     SDLK_F3,
+    SDLK_F4,
     SDLK_SPACE,
     SDLK_r,
     SDLK_UP,
@@ -256,6 +257,10 @@ def handle_events():
             continue
         if controller.state in (StageState.FAILED, StageState.CLEAR):
             continue
+        if event.key == SDLK_F4:
+            if event.type == SDL_KEYDOWN and fresh_press:
+                complete_all_deliveries()
+            continue
         if event.key == SDLK_F2:
             if debug_view.enabled and event.type == SDL_KEYDOWN and fresh_press:
                 contact_obstacles.difference_update(meteor_system.clear())
@@ -282,6 +287,26 @@ def handle_events():
         blocked_keys.update(previous_held_keys)
         restart_frame = True
         print('[다시 시작] 화물 수령 대기')
+
+
+def complete_all_deliveries():
+    """F4 치트: 수령한 화물을 현재 시간·내구도로 한 번씩 정산한다."""
+    global total_revenue
+    if not controller.can_deliver():
+        return
+    completed = 0
+    for house in delivery_houses:
+        bounds = house.get_zone_bounds()
+        if bounds is None:
+            continue
+        left, bottom, right, top = bounds
+        if house.try_deliver((left + right) / 2, (bottom + top) / 2,
+                             motorcycle.cargo_list, controller.elapsed_time):
+            total_revenue += house.reward
+            completed += 1
+    controller.evaluate(delivery_houses, total_revenue, motorcycle.cargo_list)
+    meteor_system.sync_stage(controller.state)
+    print(f'[전체 배송 치트] 완료={completed}개, 누적 수익={total_revenue}원')
 
 
 def update():
