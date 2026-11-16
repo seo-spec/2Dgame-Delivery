@@ -57,6 +57,7 @@ class MeteorNotices:
 
     def close(self):
         self._stop_sound()
+        self.seen_alert = 0
         self.sound = None
 
     def _alert_active(self, controller, meteor_system):

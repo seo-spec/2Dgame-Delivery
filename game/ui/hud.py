@@ -4,8 +4,10 @@ import os
 from pathlib import Path
 from math import ceil
 
-from pico2d import get_canvas_height, load_font, load_image, draw_rectangle
+from pico2d import get_canvas_height, load_image, draw_rectangle
+from game.ui.cached_font import CachedFont
 from game.core import debug_view
+from game.core import game_framework
 from game.config import settings
 from game.systems.stage import StageState
 
@@ -25,10 +27,15 @@ YELLOW = (255, 205, 104)
 
 class CargoDebugText:
     def __init__(self):
-        self.font = load_font(str(FONT_PATH), FONT_SIZE)
+        self.font = CachedFont(FONT_PATH, FONT_SIZE)
         menu_path = FONT_DIRECTORY / 'bahnschrift.ttf'
-        self.menu_font = load_font(str(menu_path if menu_path.is_file() else FONT_PATH), 30)
+        self.menu_font = CachedFont(menu_path if menu_path.is_file() else FONT_PATH, 30)
         self.cargo_icons = {}
+
+    def close(self):
+        self.font.close()
+        self.menu_font.close()
+        self.cargo_icons.clear()
 
     def prepare_cargo_icons(self, cargo_list):
         # 수령 시 한 번 불러오고 draw에서는 캐시만 사용한다. 수령 전에는 읽지 않는다.
@@ -130,7 +137,9 @@ class CargoDebugText:
             self._notice('배달소에서 화물을 수령하세요')
 
         if debug_view.enabled:
-            lines = [f'경과시간: {elapsed:.2f}초',
+            lines = [f'FPS {game_framework.fps:.1f} | 계산 {game_framework.update_ms:.1f}ms',
+                     f'그리기 {game_framework.render_ms:.1f}ms / 화면대기 {game_framework.present_ms:.1f}ms',
+                     f'경과시간: {elapsed:.2f}초',
                      f'남은 최대 예상 수익: {controller.remaining_max_revenue:,}원']
             for house in delivery_houses:
                 cargo = cargo_by_id.get(house.cargo_id)

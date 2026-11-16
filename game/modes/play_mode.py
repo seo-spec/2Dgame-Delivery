@@ -1,6 +1,8 @@
 """플레이 객체 구성, 게임 월드 호출, 종료 입력 처리."""
 
 from random import sample
+from math import ceil, isfinite
+from time import perf_counter
 
 from pico2d import (
     SDL_KEYDOWN,
@@ -39,6 +41,7 @@ from game.objects.motorcycle import Motorcycle
 from game.ui.minimap import MiniMap
 from game.world.road_map import RoadMap, create_decorations
 from game.config.settings import WORLD_WIDTH, WORLD_HEIGHT
+from game.config.simulation import MAX_FRAME_TIME, MAX_STEP_TIME
 from game.systems.stage import GameController, StageState
 from game.ui.hud import CargoDebugText
 from game.ui.meteor_notices import MeteorNotices
@@ -141,6 +144,8 @@ def finish():
     if meteor_notices is not None:
         meteor_notices.close()
     meteor_notices = None
+    if meteor_system is not None:
+        meteor_system.close()
     meteor_system = None
     static_colliders.clear()
     global minimap
@@ -148,14 +153,24 @@ def finish():
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     global controller, total_revenue
     global pickup_bounds
+    global paused, pause_selection, restart_frame
+    paused = False
+    pause_selection = 0
+    restart_frame = False
+    held_keys.clear()
+    blocked_keys.clear()
     pickup_bounds = None
     controller = None
     total_revenue = 0
     space_pressed = False
     delivery_requested = False
     game_world.clear()
+    if motorcycle is not None:
+        motorcycle.pressed_keys.clear()
     motorcycle = None
     camera = None
+    if cargo_debug_text is not None:
+        cargo_debug_text.close()
     cargo_debug_text = None
     solid_obstacles.clear()
     contact_obstacles.clear()
@@ -255,18 +270,62 @@ def handle_events():
 
 
 def update():
-    global delivery_requested, total_revenue, restart_frame
+    global delivery_requested, restart_frame
     if restart_frame:
         # 리소스 재초기화에 걸린 시간을 새 플레이의 이동에 적용하지 않는다.
         restart_frame = False
-        return
-    if paused:
-        return
-    # 출발부터의 시뮬레이션 시간. 배송은 이번 프레임의 갱신된 시간으로 판정한다.
-    if controller.state in (StageState.FAILED, StageState.CLEAR):
         delivery_requested = False
         return
-    controller.advance_time(game_framework.frame_time)
+    if paused:
+        delivery_requested = False
+        return
+    if controller.state in (StageState.FAILED, StageState.CLEAR):
+        delivery_requested = False
+        meteor_system.sync_stage(controller.state)
+        meteor_notices.sync(meteor_system, controller.state)
+        return
+
+    frame_request = delivery_requested
+    delivery_requested = False
+    raw_dt = game_framework.frame_time
+    frame_dt = min(MAX_FRAME_TIME, max(0.0, raw_dt)) if isfinite(raw_dt) else 0.0
+    if raw_dt > MAX_FRAME_TIME and debug_view.enabled:
+        print(f'[시간 보정] 실제 프레임={raw_dt:.3f}초, 적용={frame_dt:.3f}초, 초과 구간은 정지 취급')
+    steps = max(1, ceil(frame_dt / MAX_STEP_TIME))
+    step_dt = frame_dt / steps
+    delivery_at_frame_start = controller.state == StageState.DELIVERING
+    elapsed_at_frame_start = controller.elapsed_time
+    collision_applied = False
+    try:
+        for index in range(steps):
+            game_framework.frame_time = step_dt
+            # 분할 누적으로 제한시간 경계가 달라지지 않게 같은 프레임 시작점에서 계산.
+            elapsed_in_frame = frame_dt if index == steps - 1 else frame_dt * (index + 1) / steps
+            delivery_time = (elapsed_at_frame_start + elapsed_in_frame
+                             if delivery_at_frame_start else None)
+            collision_applied = _simulate_step(
+                step_dt, frame_request and index == steps - 1, delivery_time, collision_applied)
+            if controller.state in (StageState.FAILED, StageState.CLEAR):
+                break
+    finally:
+        game_framework.frame_time = raw_dt
+
+    # 마지막 배송·성공·실패·복귀까지 판정한 뒤에만 새 묶음을 만든다.
+    # 이번에 생성된 예고에는 이미 소비한 프레임 시간을 다시 적용하지 않는다.
+    camera.follow(motorcycle.x, motorcycle.y)
+    meteor_system.spawn_due_wave(
+        motorcycle, static_colliders, delivery_available=controller.can_deliver())
+    meteor_notices.sync(meteor_system, controller.state)
+
+
+def _simulate_step(step_dt, delivery_input, delivery_time, collision_applied):
+    """기존 사건 → 주행·손상 → 프레임 말 입력·정산 → 진행 판정을 수행한다."""
+    global total_revenue
+    if delivery_time is None:
+        controller.advance_time(step_dt)
+    elif controller.state == StageState.DELIVERING:
+        controller.elapsed_time = delivery_time
+    meteor_system.sync_stage(controller.state)
     # 자동·수동 운석 모두 시뮬레이션 시간을 따르며 정지·결과에서는 갱신하지 않는다.
     expired_craters = meteor_system.update(
         game_framework.frame_time, motorcycle, static_colliders,
@@ -287,7 +346,7 @@ def update():
     )
     collided = bool(hits) or meteor_system.landed_on_player
     fresh_contacts = meteor_system.suppress_crater_contacts(hits - contact_obstacles)
-    if fresh_contacts:
+    if fresh_contacts and not collision_applied:
         # 직접 피해는 충돌 감속 전 속도로 화물마다 한 번만 계산한다.
         impact_speed = motorcycle.speed
         if controller.state == StageState.DELIVERING:
@@ -295,6 +354,7 @@ def update():
                 cargo.apply_collision_damage(impact_speed)
         # 같은 프레임에 여러 장애물을 처음 접촉해도 감속은 한 번만 적용한다.
         motorcycle.apply_collision_slowdown()
+        collision_applied = True
         if debug_view.enabled:
             print(f'[새 충돌] 장애물 ID={sorted(fresh_contacts)}, '
                   f'충돌 속도={impact_speed:.2f}, 감속 후={motorcycle.speed:.2f}')
@@ -310,8 +370,7 @@ def update():
             )
             cargo.apply_shake_damage(game_framework.frame_time)
     # 입력은 이번 프레임의 이동·충돌·손상 결과로 판정하고, 실패해도 소비한다.
-    if delivery_requested:
-        delivery_requested = False
+    if delivery_input:
         was_delivering = controller.state == StageState.DELIVERING
         if controller.state == StageState.WAITING and in_pickup_zone():
             selected_types = sample(CARGO_TYPES, len(delivery_houses))
@@ -323,7 +382,7 @@ def update():
                 print(f'[화물 종류] {house.label}: {cargo.cargo_type.name} ({cargo.cargo_id})')
             cargo_debug_text.prepare_cargo_icons(motorcycle.cargo_list)
             if controller.start_delivery():
-                meteor_system.start_waves()
+                meteor_system.sync_stage(controller.state)
             print(f'[화물 수령 완료] 적재={len(motorcycle.cargo_list)}개, 배송 시작')
         house = current_delivery_target() if was_delivering else None
         if house is not None and house.try_deliver(
@@ -338,8 +397,6 @@ def update():
             )
     previous_state = controller.state
     controller.evaluate(delivery_houses, total_revenue, motorcycle.cargo_list)
-    if controller.state != StageState.DELIVERING:
-        meteor_system.stop_waves()
     if controller.state != previous_state:
         print(f'[진행 상태] {controller.state.value}'
               + (f': {controller.failure_reason}' if controller.failure_reason else ''))
@@ -348,12 +405,12 @@ def update():
         completed = sum(house.delivered for house in delivery_houses)
         print(f'[STAGE CLEAR] 배송={completed}/{len(delivery_houses)}, '
               f'최종 수익={total_revenue}원, 목표={controller.target_revenue}원')
-    # 이번 프레임의 이동을 반영한 뒤 출력할 카메라 위치를 결정한다.
-    meteor_notices.sync(meteor_system, controller.state)
-    camera.follow(motorcycle.x, motorcycle.y)
+    meteor_system.sync_stage(controller.state)
+    return collision_applied
 
 
 def draw():
+    draw_started = perf_counter()
     clear_canvas()
     game_world.render()
     reserved_height = meteor_notices.reserved_height(controller, meteor_system)
@@ -413,7 +470,9 @@ def draw():
         meteor_system.draw_help(camera, cargo_debug_text.font)
     if paused:
         cargo_debug_text.draw_pause_menu(pause_selection)
+    present_started = perf_counter()
     update_canvas()
+    game_framework.record_render_times(present_started - draw_started, perf_counter() - present_started)
 
 
 def in_pickup_zone():
@@ -440,6 +499,7 @@ def set_paused(value):
     delivery_requested = False
     space_pressed = False
     motorcycle.pressed_keys.clear()
+    meteor_system.set_paused(value)
     meteor_notices.set_paused(value)
     if value:
         pause_selection = 0

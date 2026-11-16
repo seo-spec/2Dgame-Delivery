@@ -24,6 +24,10 @@ class MeteorWaves:
     def __init__(self, road_map, protected_bounds):
         self.road_map = road_map
         self.protected_bounds = protected_bounds
+        self.reset()
+
+    def reset(self):
+        """주기·통계·정적 지도 캐시까지 정리한다. F2 삭제와는 별도다."""
         self.started_at = None
         self.next_wave_at = None
         self.wave_number = 0

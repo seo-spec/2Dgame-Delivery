@@ -30,6 +30,23 @@ def circle_touches_bounds(x, y, radius, bounds):
                  y - max(bottom, min(top, y))) <= radius
 
 
+def _nearby(obstacles, ax, ay, bx, by, radius):
+    """원판 이동 영역의 외접 상자와 겹친 장애물만 정밀 검사한다."""
+    padding = radius + CONTACT_MARGIN * 4
+    left, right = min(ax, bx) - padding, max(ax, bx) + padding
+    bottom, top = min(ay, by) - padding, max(ay, by) + padding
+    result = []
+    for obstacle in obstacles:
+        if isinstance(obstacle, CircleObstacle):
+            l, b = obstacle.x - obstacle.radius, obstacle.y - obstacle.radius
+            r, t = obstacle.x + obstacle.radius, obstacle.y + obstacle.radius
+        else:
+            l, b, r, t = obstacle.bounds
+        if l <= right and r >= left and b <= top and t >= bottom:
+            result.append(obstacle)
+    return result
+
+
 def _clearance(x, y, radius, obstacle):
     if isinstance(obstacle, CircleObstacle):
         return hypot(x - obstacle.x, y - obstacle.y) - radius - obstacle.radius
@@ -85,7 +102,8 @@ def is_circle_position_clear(x, y, radius, obstacles, world_size):
     """위치의 원 전체를 검사한다. 접촉·관통 위치를 보정 없이 거부한다."""
     width, height = world_size
     return (radius <= x <= width - radius and radius <= y <= height - radius
-            and all(_clearance(x, y, radius, obstacle) > 0 for obstacle in obstacles))
+            and all(_clearance(x, y, radius, obstacle) > 0
+                    for obstacle in _nearby(obstacles, x, y, x, y, radius)))
 
 
 def is_circle_path_clear(x, y, target_x, target_y, radius, obstacles, world_size):
@@ -98,7 +116,7 @@ def is_circle_path_clear(x, y, target_x, target_y, radius, obstacles, world_size
     return all(_clearance(x, y, radius, obstacle) >= -CONTACT_MARGIN / 2
                and _clearance(target_x, target_y, radius, obstacle) > 0
                and _sweep(x, y, dx, dy, radius, obstacle) is None
-               for obstacle in obstacles)
+               for obstacle in _nearby(obstacles, x, y, target_x, target_y, radius))
 
 
 def _recover(x, y, radius, obstacles, world_size, hits):
@@ -106,7 +124,7 @@ def _recover(x, y, radius, obstacles, world_size, hits):
     original = _clamp_to_world(x, y, radius, world_size)
     x, y = original
     for _ in range(8):
-        for obstacle in obstacles:
+        for obstacle in _nearby(obstacles, x, y, x, y, radius):
             if isinstance(obstacle, RectObstacle):
                 corrected = _separate_circle(x, y, radius, obstacle.bounds)
             elif _clearance(x, y, radius, obstacle) < 0:
@@ -121,8 +139,9 @@ def _recover(x, y, radius, obstacles, world_size, hits):
                 hits.add(obstacle.obstacle_id)
             x, y = corrected
         x, y = _clamp_to_world(x, y, radius, world_size)
+        # 보정으로 옮겨진 위치에서 후보를 다시 선정해 새 장애물을 놓치지 않는다.
         if all(_clearance(x, y, radius, obstacle) >= -CONTACT_MARGIN / 2
-               for obstacle in obstacles):
+               for obstacle in _nearby(obstacles, x, y, x, y, radius)):
             return x, y
     return original
 
@@ -153,7 +172,7 @@ def move_circle(start_x, start_y, target_x, target_y, radius, obstacles, world_s
         if hypot(dx, dy) < 1e-10:
             break
         earliest = None
-        for obstacle in obstacles:
+        for obstacle in _nearby(obstacles, x, y, x + dx, y + dy, radius):
             result = _sweep(x, y, dx, dy, radius, obstacle)
             if result is not None and (earliest is None or result[0] < earliest[0]):
                 earliest = (*result, obstacle.obstacle_id)
@@ -169,7 +188,7 @@ def move_circle(start_x, start_y, target_x, target_y, radius, obstacles, world_s
         inward = min(0.0, dx * nx + dy * ny)
         dx, dy = dx - inward * nx, dy - inward * ny
         # 모서리 동시 접촉 등은 다음 반복에서 남은 모든 장애물과 재검사.
-    contacts = {obstacle.obstacle_id for obstacle in obstacles
+    contacts = {obstacle.obstacle_id for obstacle in _nearby(obstacles, x, y, x, y, radius)
                 if obstacle.obstacle_id > 0
                 and _clearance(x, y, radius, obstacle) <= CONTACT_MARGIN * 4}
     return x, y, {obstacle_id for obstacle_id in hits if obstacle_id > 0}, contacts

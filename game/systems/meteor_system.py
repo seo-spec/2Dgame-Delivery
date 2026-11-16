@@ -8,6 +8,7 @@ from game.systems.static_collision import CircleObstacle, RectObstacle
 from game.systems.meteor_placement import interaction_bounds, placement_rejection
 from game.systems.meteor_impact import find_push_out
 from game.systems.meteor_waves import MeteorWaves
+from game.systems.stage import StageState
 from game.config import meteor as config
 from game.config.meteor import MIN_RADIUS, MAX_RADIUS, sample_radius
 from game.objects.meteor import Meteor
@@ -21,6 +22,9 @@ class MeteorSystem:
         self.meteors = []
         self.tool = 'crater'
         self.clock = 0.0
+        self.stage_state = StageState.WAITING
+        self.paused = False
+        self.closed = False
         self.expires_at = {}
         self.grace_until = 0.0
         self.landed_on_player = False
@@ -45,6 +49,8 @@ class MeteorSystem:
                         if self.tool == 'meteor' else '크레이터 도구: 즉시 생성 (수동 삭제까지 유지)')
 
     def create(self, x, y, motorcycle, buildings):
+        if self.paused or self.closed or self.stage_state in (StageState.FAILED, StageState.CLEAR):
+            return
         if self.tool == 'meteor' and any(item.wave_id is None for item in self.meteors):
             self.message = '수동 운석 확인 중입니다. 착지까지 기다리거나 우클릭으로 취소하세요.'
             return
@@ -92,10 +98,38 @@ class MeteorSystem:
         return removed
 
     def start_waves(self):
-        self.waves.start(self.clock)
+        if not self.paused and not self.closed and self.stage_state == StageState.DELIVERING:
+            self.waves.start(self.clock)
 
     def stop_waves(self):
         self.waves.stop()
+
+    def sync_stage(self, state):
+        """상태를 한 곳에서 반영한다. 배송 진입 외에는 자동 주기를 시작하지 않는다."""
+        if self.closed:
+            return
+        previous = self.stage_state
+        self.stage_state = state
+        if state == StageState.DELIVERING and previous == StageState.WAITING:
+            self.start_waves()
+        elif state != StageState.DELIVERING:
+            self.stop_waves()
+
+    def set_paused(self, value):
+        self.paused = value
+
+    def close(self):
+        """재시작·모드 종료 시 모든 실제 객체와 예약·첫 안내 상태를 제거한다."""
+        self.clear()
+        self.waves.reset()
+        self.building_footprints.clear()
+        self.clock = 0.0
+        self.alert_serial = 0
+        self.alert_count = 0
+        self.landed_on_player = False
+        self.stage_state = StageState.WAITING
+        self.paused = False
+        self.closed = True
 
     def crater_remaining(self, obstacle_id):
         """자동 차단은 잔여 초, 수동 영구 차단은 None. 월드·미니맵이 공유한다."""
@@ -108,6 +142,9 @@ class MeteorSystem:
         return new_contacts
 
     def update(self, dt, motorcycle, buildings, *, apply_damage):
+        if self.paused or self.closed or self.stage_state in (StageState.FAILED, StageState.CLEAR):
+            return set()
+        apply_damage = apply_damage and self.stage_state == StageState.DELIVERING
         dt = max(0.0, dt)
         target_clock = self.clock + dt
         self.landed_on_player = False
@@ -128,8 +165,13 @@ class MeteorSystem:
         self.landing_contacts.intersection_update(active_ids)
         for meteor in self.meteors:
             meteor.update_to(self.clock)
-        # 기존 사건을 처리한 뒤 지금부터 새 예고를 시작한다. 지연되어도 새 운석은
-        # 이번 프레임 dt로 경고 시간이 깎이거나 즉시 착지하지 않는다.
+        return expired
+
+    def spawn_due_wave(self, motorcycle, buildings, *, delivery_available):
+        """프레임의 배송·성공/실패 판정 뒤 한 번만 호출한다. 시계는 진행하지 않는다."""
+        if (self.paused or self.closed or self.stage_state != StageState.DELIVERING
+                or not delivery_available):
+            return
         new_meteors = self.waves.update(
             self.clock, motorcycle, buildings, (*self.obstacles, *self.meteors))
         self.meteors.extend(new_meteors)
@@ -139,7 +181,6 @@ class MeteorSystem:
             self.alert_started_at = self.clock
             self.alert_count = len(new_meteors)
             self.message = f'자동 묶음 #{self.waves.wave_number}: {len(new_meteors)}개 동시 예고'
-        return expired
 
     def _expire_craters(self):
         expired = {key for key, end in self.expires_at.items() if end <= self.clock}
