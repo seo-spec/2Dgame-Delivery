@@ -42,6 +42,11 @@ class EffectShapes:
             self.line(x + cos(a) * radius, y + sin(a) * radius,
                       x + cos(b) * radius, y + sin(b) * radius, color)
 
+    def world_line(self, x1, y1, x2, y2, color):
+        x1, y1 = self.camera.world_to_screen(x1, y1)
+        x2, y2 = self.camera.world_to_screen(x2, y2)
+        self.line(x1, y1, x2, y2, color)
+
     def disk(self, x, y, radius, color):
         x, y = self.camera.world_to_screen(x, y)
         for row in range(max(self.bottom, ceil(y - radius)), min(self.top, floor(y + radius)) + 1):

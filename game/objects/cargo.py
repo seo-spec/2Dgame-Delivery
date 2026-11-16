@@ -51,3 +51,12 @@ class Cargo:
         # 접촉 시작 이벤트의 피해이므로 프레임 경과시간을 곱하지 않는다.
         damage = abs(impact_speed) * COLLISION_DAMAGE_FACTOR * self.collision_damage_multiplier
         self.current_durability = max(0.0, self.current_durability - damage)
+
+    def apply_meteor_damage(self):
+        """정지 중에도 적용되는 착지 1회 피해. 완료·파손 화물은 제외한다."""
+        from game.config.meteor import LANDING_DAMAGE_RATIO
+
+        if self.delivered or self.current_durability <= 0.0:
+            return
+        damage = self.max_durability * LANDING_DAMAGE_RATIO * self.collision_damage_multiplier
+        self.current_durability = max(0.0, self.current_durability - damage)

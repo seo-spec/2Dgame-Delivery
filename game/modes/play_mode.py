@@ -177,17 +177,7 @@ def handle_events():
                 x = event.x - camera.viewport_left + camera.x
                 y = screen_y - camera.viewport_bottom + camera.y
                 if event.button == 1:
-                    # 완료 여부와 무관하게 맵의 모든 배송 가능 구역을 보호한다.
-                    protected = [pickup_bounds]
-                    for building in debug_craters.road_map.config['buildings']:
-                        zone = building.get('delivery_zone')
-                        if zone:
-                            cx = building['position'][0] + zone['offset'][0]
-                            cy = building['position'][1] + zone['offset'][1]
-                            width, height = zone['size']
-                            protected.append((cx - width / 2, cy - height / 2,
-                                              cx + width / 2, cy + height / 2))
-                    debug_craters.create(x, y, motorcycle, protected, static_colliders)
+                    debug_craters.create(x, y, motorcycle, static_colliders)
                 elif event.button == 3:
                     contact_obstacles.difference_update(debug_craters.remove_at(x, y))
             continue
@@ -271,7 +261,12 @@ def update():
         return
     controller.advance_time(game_framework.frame_time)
     # 수동 단일 운석도 게임 시뮬레이션 시간에 맞추며 정지·결과에서는 갱신하지 않는다.
-    debug_craters.update(game_framework.frame_time)
+    expired_craters = debug_craters.update(
+        game_framework.frame_time, motorcycle, static_colliders,
+        apply_damage=controller.state == StageState.DELIVERING)
+    contact_obstacles.difference_update(expired_craters)
+    # 착지 접촉을 미리 소비하여 일반 충돌 피해와 중복되지 않게 한다.
+    contact_obstacles.update(debug_craters.landing_contacts)
     previous_x, previous_y = motorcycle.x, motorcycle.y
     previous_speed = motorcycle.speed
     game_world.update()
@@ -283,8 +278,9 @@ def update():
         (*static_colliders, *debug_craters.obstacles),
         world_size=(WORLD_WIDTH, WORLD_HEIGHT),
     )
-    collided = bool(hits)
-    if hits - contact_obstacles:
+    collided = bool(hits) or debug_craters.landed_on_player
+    fresh_contacts = debug_craters.suppress_crater_contacts(hits - contact_obstacles)
+    if fresh_contacts:
         # 직접 피해는 충돌 감속 전 속도로 화물마다 한 번만 계산한다.
         impact_speed = motorcycle.speed
         if controller.state == StageState.DELIVERING:
@@ -293,7 +289,7 @@ def update():
         # 같은 프레임에 여러 장애물을 처음 접촉해도 감속은 한 번만 적용한다.
         motorcycle.apply_collision_slowdown()
         if debug_view.enabled:
-            print(f'[새 충돌] 장애물 ID={sorted(hits - contact_obstacles)}, '
+            print(f'[새 충돌] 장애물 ID={sorted(fresh_contacts)}, '
                   f'충돌 속도={impact_speed:.2f}, 감속 후={motorcycle.speed:.2f}')
     # 이미 충돌한 장애물은 실제로 떨어질 때까지 접촉 상태를 유지한다.
     contact_obstacles.update(hits)

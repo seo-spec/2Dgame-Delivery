@@ -6,12 +6,12 @@ from game.systems.static_collision import circle_touches_bounds
 
 
 def placement_rejection(x, y, radius, road_map, motorcycle, protected_bounds,
-                        buildings, existing):
+                        buildings, existing, *, reject_player=True):
     """거부 사유 또는 None. 낙하·피해·경로 탐색은 수행하지 않는다."""
     if not (radius <= x <= road_map.width - radius
             and radius <= y <= road_map.height - radius):
         return '크레이터 전체가 맵 안에 있어야 합니다.'
-    if hypot(x - motorcycle.x, y - motorcycle.y) <= radius + motorcycle.collision_radius:
+    if reject_player and hypot(x - motorcycle.x, y - motorcycle.y) <= radius + motorcycle.collision_radius:
         return '오토바이와 겹칩니다.'
     # 건물 충돌 박스가 그림보다 작으므로 집 보호에는 전체 표시 영역도 사용.
     for building in road_map.config['buildings']:
@@ -31,3 +31,18 @@ def placement_rejection(x, y, radius, road_map, motorcycle, protected_bounds,
     if any(hypot(x - item.x, y - item.y) <= radius + item.radius for item in existing):
         return '다른 크레이터와 겹칩니다.'
     return None
+
+
+def interaction_bounds(config):
+    """선택·배송 완료 여부와 무관하게 모든 배송·수령 구역을 반환한다."""
+    bounds = []
+    for building in config['buildings']:
+        for name in ('delivery_zone', 'pickup_zone'):
+            zone = building.get(name)
+            if zone:
+                x = building['position'][0] + zone['offset'][0]
+                y = building['position'][1] + zone['offset'][1]
+                width, height = zone['size']
+                bounds.append((x - width / 2, y - height / 2,
+                               x + width / 2, y + height / 2))
+    return tuple(bounds)

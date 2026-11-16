@@ -81,6 +81,26 @@ def _sweep(x, y, dx, dy, radius, obstacle):
     return min(candidates, key=lambda hit: hit[0], default=None)
 
 
+def is_circle_position_clear(x, y, radius, obstacles, world_size):
+    """위치의 원 전체를 검사한다. 접촉·관통 위치를 보정 없이 거부한다."""
+    width, height = world_size
+    return (radius <= x <= width - radius and radius <= y <= height - radius
+            and all(_clearance(x, y, radius, obstacle) > 0 for obstacle in obstacles))
+
+
+def is_circle_path_clear(x, y, target_x, target_y, radius, obstacles, world_size):
+    """직선 보정 경로를 조회한다. 벽 건너 도착점은 허용하지 않는다."""
+    width, height = world_size
+    if not all(radius <= px <= width - radius and radius <= py <= height - radius
+               for px, py in ((x, y), (target_x, target_y))):
+        return False
+    dx, dy = target_x - x, target_y - y
+    return all(_clearance(x, y, radius, obstacle) >= -CONTACT_MARGIN / 2
+               and _clearance(target_x, target_y, radius, obstacle) > 0
+               and _sweep(x, y, dx, dy, radius, obstacle) is None
+               for obstacle in obstacles)
+
+
 def _recover(x, y, radius, obstacles, world_size, hits):
     """기존 건물 초기 겹침 복구용. 운석 착지 밀어내기 기능과는 별개."""
     original = _clamp_to_world(x, y, radius, world_size)
