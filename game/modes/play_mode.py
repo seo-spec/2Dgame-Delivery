@@ -31,7 +31,7 @@ from game.world.camera import Camera
 from game.objects.cargo import Cargo
 from game.config.cargo_types import CARGO_TYPES
 from game.systems.static_collision import RectObstacle, move_circle
-from game.objects.debug_craters import DebugCraters
+from game.systems.meteor_system import MeteorSystem
 from game.systems.delivery import (
     DeliveryHouse, INITIAL_DELIVERY_SETTINGS, select_delivery_buildings, select_delivery_target,
 )
@@ -49,7 +49,7 @@ cargo_debug_text = None
 minimap = None
 solid_obstacles = []
 static_colliders = []
-debug_craters = None
+meteor_system = None
 contact_obstacles = set()
 delivery_houses = []
 space_pressed = False
@@ -66,7 +66,7 @@ pause_selection = 0
 
 
 def init():
-    global debug_craters
+    global meteor_system
     global minimap
     global motorcycle, camera, cargo_debug_text, space_pressed, delivery_requested
     global controller, total_revenue
@@ -89,7 +89,7 @@ def init():
     delivery_houses.clear()
     camera = Camera()
     road_map = RoadMap(camera)
-    debug_craters = DebugCraters(road_map)
+    meteor_system = MeteorSystem(road_map)
     game_world.add_object(road_map, game_world.BACKGROUND)
     for decoration in create_decorations(camera, road_map.config):
         game_world.add_object(decoration, game_world.BACKGROUND)
@@ -133,8 +133,8 @@ def init():
 
 
 def finish():
-    global debug_craters
-    debug_craters = None
+    global meteor_system
+    meteor_system = None
     static_colliders.clear()
     global minimap
     minimap = None
@@ -177,9 +177,9 @@ def handle_events():
                 x = event.x - camera.viewport_left + camera.x
                 y = screen_y - camera.viewport_bottom + camera.y
                 if event.button == 1:
-                    debug_craters.create(x, y, motorcycle, static_colliders)
+                    meteor_system.create(x, y, motorcycle, static_colliders)
                 elif event.button == 3:
-                    contact_obstacles.difference_update(debug_craters.remove_at(x, y))
+                    contact_obstacles.difference_update(meteor_system.remove_at(x, y))
             continue
         # 결과 상태에서도 눌림을 추적해, 이전부터 유지한 키의 반복 입력을 배제한다.
         if event.type == SDL_KEYDOWN:
@@ -221,11 +221,11 @@ def handle_events():
             continue
         if event.key == SDLK_F2:
             if debug_view.enabled and event.type == SDL_KEYDOWN and fresh_press:
-                contact_obstacles.difference_update(debug_craters.clear())
+                contact_obstacles.difference_update(meteor_system.clear())
             continue
         if event.key == SDLK_F3:
             if debug_view.enabled and event.type == SDL_KEYDOWN and fresh_press:
-                debug_craters.toggle_tool()
+                meteor_system.toggle_tool()
             continue
         if event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
             # 구역 밖에서도 눌림을 기록해, 유지한 채 진입하는 입력을 배제한다.
@@ -260,13 +260,13 @@ def update():
         delivery_requested = False
         return
     controller.advance_time(game_framework.frame_time)
-    # 수동 단일 운석도 게임 시뮬레이션 시간에 맞추며 정지·결과에서는 갱신하지 않는다.
-    expired_craters = debug_craters.update(
+    # 자동·수동 운석 모두 시뮬레이션 시간을 따르며 정지·결과에서는 갱신하지 않는다.
+    expired_craters = meteor_system.update(
         game_framework.frame_time, motorcycle, static_colliders,
         apply_damage=controller.state == StageState.DELIVERING)
     contact_obstacles.difference_update(expired_craters)
     # 착지 접촉을 미리 소비하여 일반 충돌 피해와 중복되지 않게 한다.
-    contact_obstacles.update(debug_craters.landing_contacts)
+    contact_obstacles.update(meteor_system.landing_contacts)
     previous_x, previous_y = motorcycle.x, motorcycle.y
     previous_speed = motorcycle.speed
     game_world.update()
@@ -275,11 +275,11 @@ def update():
     motorcycle.x, motorcycle.y, hits, contacts = move_circle(
         previous_x, previous_y, motorcycle.x, motorcycle.y,
         motorcycle.collision_radius,
-        (*static_colliders, *debug_craters.obstacles),
+        (*static_colliders, *meteor_system.obstacles),
         world_size=(WORLD_WIDTH, WORLD_HEIGHT),
     )
-    collided = bool(hits) or debug_craters.landed_on_player
-    fresh_contacts = debug_craters.suppress_crater_contacts(hits - contact_obstacles)
+    collided = bool(hits) or meteor_system.landed_on_player
+    fresh_contacts = meteor_system.suppress_crater_contacts(hits - contact_obstacles)
     if fresh_contacts:
         # 직접 피해는 충돌 감속 전 속도로 화물마다 한 번만 계산한다.
         impact_speed = motorcycle.speed
@@ -315,7 +315,8 @@ def update():
             for house, cargo in zip(delivery_houses, motorcycle.cargo_list):
                 print(f'[화물 종류] {house.label}: {cargo.cargo_type.name} ({cargo.cargo_id})')
             cargo_debug_text.prepare_cargo_icons(motorcycle.cargo_list)
-            controller.start_delivery()
+            if controller.start_delivery():
+                meteor_system.start_waves()
             print(f'[화물 수령 완료] 적재={len(motorcycle.cargo_list)}개, 배송 시작')
         house = current_delivery_target() if was_delivering else None
         if house is not None and house.try_deliver(
@@ -330,6 +331,8 @@ def update():
             )
     previous_state = controller.state
     controller.evaluate(delivery_houses, total_revenue, motorcycle.cargo_list)
+    if controller.state != StageState.DELIVERING:
+        meteor_system.stop_waves()
     if controller.state != previous_state:
         print(f'[진행 상태] {controller.state.value}'
               + (f': {controller.failure_reason}' if controller.failure_reason else ''))
@@ -345,7 +348,7 @@ def update():
 def draw():
     clear_canvas()
     game_world.render()
-    debug_craters.draw(camera, cargo_debug_text.font, debug_view.enabled)
+    meteor_system.draw(camera, cargo_debug_text.font, debug_view.enabled)
     if controller.state == StageState.WAITING:
         left, bottom, right, top = pickup_bounds
         left, bottom = camera.world_to_screen(left, bottom)
@@ -377,7 +380,7 @@ def draw():
         cargo_debug_text.draw_restart_hint()
     minimap.draw(motorcycle, delivery_houses)
     if debug_view.enabled:
-        debug_craters.draw_help(camera, cargo_debug_text.font)
+        meteor_system.draw_help(camera, cargo_debug_text.font)
     if paused:
         cargo_debug_text.draw_pause_menu(pause_selection)
     update_canvas()

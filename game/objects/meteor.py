@@ -1,24 +1,35 @@
 """단일 운석의 예고·낙하. 착지 확정과 크레이터 전환은 관리 객체가 처리한다."""
 
 from random import uniform
+from itertools import count
 
 from game.config import meteor as config
 from game.world.effect_shapes import EffectShapes
 
+_creation_ids = count(1)
+
 
 class Meteor:
-    def __init__(self, x, y, radius):
+    def __init__(self, x, y, radius, *, started_at=0.0, wave_id=None, fall_duration=None):
+        self.creation_id = next(_creation_ids)
+        self.wave_id = wave_id
+        self.started_at = started_at
         self.x = x
         self.y = y
         self.radius = radius
         # 예고 전에 추첨하여 동심원이 처음부터 실제 착지 시각을 가리킨다.
-        self.fall_duration = uniform(config.MIN_FALL_DURATION, config.MAX_FALL_DURATION)
+        self.fall_duration = (uniform(config.MIN_FALL_DURATION, config.MAX_FALL_DURATION)
+                              if fall_duration is None else fall_duration)
         self.warning_duration = config.WARNING_DURATION
         self.elapsed = 0.0
 
     @property
     def total_duration(self):
         return self.warning_duration + self.fall_duration
+
+    @property
+    def landing_time(self):
+        return self.started_at + self.total_duration
 
     @property
     def remaining(self):
@@ -34,6 +45,9 @@ class Meteor:
 
     def update(self, dt):
         self.elapsed = min(self.total_duration, self.elapsed + max(0.0, dt))
+
+    def update_to(self, clock):
+        self.elapsed = min(self.total_duration, max(0.0, clock - self.started_at))
 
     def draw(self, camera, font, debug_enabled):
         shapes = EffectShapes(camera)
