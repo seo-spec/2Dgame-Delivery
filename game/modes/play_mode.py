@@ -206,6 +206,8 @@ def handle_events():
                 pause_selection = selected
                 if event.type == SDL_MOUSEBUTTONDOWN and event.button == 1:
                     restart_requested = activate_pause_selection()
+                    if pause_selection == 2:
+                        return
             continue
         if (event.type == SDL_MOUSEBUTTONDOWN and debug_view.enabled and not restart_requested
                 and not paused and controller.state not in (StageState.FAILED, StageState.CLEAR)):
@@ -245,6 +247,8 @@ def handle_events():
                     pause_selection = (pause_selection + 1) % 3
                 elif event.key == SDLK_RETURN:
                     restart_requested = activate_pause_selection()
+                    if pause_selection == 2:
+                        return
             continue
         if event.key == SDLK_F1:
             if event.type == SDL_KEYDOWN and fresh_press:
@@ -543,5 +547,7 @@ def activate_pause_selection():
     elif pause_selection == 1:
         return True
     else:
-        game_framework.quit()
+        from game.modes import title_mode
+
+        game_framework.change_mode(title_mode)
     return False
