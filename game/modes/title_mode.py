@@ -1,10 +1,12 @@
-"""타이틀 배경과 메뉴 표시, 키보드 선택 및 플레이 진입."""
+"""타이틀 배경과 메뉴 표시, 키보드·마우스 선택 및 플레이 진입."""
 
 import os
 from pathlib import Path
 
 from pico2d import (
     SDL_KEYDOWN,
+    SDL_MOUSEBUTTONDOWN,
+    SDL_MOUSEMOTION,
     SDL_QUIT,
     SDLK_ESCAPE,
     SDLK_UP,
@@ -60,6 +62,17 @@ def handle_events():
         if event.type == SDL_QUIT:
             game_framework.quit()
             return
+        if event.type in (SDL_MOUSEMOTION, SDL_MOUSEBUTTONDOWN):
+            mouse_y = get_canvas_height() - 1 - event.y
+            for index in range(len(MENU_ITEMS)):
+                left, bottom, right, top = menu_bounds(index)
+                if left <= event.x <= right and bottom <= mouse_y <= top:
+                    selection = index
+                    if event.type == SDL_MOUSEBUTTONDOWN and event.button == 1:
+                        if activate_selection():
+                            return
+                    break
+            continue
         if event.type != SDL_KEYDOWN:
             continue
         if event.key == SDLK_ESCAPE:
@@ -70,15 +83,32 @@ def handle_events():
         elif event.key == SDLK_DOWN:
             selection = (selection + 1) % len(MENU_ITEMS)
         elif event.key == SDLK_RETURN:
-            if selection == 0:
-                from game.modes import play_mode
+            if activate_selection():
+                return
 
-                game_framework.change_mode(play_mode)
-                return
-            if selection == 3:
-                game_framework.quit()
-                return
-            # 옵션과 오토바이(캐릭터) 변경은 추후 연결한다.
+
+def activate_selection():
+    """선택 항목을 실행하고 화면 전환 또는 종료 여부를 반환한다."""
+    if selection == 0:
+        from game.modes import play_mode
+
+        game_framework.change_mode(play_mode)
+        return True
+    if selection == 3:
+        game_framework.quit()
+        return True
+    # 옵션과 오토바이(캐릭터) 변경은 추후 연결한다.
+    return False
+
+
+def menu_bounds(index):
+    """그리기와 마우스 판정에 공통으로 사용하는 메뉴 영역."""
+    width = get_canvas_width()
+    height = get_canvas_height()
+    left = round(width * 0.64) - 18
+    right = round(width * 0.95)
+    y = round(height * 0.60) - index * MENU_SPACING
+    return left, y - 27, right, y + 27
 
 
 def update():
@@ -91,15 +121,13 @@ def draw():
     height = get_canvas_height()
     background.draw(width / 2, height / 2, width, height)
     # 배경 오른쪽 벽면에 맞춰 메뉴를 배치한다.
-    left = round(width * 0.64)
-    right = round(width * 0.95)
-    top_y = round(height * 0.60)
     for index, label in enumerate(MENU_ITEMS):
-        y = top_y - index * MENU_SPACING
+        left, bottom, right, top = menu_bounds(index)
+        y = (bottom + top) / 2
         active = index == selection
         if active:
-            draw_rectangle(left - 18, y - 27, right, y + 27, *SELECTED_COLOR)
-            menu_font.draw(left, y, '>', SELECTED_COLOR)
+            draw_rectangle(left, bottom, right, top, *SELECTED_COLOR)
+            menu_font.draw(left + 18, y, '>', SELECTED_COLOR)
         color = SELECTED_COLOR if active else TEXT_COLOR
-        menu_font.draw(left + 32, y, label, color)
+        menu_font.draw(left + 50, y, label, color)
     update_canvas()
