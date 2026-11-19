@@ -1,6 +1,7 @@
-"""타이틀 배경과 메뉴 표시, 키보드·마우스 선택 및 플레이 진입."""
+"""도트 도시와 순환 차량, 메뉴 입력 및 플레이 진입."""
 
 import os
+from math import atan2, cos, hypot, pi, sin
 from pathlib import Path
 
 from pico2d import (
@@ -12,6 +13,7 @@ from pico2d import (
     SDLK_UP,
     SDLK_DOWN,
     SDLK_RETURN,
+    SDL_SetTextureScaleMode,
     clear_canvas,
     draw_rectangle,
     get_canvas_height,
@@ -22,14 +24,15 @@ from pico2d import (
 )
 
 from game.core import game_framework
+from game.config import title_animation
 from game.ui.cached_font import CachedFont
 
 
-BACKGROUND_PATH = (
-    Path(__file__).resolve().parents[2]
-    / 'assets/images/title/title_background_v1.png'
-)
+BACKGROUND_PATH = title_animation.FALLBACK_PATH
 background = None
+traffic = []
+routes = []
+elapsed = 0.0
 menu_font = None
 selection = 0
 
@@ -42,18 +45,44 @@ SELECTED_COLOR = (255, 205, 104)
 
 
 def init():
-    global background, menu_font, selection
+    global background, menu_font, selection, elapsed
     selection = 0
-    background = load_image(str(BACKGROUND_PATH))
+    elapsed = 0.0
+    traffic.clear()
+    routes.clear()
+    try:
+        background = load_title_image(title_animation.BACKGROUND_PATH)
+        sprites = {
+            name: load_title_image(spec['path'])
+            for name, spec in title_animation.SPRITES.items()
+        }
+        routes.extend(build_route(spec) for spec in title_animation.ROUTES)
+        for name, route_index, phase in title_animation.VEHICLES:
+            traffic.append((sprites[name], title_animation.SPRITES[name], route_index, phase))
+    except OSError:
+        # 불완전한 자산 묶음은 버리고 기존 완성 배경으로 진입한다.
+        traffic.clear()
+        routes.clear()
+        background = None
+        background = load_image(str(BACKGROUND_PATH))
     menu_font = CachedFont(FONT_PATH, MENU_FONT_SIZE)
 
 
 def finish():
-    global background, menu_font
+    global background, menu_font, elapsed
     if menu_font is not None:
         menu_font.close()
     menu_font = None
     background = None
+    traffic.clear()
+    routes.clear()
+    elapsed = 0.0
+
+
+def load_title_image(path):
+    image = load_image(str(path))
+    SDL_SetTextureScaleMode(image.texture, 0)  # SDL_ScaleModeNearest, 도트 경계 유지
+    return image
 
 
 def handle_events():
@@ -112,7 +141,45 @@ def menu_bounds(index):
 
 
 def update():
-    pass
+    global elapsed
+    elapsed += min(game_framework.frame_time, title_animation.MAX_FRAME_TIME)
+
+
+def build_route(spec):
+    """둥근 사각 경로의 선분과 길이를 초기화 시 한 번 계산한다."""
+    left, top, right, bottom = spec['rect']
+    radius = title_animation.CORNER_RADIUS
+    corners = (
+        (right - radius, top + radius, -pi / 2),
+        (right - radius, bottom - radius, 0),
+        (left + radius, bottom - radius, pi / 2),
+        (left + radius, top + radius, pi),
+    )
+    points = []
+    for center_x, center_y, start_angle in corners:
+        for step in range(9):
+            angle = start_angle + step * pi / 16
+            points.append((center_x + radius * cos(angle), center_y + radius * sin(angle)))
+    if not spec['clockwise']:
+        points.reverse()
+    segments = []
+    for start, end in zip(points, points[1:] + points[:1]):
+        dx, dy = end[0] - start[0], end[1] - start[1]
+        length = hypot(dx, dy)
+        segments.append((start, dx, dy, length, atan2(-dy, dx) - pi / 2))
+    return segments, sum(segment[3] for segment in segments)
+
+
+def vehicle_pose(route_index, phase):
+    segments, total_length = routes[route_index]
+    distance = (elapsed * title_animation.ROUTES[route_index]['speed'] + phase * total_length) % total_length
+    for start, dx, dy, length, angle in segments:
+        if distance <= length:
+            ratio = distance / length
+            return start[0] + dx * ratio, start[1] + dy * ratio, angle
+        distance -= length
+    start, _, _, _, angle = segments[0]
+    return start[0], start[1], angle
 
 
 def draw():
@@ -120,7 +187,16 @@ def draw():
     width = get_canvas_width()
     height = get_canvas_height()
     background.draw(width / 2, height / 2, width, height)
-    # 배경 오른쪽 벽면에 맞춰 메뉴를 배치한다.
+    scale_x = width / title_animation.REFERENCE_WIDTH
+    scale_y = height / title_animation.REFERENCE_HEIGHT
+    for image, spec, route_index, phase in traffic:
+        x, y, angle = vehicle_pose(route_index, phase)
+        sprite_width, sprite_height = spec['size']
+        image.clip_composite_draw(
+            *spec['clip'], angle, '', round(x * scale_x), round(height - y * scale_y),
+            sprite_width * scale_x, sprite_height * scale_y,
+        )
+    # 오른쪽 창고 지붕의 어두운 영역에 메뉴를 배치한다.
     for index, label in enumerate(MENU_ITEMS):
         left, bottom, right, top = menu_bounds(index)
         y = (bottom + top) / 2

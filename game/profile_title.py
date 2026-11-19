@@ -1,4 +1,4 @@
-"""정적 타이틀을 5초 준비 후 60초 측정하는 선택 실행 진입점."""
+"""현재 타이틀을 5초 준비 후 60초 측정하는 선택 실행 진입점."""
 
 import argparse
 import json
@@ -47,6 +47,7 @@ def main():
     update_seconds = 0.0
     present_seconds = 0.0
     load_seconds = None
+    image_draw_count = 0
     status = 'interrupted'
     try:
         pico_version = metadata.version('pico2d')
@@ -54,12 +55,13 @@ def main():
         pico_version = getattr(pico2d, '__version__', 'unrecorded')
 
     def measured_init():
-        nonlocal load_seconds, started, previous_present
+        nonlocal load_seconds, started, previous_present, image_draw_count
         before = perf_counter()
         original_init()
         started = perf_counter()
         previous_present = started
         load_seconds = started - before
+        image_draw_count = 1 + len(getattr(title_mode, 'traffic', ()))
 
     def measured_update():
         nonlocal update_seconds
@@ -129,6 +131,7 @@ def main():
             'sample_capacity': MAX_SAMPLES, 'sample_count': len(samples),
             'title_init_ms': None if load_seconds is None else load_seconds * 1000,
             'background_image_draws_per_frame': 1,
+            'title_image_draws_per_frame': image_draw_count,
             'notes': 'CPU wall time. Render includes menu, excludes update_canvas. '
                      'Present includes submission/vsync wait. GPU execution time is unmeasured.',
         }
