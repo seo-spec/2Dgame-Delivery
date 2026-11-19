@@ -1,8 +1,6 @@
 """도트 도시와 순환 차량, 메뉴 입력 및 플레이 진입."""
 
-import os
 from math import atan2, cos, hypot, pi, sin
-from pathlib import Path
 
 from pico2d import (
     SDL_KEYDOWN,
@@ -25,6 +23,7 @@ from pico2d import (
 
 from game.core import game_framework
 from game.config import title_animation
+from game.config.fonts import FONT_PATH
 from game.ui.cached_font import CachedFont
 
 
@@ -37,7 +36,6 @@ menu_font = None
 selection = 0
 
 MENU_ITEMS = ('시작', '옵션', '오토바이(캐릭터) 변경', '종료')
-FONT_PATH = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts/malgunbd.ttf'
 MENU_FONT_SIZE = 28
 MENU_SPACING = 76
 TEXT_COLOR = (245, 238, 224)

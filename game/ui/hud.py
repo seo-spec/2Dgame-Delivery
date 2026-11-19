@@ -1,7 +1,5 @@
 """상단 진행 정보·하단 화물 상태·오른쪽 배송 마감 HUD."""
 
-import os
-from pathlib import Path
 from math import ceil
 
 from pico2d import get_canvas_height, load_image, draw_rectangle
@@ -9,13 +7,10 @@ from game.ui.cached_font import CachedFont
 from game.core import debug_view
 from game.core import game_framework
 from game.config import settings
+from game.config.fonts import FONT_PATH
 from game.systems.stage import StageState
 from game.systems.traffic_penalties import FINE_AMOUNT
 
-FONT_DIRECTORY = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts'
-FONT_PATH = next((FONT_DIRECTORY / name for name in (
-    'Hancom Gothic Bold.ttf', 'malgunbd.ttf', 'malgun.ttf',
-) if (FONT_DIRECTORY / name).is_file()))
 FONT_SIZE = 18
 LINE_SPACING = 26
 NAVY = (25, 40, 57)
@@ -29,8 +24,7 @@ YELLOW = (255, 205, 104)
 class CargoDebugText:
     def __init__(self):
         self.font = CachedFont(FONT_PATH, FONT_SIZE)
-        menu_path = FONT_DIRECTORY / 'bahnschrift.ttf'
-        self.menu_font = CachedFont(menu_path if menu_path.is_file() else FONT_PATH, 30)
+        self.menu_font = CachedFont(FONT_PATH, 30)
         self.cargo_icons = {}
 
     def close(self):
