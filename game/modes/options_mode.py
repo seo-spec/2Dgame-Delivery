@@ -6,6 +6,8 @@ from pico2d import (
     SDL_QUIT,
     SDLK_ESCAPE,
     SDLK_RETURN,
+    SDLK_LEFT,
+    SDLK_RIGHT,
     clear_canvas,
     draw_rectangle,
     get_canvas_height,
@@ -49,12 +51,32 @@ def handle_events():
         if event.type == SDL_KEYDOWN and event.key in (SDLK_RETURN, SDLK_ESCAPE):
             return_to_title()
             return
+        if event.type == SDL_KEYDOWN and event.key in (SDLK_LEFT, SDLK_RIGHT):
+            change_bgm_volume(-10 if event.key == SDLK_LEFT else 10)
+            continue
         if event.type == SDL_MOUSEBUTTONDOWN and event.button == 1:
             left, bottom, right, top = return_bounds()
             mouse_y = get_canvas_height() - 1 - event.y
             if left <= event.x <= right and bottom <= mouse_y <= top:
                 return_to_title()
                 return
+            for direction in (-1, 1):
+                left, bottom, right, top = volume_button_bounds(direction)
+                if left <= event.x <= right and bottom <= mouse_y <= top:
+                    change_bgm_volume(direction * 10)
+                    break
+
+
+def change_bgm_volume(amount):
+    global BGM_VOLUME
+    BGM_VOLUME = max(0, min(100, BGM_VOLUME + amount))
+
+
+def volume_button_bounds(direction):
+    """음량 버튼 표시와 마우스 판정이 공유하는 영역."""
+    center_x = round(get_canvas_width() / 2) + (-24 if direction < 0 else 136)
+    center_y = round(get_canvas_height() * 0.52)
+    return center_x - 24, center_y - 20, center_x + 24, center_y + 20
 
 
 def return_to_title():
@@ -81,8 +103,14 @@ def draw():
     height = get_canvas_height()
     draw_rectangle(0, 0, width, height, *BACKGROUND_COLOR, filled=True)
     font.draw(round(width / 2 - 24), round(height * 0.7), '옵션', TEXT_COLOR)
-    font.draw(round(width / 2 - 120), round(height * 0.52),
-              f'BGM 음량  {BGM_VOLUME}%', TEXT_COLOR)
+    volume_y = round(height * 0.52)
+    font.draw(round(width / 2 - 180), volume_y, 'BGM 음량', TEXT_COLOR)
+    font.draw(round(width / 2 + 32), volume_y, f'{BGM_VOLUME}%', SELECTED_COLOR)
+    for direction, label in ((-1, '-'), (1, '+')):
+        left, bottom, right, top = volume_button_bounds(direction)
+        draw_rectangle(left, bottom, right, top, *SELECTED_BACKGROUND, filled=True)
+        font.draw(round((left + right) / 2 - 6), round((bottom + top) / 2),
+                  label, SELECTED_COLOR)
     left, bottom, right, top = return_bounds()
     center_y = round((bottom + top) / 2)
     draw_rectangle(left, bottom, right, top, *SELECTED_BACKGROUND, filled=True)
