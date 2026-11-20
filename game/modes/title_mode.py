@@ -143,10 +143,15 @@ def activate_selection():
 
         game_framework.change_mode(play_mode)
         return True
+    if selection == 1:
+        from game.modes import options_mode
+
+        game_framework.change_mode(options_mode)
+        return True
     if selection == 3:
         game_framework.quit()
         return True
-    # 옵션과 오토바이(캐릭터) 변경은 추후 연결한다.
+    # 오토바이(캐릭터) 변경은 추후 연결한다.
     return False
 
 
