@@ -1,6 +1,6 @@
 """도트 도시와 순환 차량, 메뉴 입력 및 플레이 진입."""
 
-from math import atan2, cos, hypot, pi, sin
+from math import cos, hypot, pi, sin
 
 from pico2d import (
     SDL_KEYDOWN,
@@ -178,26 +178,30 @@ def build_route(spec):
     for center_x, center_y, start_angle in corners:
         for step in range(9):
             angle = start_angle + step * pi / 16
-            points.append((center_x + radius * cos(angle), center_y + radius * sin(angle)))
+            points.append((center_x + radius * cos(angle),
+                           center_y + radius * sin(angle), -angle - pi))
     if not spec['clockwise']:
-        points.reverse()
+        points = [(x, y, angle + pi) for x, y, angle in reversed(points)]
     segments = []
     for start, end in zip(points, points[1:] + points[:1]):
         dx, dy = end[0] - start[0], end[1] - start[1]
         length = hypot(dx, dy)
-        segments.append((start, dx, dy, length, atan2(-dy, dx) - pi / 2))
+        # 최단 각도 차이를 저장해 직선·곡선 경계에서도 방향이 연속적으로 바뀐다.
+        angle_delta = (end[2] - start[2] + pi) % (2 * pi) - pi
+        segments.append((start[:2], dx, dy, length, start[2], angle_delta))
     return segments, sum(segment[3] for segment in segments)
 
 
 def vehicle_pose(route_index, phase):
     segments, total_length = routes[route_index]
     distance = (elapsed * title_animation.ROUTES[route_index]['speed'] + phase * total_length) % total_length
-    for start, dx, dy, length, angle in segments:
+    for start, dx, dy, length, angle, angle_delta in segments:
         if distance <= length:
             ratio = distance / length
-            return start[0] + dx * ratio, start[1] + dy * ratio, angle
+            return (start[0] + dx * ratio, start[1] + dy * ratio,
+                    angle + angle_delta * ratio)
         distance -= length
-    start, _, _, _, angle = segments[0]
+    start, _, _, _, angle, _ = segments[0]
     return start[0], start[1], angle
 
 

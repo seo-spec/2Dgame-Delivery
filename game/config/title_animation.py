@@ -11,7 +11,7 @@ FALLBACK_PATH = ASSET_DIR / 'title_background_v1.png'
 MENU_SAFE_RECT = (780, 235, 1240, 570)
 MAX_FRAME_TIME = 0.1
 # 한 주기의 비율과 RGB 밝기. 끝 색을 시작 색과 맞춰 반복 경계를 연결한다.
-DAY_NIGHT_CYCLE_SECONDS = 90.0
+DAY_NIGHT_CYCLE_SECONDS = 30.0
 DAY_NIGHT_COLORS = (
     (0.00, (255, 255, 255)),  # 낮
     (0.12, (255, 255, 255)),
@@ -21,20 +21,20 @@ DAY_NIGHT_COLORS = (
     (0.85, (215, 180, 165)),  # 새벽
     (1.00, (255, 255, 255)),
 )
-CORNER_RADIUS = 18
+CORNER_RADIUS = 22
 ROUTES = (
-    {'rect': (168, 170, 673, 581), 'clockwise': True, 'speed': 36.0},
-    {'rect': (138, 140, 703, 611), 'clockwise': False, 'speed': 42.0},
+    {'rect': (168, 170, 673, 581), 'clockwise': True, 'speed': 48.0},
+    {'rect': (138, 140, 703, 611), 'clockwise': False, 'speed': 54.0},
 )
 SPRITES = {
     'car': {
         'path': ASSET_DIR / 'title_car.png',
-        'size': (24, 48),
+        'size': (26, 52),
         'clip': (199, 316, 528, 1054),
     },
     'motorcycle': {
         'path': ASSET_DIR / 'title_motorcycle.png',
-        'size': (18, 36),
+        'size': (20, 40),
         'clip': (246, 404, 471, 936),
     },
 }
