@@ -13,6 +13,18 @@ MENU_SAFE_RECT = (780, 235, 1240, 570)
 STREETLAMP_PATH = ASSET_DIR / 'title_streetlamp.png'
 STREETLAMP_SIZE = (12, 50)
 STREETLAMP_CLIP = (262, 325, 297, 1259)
+STREETLAMP_LIGHT_OFFSET = (0, -41)
+STREETLAMP_GLOW_SIZE = 36
+STREETLAMP_GLOW_COLOR = (255, 210, 125)
+# 낮·밤 주기의 비율에 따른 점등 강도. 노을에 켜지고 새벽에 꺼진다.
+STREETLAMP_LIGHT_LEVELS = (
+    (0.00, 0.0),
+    (0.18, 0.0),
+    (0.46, 1.0),
+    (0.68, 1.0),
+    (0.88, 0.0),
+    (1.00, 0.0),
+)
 STREETLAMP_POSITIONS = (
     (280, 112),  # 상단 도로변 왼쪽
     (430, 112),  # 상단 도로변
@@ -23,6 +35,12 @@ STREETLAMP_POSITIONS = (
     (741, 530),  # 오른쪽 외곽 보도 아래쪽
     (450, 554),  # 하단 도로의 안쪽 보도
 )
+# 배경 이미지에 그려진 가운데 가로등의 발광부 중심. 왼쪽 위 원점이다.
+BACKGROUND_STREETLAMP_LIGHTS = ((338, 343),)
+STREETLAMP_GLOW_POSITIONS = tuple(
+    (x + STREETLAMP_LIGHT_OFFSET[0], bottom + STREETLAMP_LIGHT_OFFSET[1])
+    for x, bottom in STREETLAMP_POSITIONS
+) + BACKGROUND_STREETLAMP_LIGHTS
 MAX_FRAME_TIME = 0.1
 # 한 주기의 비율과 RGB 밝기. 끝 색을 시작 색과 맞춰 반복 경계를 연결한다.
 DAY_NIGHT_CYCLE_SECONDS = 30.0

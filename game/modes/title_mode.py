@@ -1,6 +1,8 @@
 """도트 도시와 순환 차량, 메뉴 입력 및 플레이 진입."""
 
 from math import cos, hypot, pi, sin
+import ctypes
+from importlib import import_module
 
 from pico2d import (
     SDL_KEYDOWN,
@@ -28,9 +30,11 @@ from game.config.fonts import FONT_PATH
 from game.ui.cached_font import CachedFont
 
 
+_pico = import_module('pico2d.pico2d')
 BACKGROUND_PATH = title_animation.FALLBACK_PATH
 background = None
 streetlamp = None
+light_glow = None
 traffic = []
 routes = []
 elapsed = 0.0
@@ -50,10 +54,11 @@ SELECTED_BACKGROUND = (25, 43, 52)
 
 
 def init():
-    global background, streetlamp, menu_font, selection, elapsed
+    global background, streetlamp, light_glow, menu_font, selection, elapsed
     selection = 0
     elapsed = 0.0
     streetlamp = None
+    light_glow = None
     traffic.clear()
     routes.clear()
     try:
@@ -76,16 +81,19 @@ def init():
             streetlamp = load_title_image(title_animation.STREETLAMP_PATH)
         except OSError:
             streetlamp = None
+    if streetlamp is not None:
+        light_glow = create_light_glow()
     menu_font = CachedFont(FONT_PATH, MENU_FONT_SIZE)
 
 
 def finish():
-    global background, streetlamp, menu_font, elapsed
+    global background, streetlamp, light_glow, menu_font, elapsed
     if menu_font is not None:
         menu_font.close()
     menu_font = None
     background = None
     streetlamp = None
+    light_glow = None
     traffic.clear()
     routes.clear()
     elapsed = 0.0
@@ -172,6 +180,44 @@ def daylight_color():
     return keyframes[-1][1]
 
 
+def streetlamp_intensity():
+    phase = (elapsed % title_animation.DAY_NIGHT_CYCLE_SECONDS) / title_animation.DAY_NIGHT_CYCLE_SECONDS
+    levels = title_animation.STREETLAMP_LIGHT_LEVELS
+    for (start, start_level), (end, end_level) in zip(levels, levels[1:]):
+        if phase <= end:
+            ratio = (phase - start) / (end - start)
+            blend = ratio * ratio * (3 - 2 * ratio)
+            return start_level + (end_level - start_level) * blend
+    return levels[-1][1]
+
+
+def create_light_glow():
+    """밝은 중심과 옅은 원형 번짐을 가진 작은 공유 텍스처를 만든다."""
+    size = 64
+    pixels = bytearray()
+    for y in range(size):
+        for x in range(size):
+            radius = hypot(x + 0.5 - size / 2, y + 0.5 - size / 2) / (size / 2)
+            falloff = max(0.0, 1.0 - radius)
+            # 중심부는 등불 유리의 발광, 바깥쪽은 약한 빛 번짐이다.
+            core = max(0.0, 1.0 - radius / 0.16)
+            alpha = round(max(255 * core, 80 * falloff * falloff))
+            pixels.extend((*title_animation.STREETLAMP_GLOW_COLOR, alpha))
+    texture = _pico.SDL_CreateTexture(
+        _pico.renderer, _pico.SDL_PIXELFORMAT_ABGR8888,
+        _pico.SDL_TEXTUREACCESS_STATIC, size, size,
+    )
+    if not texture:
+        return None
+    buffer = ctypes.create_string_buffer(bytes(pixels))
+    updated = _pico.SDL_UpdateTexture(texture, None, buffer, size * 4)
+    blended = _pico.SDL_SetTextureBlendMode(texture, _pico.SDL_BLENDMODE_ADD)
+    if updated != 0 or blended != 0:
+        _pico.SDL_DestroyTexture(texture)
+        return None
+    return _pico.Image(texture)
+
+
 def build_route(spec):
     """둥근 사각 경로의 선분과 길이를 초기화 시 한 번 계산한다."""
     left, top, right, bottom = spec['rect']
@@ -239,6 +285,17 @@ def draw():
             *spec['clip'], angle, '', round(x * scale_x), round(height - y * scale_y),
             sprite_width * scale_x, sprite_height * scale_y,
         )
+    if light_glow is not None:
+        strength = streetlamp_intensity()
+        if strength > 0:
+            _pico.SDL_SetTextureAlphaMod(light_glow.texture, round(255 * strength))
+            glow_size = title_animation.STREETLAMP_GLOW_SIZE
+            for x, y in title_animation.STREETLAMP_GLOW_POSITIONS:
+                light_glow.draw(
+                    round(x * scale_x),
+                    round(height - y * scale_y),
+                    glow_size * scale_x, glow_size * scale_y,
+                )
     # 오른쪽 창고 지붕의 어두운 영역에 메뉴를 배치한다.
     for index, label in enumerate(MENU_ITEMS):
         left, bottom, right, top = menu_bounds(index)
