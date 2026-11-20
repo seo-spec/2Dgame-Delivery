@@ -30,6 +30,7 @@ from game.ui.cached_font import CachedFont
 
 BACKGROUND_PATH = title_animation.FALLBACK_PATH
 background = None
+streetlamp = None
 traffic = []
 routes = []
 elapsed = 0.0
@@ -49,9 +50,10 @@ SELECTED_BACKGROUND = (25, 43, 52)
 
 
 def init():
-    global background, menu_font, selection, elapsed
+    global background, streetlamp, menu_font, selection, elapsed
     selection = 0
     elapsed = 0.0
+    streetlamp = None
     traffic.clear()
     routes.clear()
     try:
@@ -69,15 +71,21 @@ def init():
         routes.clear()
         background = None
         background = load_image(str(BACKGROUND_PATH))
+    if traffic:
+        try:
+            streetlamp = load_title_image(title_animation.STREETLAMP_PATH)
+        except OSError:
+            streetlamp = None
     menu_font = CachedFont(FONT_PATH, MENU_FONT_SIZE)
 
 
 def finish():
-    global background, menu_font, elapsed
+    global background, streetlamp, menu_font, elapsed
     if menu_font is not None:
         menu_font.close()
     menu_font = None
     background = None
+    streetlamp = None
     traffic.clear()
     routes.clear()
     elapsed = 0.0
@@ -214,6 +222,15 @@ def draw():
     background.draw(width / 2, height / 2, width, height)
     scale_x = width / title_animation.REFERENCE_WIDTH
     scale_y = height / title_animation.REFERENCE_HEIGHT
+    if streetlamp is not None:
+        SDL_SetTextureColorMod(streetlamp.texture, *ambient_color)
+        lamp_width, lamp_height = title_animation.STREETLAMP_SIZE
+        for x, bottom in title_animation.STREETLAMP_POSITIONS:
+            streetlamp.clip_draw(
+                *title_animation.STREETLAMP_CLIP,
+                round(x * scale_x), round(height - (bottom - lamp_height / 2) * scale_y),
+                lamp_width * scale_x, lamp_height * scale_y,
+            )
     for image, spec, route_index, phase in traffic:
         SDL_SetTextureColorMod(image.texture, *ambient_color)
         x, y, angle = vehicle_pose(route_index, phase)

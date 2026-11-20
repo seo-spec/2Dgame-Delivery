@@ -9,6 +9,20 @@ REFERENCE_HEIGHT = 720
 BACKGROUND_PATH = ASSET_DIR / 'title_city_v1.png'
 FALLBACK_PATH = ASSET_DIR / 'title_background_v1.png'
 MENU_SAFE_RECT = (780, 235, 1240, 570)
+# 위치는 왼쪽 위 원점의 받침대 중심이다. 차량 차선과 메뉴 영역을 피한다.
+STREETLAMP_PATH = ASSET_DIR / 'title_streetlamp.png'
+STREETLAMP_SIZE = (12, 50)
+STREETLAMP_CLIP = (262, 325, 297, 1259)
+STREETLAMP_POSITIONS = (
+    (280, 112),  # 상단 도로변 왼쪽
+    (430, 112),  # 상단 도로변
+    (600, 112),  # 상단 도로변 오른쪽
+    (102, 240),  # 왼쪽 외곽 보도 위쪽
+    (102, 360),  # 왼쪽 외곽 보도
+    (741, 400),  # 오른쪽 외곽 보도
+    (741, 530),  # 오른쪽 외곽 보도 아래쪽
+    (450, 554),  # 하단 도로의 안쪽 보도
+)
 MAX_FRAME_TIME = 0.1
 # 한 주기의 비율과 RGB 밝기. 끝 색을 시작 색과 맞춰 반복 경계를 연결한다.
 DAY_NIGHT_CYCLE_SECONDS = 30.0

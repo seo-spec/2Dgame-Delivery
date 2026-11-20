@@ -32,7 +32,7 @@ def main():
 
     import pico2d
     import main as application
-    from game.config import settings
+    from game.config import settings, title_animation
     from game.core import game_framework
     from game.modes import title_mode
 
@@ -62,6 +62,8 @@ def main():
         previous_present = started
         load_seconds = started - before
         image_draw_count = 1 + len(getattr(title_mode, 'traffic', ()))
+        if title_mode.streetlamp is not None:
+            image_draw_count += len(title_animation.STREETLAMP_POSITIONS)
 
     def measured_update():
         nonlocal update_seconds
