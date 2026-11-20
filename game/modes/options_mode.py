@@ -22,6 +22,7 @@ from game.ui.cached_font import CachedFont
 font = None
 MENU_FONT_SIZE = 24
 MENU_ROW_HEIGHT = 56
+BGM_VOLUME = 80
 BACKGROUND_COLOR = (18, 31, 39)
 TEXT_COLOR = (245, 238, 224)
 SELECTED_COLOR = (255, 205, 104)
@@ -80,6 +81,8 @@ def draw():
     height = get_canvas_height()
     draw_rectangle(0, 0, width, height, *BACKGROUND_COLOR, filled=True)
     font.draw(round(width / 2 - 24), round(height * 0.7), '옵션', TEXT_COLOR)
+    font.draw(round(width / 2 - 120), round(height * 0.52),
+              f'BGM 음량  {BGM_VOLUME}%', TEXT_COLOR)
     left, bottom, right, top = return_bounds()
     center_y = round((bottom + top) / 2)
     draw_rectangle(left, bottom, right, top, *SELECTED_BACKGROUND, filled=True)
