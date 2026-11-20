@@ -47,4 +47,5 @@ def draw():
     height = get_canvas_height()
     draw_rectangle(0, 0, width, height, 25, 43, 52, filled=True)
     font.draw(round(width / 2 - 24), round(height * 0.7), '옵션', (245, 238, 224))
+    font.draw(round(width / 2 - 48), round(height * 0.4), '돌아가기', (245, 238, 224))
     update_canvas()
