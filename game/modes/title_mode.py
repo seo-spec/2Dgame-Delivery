@@ -36,10 +36,15 @@ menu_font = None
 selection = 0
 
 MENU_ITEMS = ('시작', '옵션', '오토바이(캐릭터) 변경', '종료')
-MENU_FONT_SIZE = 28
-MENU_SPACING = 76
+MENU_FONT_SIZE = 24
+MENU_SPACING = 68
+MENU_LEFT = 804
+MENU_RIGHT = 1216
+MENU_FIRST_Y = 432
+MENU_ROW_HEIGHT = 56
 TEXT_COLOR = (245, 238, 224)
 SELECTED_COLOR = (255, 205, 104)
+SELECTED_BACKGROUND = (25, 43, 52)
 
 
 def init():
@@ -130,12 +135,15 @@ def activate_selection():
 
 def menu_bounds(index):
     """그리기와 마우스 판정에 공통으로 사용하는 메뉴 영역."""
-    width = get_canvas_width()
-    height = get_canvas_height()
-    left = round(width * 0.64) - 18
-    right = round(width * 0.95)
-    y = round(height * 0.60) - index * MENU_SPACING
-    return left, y - 27, right, y + 27
+    scale_x = get_canvas_width() / title_animation.REFERENCE_WIDTH
+    scale_y = get_canvas_height() / title_animation.REFERENCE_HEIGHT
+    y = MENU_FIRST_Y - index * MENU_SPACING
+    return (
+        round(MENU_LEFT * scale_x),
+        round((y - MENU_ROW_HEIGHT / 2) * scale_y),
+        round(MENU_RIGHT * scale_x),
+        round((y + MENU_ROW_HEIGHT / 2) * scale_y),
+    )
 
 
 def update():
@@ -200,8 +208,10 @@ def draw():
         y = (bottom + top) / 2
         active = index == selection
         if active:
-            draw_rectangle(left, bottom, right, top, *SELECTED_COLOR)
-            menu_font.draw(left + 18, y, '>', SELECTED_COLOR)
+            draw_rectangle(left, bottom, right, top, *SELECTED_BACKGROUND, filled=True)
+            draw_rectangle(left, bottom, round(left + 4 * scale_x), top,
+                           *SELECTED_COLOR, filled=True)
+            menu_font.draw(round(left + 18 * scale_x), y, '>', SELECTED_COLOR)
         color = SELECTED_COLOR if active else TEXT_COLOR
-        menu_font.draw(left + 50, y, label, color)
+        menu_font.draw(round(left + 48 * scale_x), y, label, color)
     update_canvas()
