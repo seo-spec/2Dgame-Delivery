@@ -12,6 +12,7 @@ from pico2d import (
     SDLK_DOWN,
     SDLK_RETURN,
     SDL_SetTextureScaleMode,
+    SDL_SetTextureColorMod,
     clear_canvas,
     draw_rectangle,
     get_canvas_height,
@@ -151,6 +152,18 @@ def update():
     elapsed += min(game_framework.frame_time, title_animation.MAX_FRAME_TIME)
 
 
+def daylight_color():
+    """시간대 사이의 색을 부드럽게 보간한다. 메뉴에는 적용하지 않는다."""
+    phase = (elapsed % title_animation.DAY_NIGHT_CYCLE_SECONDS) / title_animation.DAY_NIGHT_CYCLE_SECONDS
+    keyframes = title_animation.DAY_NIGHT_COLORS
+    for (start, start_color), (end, end_color) in zip(keyframes, keyframes[1:]):
+        if phase <= end:
+            ratio = (phase - start) / (end - start)
+            blend = ratio * ratio * (3 - 2 * ratio)
+            return tuple(round(a + (b - a) * blend) for a, b in zip(start_color, end_color))
+    return keyframes[-1][1]
+
+
 def build_route(spec):
     """둥근 사각 경로의 선분과 길이를 초기화 시 한 번 계산한다."""
     left, top, right, bottom = spec['rect']
@@ -192,10 +205,13 @@ def draw():
     clear_canvas()
     width = get_canvas_width()
     height = get_canvas_height()
+    ambient_color = daylight_color()
+    SDL_SetTextureColorMod(background.texture, *ambient_color)
     background.draw(width / 2, height / 2, width, height)
     scale_x = width / title_animation.REFERENCE_WIDTH
     scale_y = height / title_animation.REFERENCE_HEIGHT
     for image, spec, route_index, phase in traffic:
+        SDL_SetTextureColorMod(image.texture, *ambient_color)
         x, y, angle = vehicle_pose(route_index, phase)
         sprite_width, sprite_height = spec['size']
         image.clip_composite_draw(

@@ -10,6 +10,17 @@ BACKGROUND_PATH = ASSET_DIR / 'title_city_v1.png'
 FALLBACK_PATH = ASSET_DIR / 'title_background_v1.png'
 MENU_SAFE_RECT = (780, 235, 1240, 570)
 MAX_FRAME_TIME = 0.1
+# 한 주기의 비율과 RGB 밝기. 끝 색을 시작 색과 맞춰 반복 경계를 연결한다.
+DAY_NIGHT_CYCLE_SECONDS = 90.0
+DAY_NIGHT_COLORS = (
+    (0.00, (255, 255, 255)),  # 낮
+    (0.12, (255, 255, 255)),
+    (0.34, (235, 180, 145)),  # 노을
+    (0.50, (75, 95, 145)),   # 밤
+    (0.68, (75, 95, 145)),
+    (0.85, (215, 180, 165)),  # 새벽
+    (1.00, (255, 255, 255)),
+)
 CORNER_RADIUS = 18
 ROUTES = (
     {'rect': (168, 170, 673, 581), 'clockwise': True, 'speed': 36.0},
