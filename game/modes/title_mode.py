@@ -39,22 +39,30 @@ traffic = []
 routes = []
 elapsed = 0.0
 menu_font = None
+title_font = None
 selection = 0
 
+GAME_TITLE = 'ALLEYWAY'
+GAME_SUBTITLE = 'QUICK DELIVERY'
+TITLE_FONT_SIZE = 48
+TITLE_X = 852
+TITLE_Y = 525
+SUBTITLE_Y = 480
 MENU_ITEMS = ('시작', '옵션', '오토바이(캐릭터) 변경', '종료')
 MENU_FONT_SIZE = 24
 MENU_SPACING = 68
 MENU_LEFT = 804
 MENU_RIGHT = 1216
-MENU_FIRST_Y = 432
+MENU_FIRST_Y = 400
 MENU_ROW_HEIGHT = 56
 TEXT_COLOR = (245, 238, 224)
 SELECTED_COLOR = (255, 205, 104)
 SELECTED_BACKGROUND = (25, 43, 52)
+TITLE_SHADOW_COLOR = (12, 23, 30)
 
 
 def init():
-    global background, streetlamp, light_glow, menu_font, selection, elapsed
+    global background, streetlamp, light_glow, menu_font, title_font, selection, elapsed
     selection = 0
     elapsed = 0.0
     streetlamp = None
@@ -84,13 +92,17 @@ def init():
     if streetlamp is not None:
         light_glow = create_light_glow()
     menu_font = CachedFont(FONT_PATH, MENU_FONT_SIZE)
+    title_font = CachedFont(FONT_PATH, TITLE_FONT_SIZE)
 
 
 def finish():
-    global background, streetlamp, light_glow, menu_font, elapsed
+    global background, streetlamp, light_glow, menu_font, title_font, elapsed
     if menu_font is not None:
         menu_font.close()
+    if title_font is not None:
+        title_font.close()
     menu_font = None
+    title_font = None
     background = None
     streetlamp = None
     light_glow = None
@@ -301,6 +313,13 @@ def draw():
                     round(height - y * scale_y),
                     glow_size * scale_x, glow_size * scale_y,
                 )
+    title_x = round(TITLE_X * scale_x)
+    title_y = round(TITLE_Y * scale_y)
+    subtitle_y = round(SUBTITLE_Y * scale_y)
+    title_font.draw(title_x + 2, title_y - 3, GAME_TITLE, TITLE_SHADOW_COLOR)
+    title_font.draw(title_x, title_y, GAME_TITLE, TEXT_COLOR)
+    menu_font.draw(title_x + 2, subtitle_y - 2, GAME_SUBTITLE, TITLE_SHADOW_COLOR)
+    menu_font.draw(title_x, subtitle_y, GAME_SUBTITLE, SELECTED_COLOR)
     # 오른쪽 창고 지붕의 어두운 영역에 메뉴를 배치한다.
     for index, label in enumerate(MENU_ITEMS):
         left, bottom, right, top = menu_bounds(index)
