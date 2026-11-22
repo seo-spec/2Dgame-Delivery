@@ -27,7 +27,8 @@ font = None
 screen_mode_error = ''
 MENU_FONT_SIZE = 24
 MENU_ROW_HEIGHT = 56
-BGM_VOLUME = 80
+DEFAULT_BGM_VOLUME = 80
+BGM_VOLUME = DEFAULT_BGM_VOLUME
 BACKGROUND_COLOR = (18, 31, 39)
 TEXT_COLOR = (245, 238, 224)
 SELECTED_COLOR = (255, 205, 104)
@@ -64,6 +65,10 @@ def handle_events():
             if left <= event.x <= right and bottom <= mouse_y <= top:
                 toggle_screen_mode()
                 return
+            left, bottom, right, top = reset_bounds()
+            if left <= event.x <= right and bottom <= mouse_y <= top:
+                restore_defaults()
+                return
             left, bottom, right, top = return_bounds()
             if left <= event.x <= right and bottom <= mouse_y <= top:
                 return_to_title()
@@ -94,6 +99,27 @@ def screen_mode_bounds():
     return center_x + 16, center_y - 20, center_x + 208, center_y + 20
 
 
+def restore_defaults():
+    global BGM_VOLUME, screen_mode_error
+    screen_mode_error = ''
+    if not set_fullscreen(False):
+        screen_mode_error = '기본 창 모드로 변경하지 못했습니다.'
+        return
+    BGM_VOLUME = DEFAULT_BGM_VOLUME
+    try:
+        save_screen_mode(False)
+    except OSError:
+        screen_mode_error = '기본값은 적용됐지만 설정을 저장하지 못했습니다.'
+
+
+def reset_bounds():
+    """기본값 복원 버튼 표시와 클릭 판정의 공통 영역."""
+    center_x = round(get_canvas_width() / 2)
+    center_y = round(get_canvas_height() * 0.4)
+    half_height = MENU_ROW_HEIGHT // 2
+    return center_x - 160, center_y - half_height, center_x + 160, center_y + half_height
+
+
 def change_bgm_volume(amount):
     global BGM_VOLUME
     BGM_VOLUME = max(0, min(100, BGM_VOLUME + amount))
@@ -115,7 +141,7 @@ def return_to_title():
 def return_bounds():
     """돌아가기 표시와 마우스 판정이 공유하는 영역."""
     center_x = round(get_canvas_width() / 2)
-    center_y = round(get_canvas_height() * 0.4)
+    center_y = round(get_canvas_height() * 0.3)
     half_height = MENU_ROW_HEIGHT // 2
     return center_x - 160, center_y - half_height, center_x + 160, center_y + half_height
 
@@ -144,6 +170,9 @@ def draw():
         draw_rectangle(left, bottom, right, top, *SELECTED_BACKGROUND, filled=True)
         font.draw(round((left + right) / 2 - 6), round((bottom + top) / 2),
                   label, SELECTED_COLOR)
+    left, bottom, right, top = reset_bounds()
+    draw_rectangle(left, bottom, right, top, *SELECTED_BACKGROUND, filled=True)
+    font.draw(left + 48, round((bottom + top) / 2), '기본값 복원', TEXT_COLOR)
     left, bottom, right, top = return_bounds()
     center_y = round((bottom + top) / 2)
     draw_rectangle(left, bottom, right, top, *SELECTED_BACKGROUND, filled=True)
@@ -151,5 +180,5 @@ def draw():
     font.draw(left + 18, center_y, '>', SELECTED_COLOR)
     font.draw(left + 48, center_y, '돌아가기', SELECTED_COLOR)
     if screen_mode_error:
-        font.draw(round(width / 2 - 216), round(height * 0.24), screen_mode_error, TEXT_COLOR)
+        font.draw(round(width / 2 - 216), round(height * 0.18), screen_mode_error, TEXT_COLOR)
     update_canvas()
