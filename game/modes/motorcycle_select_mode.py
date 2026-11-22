@@ -28,7 +28,11 @@ label_font = None
 preview_images = {}
 selection = 0
 PREVIEW_PATH = Path(__file__).resolve().parents[2] / 'assets/images/motorcycle/motorcycle_side_v1.png'
-MOTORCYCLES = (('기본 오토바이', PREVIEW_PATH),)
+# clip은 투명 여백을 제외한 왼쪽 아래 원점 영역이며 두 차종의 바닥을 맞춘다.
+MOTORCYCLES = (
+    ('기본 오토바이', PREVIEW_PATH, (82, 53, 1343, 862)),
+    ('블루 바이크', PREVIEW_PATH.with_name('motorcycle_blue_side_v1.png'), (79, 35, 1369, 887)),
+)
 BACKGROUND_COLOR = (18, 31, 39)
 PANEL_COLOR = (25, 43, 52)
 CARD_COLOR = (32, 53, 65)
@@ -42,7 +46,7 @@ def init():
     font = CachedFont(FONT_PATH, 24)
     label_font = CachedFont(FONT_PATH, 18)
     preview_images.clear()
-    for _, image_path in MOTORCYCLES:
+    for _, image_path, _ in MOTORCYCLES:
         if image_path not in preview_images:
             preview_images[image_path] = load_image(str(image_path))
     selection = 0
@@ -102,11 +106,13 @@ def card_bounds(index):
     return left, 48, left + 168, 180
 
 
-def draw_motorcycle(image_path, x, y, max_width, max_height):
-    """사이드 뷰 이미지의 비율을 유지해 미리보기 영역 안에 맞춘다."""
+def draw_motorcycle(image_path, clip, x, bottom, max_width, max_height):
+    """차종별 투명 여백을 제외하고 같은 바닥선과 표시 영역에 맞춘다."""
     image = preview_images[image_path]
-    scale = min(max_width / image.w, max_height / image.h)
-    image.draw(x, y, image.w * scale, image.h * scale)
+    clip_width, clip_height = clip[2:]
+    scale = min(max_width / clip_width, max_height / clip_height)
+    draw_width, draw_height = clip_width * scale, clip_height * scale
+    image.clip_draw(*clip, x, bottom + draw_height / 2, draw_width, draw_height)
 
 
 def update():
@@ -130,20 +136,21 @@ def draw():
     draw_rectangle(32, preview_bottom, width - 32, preview_top, *PANEL_COLOR, filled=True)
     draw_rectangle(64, preview_bottom + 36, round(width * 0.64),
                    preview_bottom + 40, *MUTED_COLOR, filled=True)
-    name, image_path = MOTORCYCLES[selection]
-    draw_motorcycle(image_path, width * 0.36, preview_y,
+    name, image_path, clip = MOTORCYCLES[selection]
+    draw_motorcycle(image_path, clip, width * 0.36, preview_bottom + 40,
                     width * 0.46, preview_top - preview_bottom - 64)
     font.draw(round(width * 0.71), round(preview_y + 24), name, TEXT_COLOR)
-    label_font.draw(round(width * 0.71), round(preview_y - 22),
-                    '현재 사용 중', SELECTED_COLOR)
+    if image_path == PREVIEW_PATH:
+        label_font.draw(round(width * 0.71), round(preview_y - 22),
+                        '현재 사용 중', SELECTED_COLOR)
 
     draw_rectangle(32, 24, width - 32, 226, *PANEL_COLOR, filled=True)
     label_font.draw(56, 204, '오토바이 목록', MUTED_COLOR)
-    for index, (name, image_path) in enumerate(MOTORCYCLES):
+    for index, (name, image_path, clip) in enumerate(MOTORCYCLES):
         left, bottom, right, top = card_bounds(index)
         draw_rectangle(left, bottom, right, top, *CARD_COLOR, filled=True)
         color = SELECTED_COLOR if index == selection else MUTED_COLOR
         draw_rectangle(left, bottom, right, top, *color)
-        draw_motorcycle(image_path, (left + right) / 2, bottom + 80, 144, 76)
+        draw_motorcycle(image_path, clip, (left + right) / 2, bottom + 46, 144, 76)
         label_font.draw(left + 16, bottom + 24, name, color)
     update_canvas()
