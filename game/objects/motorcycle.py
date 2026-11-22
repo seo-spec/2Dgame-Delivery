@@ -10,11 +10,10 @@ from pico2d import (
 from game.core import game_framework
 from game.core import debug_view
 from game.ui.boost_effect import BoostEffect
+from game.config.motorcycle_catalog import get_selected_motorcycle
 from game.config.motorcycle_sprite import (
-    SPRITE_PATH, SPRITE_COLUMNS, SPRITE_DIRECTION_COUNT,
-    SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, SPRITE_DRAW_SIZE,
-    SPRITE_CENTER_OFFSET, SPRITE_REFERENCE_RADIUS, SPRITE_FRAME_METRICS,
-    SPRITE_RENDER_MODE, SPRITE_BASE_FRAME,
+    SPRITE_FRAME_WIDTH, SPRITE_DRAW_SIZE,
+    SPRITE_CENTER_OFFSET, SPRITE_REFERENCE_RADIUS,
 )
 # 초기 주행 확인용 수치. 속도는 픽셀/초, 가감속은 픽셀/초².
 FORWARD_MAX_SPEED = 210.0
@@ -37,7 +36,10 @@ COLLISION_CIRCLE_SEGMENTS = 32
 class Motorcycle:
     def __init__(self, x, y, camera):
         self.camera = camera
-        self.sprite_sheet = load_image(str(SPRITE_PATH))
+        motorcycle = get_selected_motorcycle()
+        self.motorcycle_id = motorcycle['id']
+        self.sprite_config = motorcycle['render']
+        self.sprite_sheet = load_image(str(self.sprite_config['path']))
         self.x = x
         self.y = y
         self.speed = 0.0
@@ -116,31 +118,33 @@ class Motorcycle:
         self.speed += direction * acceleration * dt
 
     def draw(self):
-        step = tau / SPRITE_DIRECTION_COUNT
-        if SPRITE_RENDER_MODE == 'continuous':
-            index = SPRITE_BASE_FRAME
+        config = self.sprite_config
+        step = tau / config['direction_count']
+        if config['render_mode'] == 'continuous':
+            index = config['base_frame']
             display_angle = self.angle
         else:
-            index = int((self.angle % tau) / step + 0.5) % SPRITE_DIRECTION_COUNT
+            index = int((self.angle % tau) / step + 0.5) % config['direction_count']
             display_angle = index * step
-        row, column = divmod(index, SPRITE_COLUMNS)
-        center_x, center_y, source_degrees, source_radius = SPRITE_FRAME_METRICS[index]
-        size = SPRITE_DRAW_SIZE * SPRITE_REFERENCE_RADIUS / source_radius
-        scale = size / SPRITE_FRAME_WIDTH
+        row, column = divmod(index, config['columns'])
+        frame_width, frame_height = config['frame_size']
+        origin_x, origin_y = config['origin']
+        center_x, center_y, source_degrees, source_radius = config['metrics'][index]
+        scale = SPRITE_DRAW_SIZE * SPRITE_REFERENCE_RADIUS / SPRITE_FRAME_WIDTH / source_radius
         # 같은 그림과 중심을 유지하면 방향 전환 시 형태·크기가 바뀌지 않는다.
         # 후진도 차체 각도를 그대로 쓰며 주행 계산과는 독립적으로 출력한다.
         correction = display_angle - radians(source_degrees)
-        local_x = (center_x - SPRITE_FRAME_WIDTH / 2) * scale
-        local_y = (SPRITE_FRAME_HEIGHT / 2 - center_y) * scale
+        local_x = (center_x - frame_width / 2) * scale
+        local_y = (frame_height / 2 - center_y) * scale
         screen_x, screen_y = self.camera.world_to_screen(self.x, self.y)
         draw_x = screen_x + SPRITE_CENTER_OFFSET[0] - local_x * cos(correction) + local_y * sin(correction)
         draw_y = screen_y + SPRITE_CENTER_OFFSET[1] - local_x * sin(correction) - local_y * cos(correction)
         self.boost_effect.draw(self, display_angle)
         self.sprite_sheet.clip_composite_draw(
-            column * SPRITE_FRAME_WIDTH,
-            self.sprite_sheet.h - (row + 1) * SPRITE_FRAME_HEIGHT,
-            SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, correction, '',
-            draw_x, draw_y, size, size,
+            origin_x + column * frame_width,
+            self.sprite_sheet.h - origin_y - (row + 1) * frame_height,
+            frame_width, frame_height, correction, '',
+            draw_x, draw_y, frame_width * scale, frame_height * scale,
         )
         if debug_view.enabled:
             self._draw_collision_circle()

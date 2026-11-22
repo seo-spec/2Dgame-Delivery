@@ -1,7 +1,5 @@
 """큰 오토바이 미리보기와 하단 선택 카드로 구성한 차고 화면."""
 
-from pathlib import Path
-
 from pico2d import (
     SDL_KEYDOWN,
     SDL_MOUSEBUTTONDOWN,
@@ -9,6 +7,7 @@ from pico2d import (
     SDLK_ESCAPE,
     SDLK_LEFT,
     SDLK_RIGHT,
+    SDLK_RETURN,
     clear_canvas,
     draw_rectangle,
     get_canvas_height,
@@ -19,6 +18,7 @@ from pico2d import (
 )
 
 from game.config.fonts import FONT_PATH
+from game.config import motorcycle_catalog
 from game.core import game_framework
 from game.ui.cached_font import CachedFont
 
@@ -27,12 +27,8 @@ font = None
 label_font = None
 preview_images = {}
 selection = 0
-PREVIEW_PATH = Path(__file__).resolve().parents[2] / 'assets/images/motorcycle/motorcycle_side_v1.png'
-# clip은 투명 여백을 제외한 왼쪽 아래 원점 영역이며 두 차종의 바닥을 맞춘다.
-MOTORCYCLES = (
-    ('기본 오토바이', PREVIEW_PATH, (82, 53, 1343, 862)),
-    ('블루 바이크', PREVIEW_PATH.with_name('motorcycle_blue_side_v1.png'), (79, 35, 1369, 887)),
-)
+MOTORCYCLES = tuple(motorcycle_catalog.MOTORCYCLES.values())
+PREVIEW_BOTTOM = 250
 BACKGROUND_COLOR = (18, 31, 39)
 PANEL_COLOR = (25, 43, 52)
 CARD_COLOR = (32, 53, 65)
@@ -46,10 +42,13 @@ def init():
     font = CachedFont(FONT_PATH, 24)
     label_font = CachedFont(FONT_PATH, 18)
     preview_images.clear()
-    for _, image_path, _ in MOTORCYCLES:
+    for motorcycle in MOTORCYCLES:
+        image_path = motorcycle['preview_path']
         if image_path not in preview_images:
             preview_images[image_path] = load_image(str(image_path))
-    selection = 0
+    current_id = motorcycle_catalog.get_selected_motorcycle()['id']
+    selection = next(index for index, motorcycle in enumerate(MOTORCYCLES)
+                     if motorcycle['id'] == current_id)
 
 
 def finish():
@@ -77,17 +76,33 @@ def handle_events():
                 selection = (selection - 1) % len(MOTORCYCLES)
             elif event.key == SDLK_RIGHT:
                 selection = (selection + 1) % len(MOTORCYCLES)
+            elif event.key == SDLK_RETURN:
+                use_selected_motorcycle()
         if event.type == SDL_MOUSEBUTTONDOWN and event.button == 1:
             mouse_y = get_canvas_height() - 1 - event.y
             left, bottom, right, top = back_bounds()
             if left <= event.x <= right and bottom <= mouse_y <= top:
                 return_to_title()
                 return
+            left, bottom, right, top = use_bounds()
+            if left <= event.x <= right and bottom <= mouse_y <= top:
+                use_selected_motorcycle()
+                return
             for index in range(len(MOTORCYCLES)):
                 left, bottom, right, top = card_bounds(index)
                 if left <= event.x <= right and bottom <= mouse_y <= top:
                     selection = index
                     break
+
+
+def use_selected_motorcycle():
+    motorcycle_catalog.selected_motorcycle_id = MOTORCYCLES[selection]['id']
+
+
+def use_bounds():
+    center_x = round(get_canvas_width() * 0.36)
+    center_y = PREVIEW_BOTTOM + 36
+    return center_x - 88, center_y - 24, center_x + 88, center_y + 24
 
 
 def return_to_title():
@@ -131,26 +146,34 @@ def draw():
     font.draw(left + 18, round((bottom + top) / 2), '< 돌아가기', TEXT_COLOR)
 
     # 위쪽은 큰 미리보기, 아래쪽은 보유 오토바이 카드 목록이다.
-    preview_bottom, preview_top = 250, height - 112
+    preview_bottom, preview_top = PREVIEW_BOTTOM, height - 112
     preview_y = (preview_bottom + preview_top) / 2
     draw_rectangle(32, preview_bottom, width - 32, preview_top, *PANEL_COLOR, filled=True)
-    draw_rectangle(64, preview_bottom + 36, round(width * 0.64),
-                   preview_bottom + 40, *MUTED_COLOR, filled=True)
-    name, image_path, clip = MOTORCYCLES[selection]
-    draw_motorcycle(image_path, clip, width * 0.36, preview_bottom + 40,
-                    width * 0.46, preview_top - preview_bottom - 64)
-    font.draw(round(width * 0.71), round(preview_y + 24), name, TEXT_COLOR)
-    if image_path == PREVIEW_PATH:
+    draw_rectangle(64, preview_bottom + 76, round(width * 0.64),
+                   preview_bottom + 80, *MUTED_COLOR, filled=True)
+    motorcycle = MOTORCYCLES[selection]
+    draw_motorcycle(motorcycle['preview_path'], motorcycle['preview_clip'],
+                    width * 0.36, preview_bottom + 80,
+                    width * 0.46, preview_top - preview_bottom - 104)
+    font.draw(round(width * 0.71), round(preview_y + 24), motorcycle['name'], TEXT_COLOR)
+    if motorcycle['id'] == motorcycle_catalog.get_selected_motorcycle()['id']:
         label_font.draw(round(width * 0.71), round(preview_y - 22),
                         '현재 사용 중', SELECTED_COLOR)
+    else:
+        left, bottom, right, top = use_bounds()
+        draw_rectangle(left, bottom, right, top, *CARD_COLOR, filled=True)
+        draw_rectangle(left, bottom, right, top, *SELECTED_COLOR)
+        font.draw(round((left + right) / 2 - 48), round((bottom + top) / 2),
+                  '사용하기', SELECTED_COLOR)
 
     draw_rectangle(32, 24, width - 32, 226, *PANEL_COLOR, filled=True)
     label_font.draw(56, 204, '오토바이 목록', MUTED_COLOR)
-    for index, (name, image_path, clip) in enumerate(MOTORCYCLES):
+    for index, motorcycle in enumerate(MOTORCYCLES):
         left, bottom, right, top = card_bounds(index)
         draw_rectangle(left, bottom, right, top, *CARD_COLOR, filled=True)
         color = SELECTED_COLOR if index == selection else MUTED_COLOR
         draw_rectangle(left, bottom, right, top, *color)
-        draw_motorcycle(image_path, clip, (left + right) / 2, bottom + 46, 144, 76)
-        label_font.draw(left + 16, bottom + 24, name, color)
+        draw_motorcycle(motorcycle['preview_path'], motorcycle['preview_clip'],
+                        (left + right) / 2, bottom + 46, 144, 76)
+        label_font.draw(left + 16, bottom + 24, motorcycle['name'], color)
     update_canvas()
