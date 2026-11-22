@@ -160,10 +160,14 @@ def activate_selection():
 
         game_framework.change_mode(options_mode)
         return True
+    if selection == 2:
+        from game.modes import motorcycle_select_mode
+
+        game_framework.change_mode(motorcycle_select_mode)
+        return True
     if selection == 3:
         game_framework.quit()
         return True
-    # 오토바이(캐릭터) 변경은 추후 연결한다.
     return False
 
 
