@@ -8,6 +8,15 @@ from tempfile import NamedTemporaryFile
 SETTINGS_PATH = Path(__file__).resolve().parents[2] / 'data/user_settings.json'
 
 
+def load_screen_mode():
+    """유효한 JSON 불리언 true가 저장된 경우에만 전체화면을 복원한다."""
+    try:
+        saved = json.loads(SETTINGS_PATH.read_text(encoding='utf-8-sig'))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return False
+    return isinstance(saved, dict) and saved.get('fullscreen') is True
+
+
 def save_screen_mode(fullscreen):
     """임시 파일을 완성한 뒤 교체해 저장 도중 기존 파일이 깨지지 않게 한다."""
     SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)

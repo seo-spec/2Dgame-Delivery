@@ -1,7 +1,5 @@
 """갈무리 폰트와 타이틀 메뉴 스타일을 사용하는 옵션 화면."""
 
-from importlib import import_module
-
 from pico2d import (
     SDL_KEYDOWN,
     SDL_MOUSEBUTTONDOWN,
@@ -21,11 +19,11 @@ from pico2d import (
 from game.config.fonts import FONT_PATH
 from game.config.user_settings import save_screen_mode
 from game.core import game_framework
+from game.core.display import is_fullscreen, set_fullscreen
 from game.ui.cached_font import CachedFont
 
 
 font = None
-_pico = import_module('pico2d.pico2d')
 screen_mode_error = ''
 MENU_FONT_SIZE = 24
 MENU_ROW_HEIGHT = 56
@@ -77,22 +75,10 @@ def handle_events():
                     break
 
 
-def is_fullscreen():
-    return bool(_pico.SDL_GetWindowFlags(_pico.window) & _pico.SDL_WINDOW_FULLSCREEN)
-
-
 def toggle_screen_mode():
     global screen_mode_error
     screen_mode_error = ''
-    # SDL의 논리 좌표 설정은 출력 비율과 마우스 이벤트 좌표를 함께 맞춘다.
-    result = _pico.SDL_RenderSetLogicalSize(
-        _pico.renderer, get_canvas_width(), get_canvas_height(),
-    )
-    if result != 0:
-        screen_mode_error = '화면 모드를 변경하지 못했습니다.'
-        return
-    flags = 0 if is_fullscreen() else _pico.SDL_WINDOW_FULLSCREEN_DESKTOP
-    if _pico.SDL_SetWindowFullscreen(_pico.window, flags) != 0:
+    if not set_fullscreen(not is_fullscreen()):
         screen_mode_error = '화면 모드를 변경하지 못했습니다.'
         return
     try:
