@@ -19,6 +19,7 @@ from pico2d import (
 )
 
 from game.config.fonts import FONT_PATH
+from game.config.user_settings import save_screen_mode
 from game.core import game_framework
 from game.ui.cached_font import CachedFont
 
@@ -93,6 +94,11 @@ def toggle_screen_mode():
     flags = 0 if is_fullscreen() else _pico.SDL_WINDOW_FULLSCREEN_DESKTOP
     if _pico.SDL_SetWindowFullscreen(_pico.window, flags) != 0:
         screen_mode_error = '화면 모드를 변경하지 못했습니다.'
+        return
+    try:
+        save_screen_mode(is_fullscreen())
+    except OSError:
+        screen_mode_error = '화면은 변경됐지만 설정을 저장하지 못했습니다.'
 
 
 def screen_mode_bounds():

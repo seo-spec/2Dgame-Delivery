@@ -1,2 +1,6 @@
 # 로컬 빌드 도구와 발표자료 검토용 임시 파일
 /.tmp/
+
+# 실행 중 생성되는 개인 화면 설정
+/data/user_settings.json
+/data/.user_settings-*.tmp
