@@ -45,7 +45,16 @@ MOTORCYCLES = {
         'name': '레드 스쿠터',
         'preview_path': ASSET_DIR / 'motorcycle_red_side_v1.png',
         'preview_clip': (93, 52, 1328, 864),
-        'render': None,
+        'render': {
+            'path': ASSET_DIR / 'motorcycle_red_top_v1.png',
+            'origin': (471, 85),
+            'frame_size': (1150, 606),
+            'columns': 1,
+            'direction_count': 1,
+            'render_mode': 'continuous',
+            'base_frame': 0,
+            'metrics': ((575.0, 303.0, 0.0, 593.6),),
+        },
     },
 }
 
