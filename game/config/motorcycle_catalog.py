@@ -51,6 +51,10 @@ MOTORCYCLES = {
     'red': {
         'id': 'red',
         'name': '레드 스쿠터',
+        'stats': {
+            'max_speed': 190.0,  # 안정형 초기값, 픽셀/초
+            'cargo_shake_multiplier': 0.8,  # 기본형보다 흔들림 증가량 20% 낮음
+        },
         'preview_path': ASSET_DIR / 'motorcycle_red_side_v1.png',
         'preview_clip': (93, 52, 1328, 864),
         'render': {
