@@ -96,7 +96,10 @@ def handle_events():
 
 
 def use_selected_motorcycle():
-    motorcycle_catalog.selected_motorcycle_id = MOTORCYCLES[selection]['id']
+    motorcycle = MOTORCYCLES[selection]
+    if motorcycle['render'] is None:
+        return
+    motorcycle_catalog.selected_motorcycle_id = motorcycle['id']
 
 
 def use_bounds():
@@ -159,12 +162,15 @@ def draw():
     if motorcycle['id'] == motorcycle_catalog.get_selected_motorcycle()['id']:
         label_font.draw(round(width * 0.71), round(preview_y - 22),
                         '현재 사용 중', SELECTED_COLOR)
-    else:
+    elif motorcycle['render'] is not None:
         left, bottom, right, top = use_bounds()
         draw_rectangle(left, bottom, right, top, *CARD_COLOR, filled=True)
         draw_rectangle(left, bottom, right, top, *SELECTED_COLOR)
         font.draw(round((left + right) / 2 - 48), round((bottom + top) / 2),
                   '사용하기', SELECTED_COLOR)
+    else:
+        label_font.draw(round(width * 0.71), round(preview_y - 22),
+                        '미리보기', MUTED_COLOR)
 
     draw_rectangle(32, 24, width - 32, 226, *PANEL_COLOR, filled=True)
     label_font.draw(56, 204, '오토바이 목록', MUTED_COLOR)

@@ -40,8 +40,18 @@ MOTORCYCLES = {
             'metrics': ((722.5, 327.5, 0.0, 723.2),),
         },
     },
+    'red': {
+        'id': 'red',
+        'name': '레드 스쿠터',
+        'preview_path': ASSET_DIR / 'motorcycle_red_side_v1.png',
+        'preview_clip': (93, 52, 1328, 864),
+        'render': None,
+    },
 }
 
 
 def get_selected_motorcycle():
-    return MOTORCYCLES.get(selected_motorcycle_id, MOTORCYCLES[DEFAULT_MOTORCYCLE_ID])
+    motorcycle = MOTORCYCLES.get(selected_motorcycle_id, MOTORCYCLES[DEFAULT_MOTORCYCLE_ID])
+    if motorcycle['render'] is None:
+        return MOTORCYCLES[DEFAULT_MOTORCYCLE_ID]
+    return motorcycle
