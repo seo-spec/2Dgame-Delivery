@@ -411,6 +411,7 @@ def _simulate_step(step_dt, delivery_input, delivery_time, collision_applied):
             cargo.update_shake(
                 motorcycle.speed, motorcycle.turn_input, game_framework.frame_time,
                 is_decelerating=is_decelerating, collided=collided,
+                shake_increase_multiplier=motorcycle.cargo_shake_multiplier,
             )
             cargo.apply_shake_damage(game_framework.frame_time)
     # 운석 밀어내기 이후 실제 주행 경로만 판정하고 벌금까지 반영해 배송·목표를 정산한다.

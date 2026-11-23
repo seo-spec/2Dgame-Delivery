@@ -38,6 +38,9 @@ class Motorcycle:
         self.camera = camera
         motorcycle = get_selected_motorcycle()
         self.motorcycle_id = motorcycle['id']
+        stats = motorcycle.get('stats', {})
+        self.max_speed = stats.get('max_speed', FORWARD_MAX_SPEED)
+        self.cargo_shake_multiplier = stats.get('cargo_shake_multiplier', 1.0)
         self.sprite_config = motorcycle['render']
         self.sprite_sheet = load_image(str(self.sprite_config['path']))
         self.x = x
@@ -77,9 +80,9 @@ class Motorcycle:
             self.boost_multiplier = 1.0
 
         if forward_pressed and not reverse_pressed:
-            if not boost_active and self.speed > FORWARD_MAX_SPEED:
+            if not boost_active and self.speed > self.max_speed:
                 # 부스트 해제 후 W를 유지해도 기본 최고속도까지 점차 감속한다.
-                self.speed = max(FORWARD_MAX_SPEED, self.speed - NATURAL_DECEL * dt)
+                self.speed = max(self.max_speed, self.speed - NATURAL_DECEL * dt)
             else:
                 self._accelerate(1, FORWARD_ACCEL * self.boost_multiplier, dt)
         elif reverse_pressed and not forward_pressed:
@@ -90,10 +93,10 @@ class Motorcycle:
             self.speed = min(0.0, self.speed + NATURAL_DECEL * dt)
 
         if boost_active:
-            forward_limit = FORWARD_MAX_SPEED * BOOST_SPEED_MULTIPLIER
+            forward_limit = self.max_speed * BOOST_SPEED_MULTIPLIER
         else:
             # 이미 얻은 부스트 속도는 입력에 따른 감속으로 줄이고 순간 절단하지 않는다.
-            forward_limit = max(FORWARD_MAX_SPEED, previous_speed)
+            forward_limit = max(self.max_speed, previous_speed)
         self.speed = max(-REVERSE_MAX_SPEED, min(forward_limit, self.speed))
         self.boost_effect.update(dt, boost_active)
         self.turn_input = int(SDLK_a in self.pressed_keys) - int(SDLK_d in self.pressed_keys)

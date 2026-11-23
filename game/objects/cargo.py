@@ -28,10 +28,12 @@ class Cargo:
         self.damage_threshold = damage_threshold
         self.delivered = False
 
-    def update_shake(self, speed, turn_input, dt, is_decelerating=False, collided=False):
+    def update_shake(self, speed, turn_input, dt, is_decelerating=False, collided=False,
+                     shake_increase_multiplier=1.0):
         if self.delivered or self.current_durability <= 0.0:
             return
-        increase = abs(speed) * abs(turn_input) * self.sensitivity * SHAKE_INCREASE_FACTOR * dt
+        increase = (abs(speed) * abs(turn_input) * self.sensitivity
+                    * SHAKE_INCREASE_FACTOR * shake_increase_multiplier * dt)
         recovery = 0.0
         if not collided and (turn_input == 0 or is_decelerating):
             # 직진과 감속 조건을 모두 만족해도 회복은 한 번만 적용한다.
