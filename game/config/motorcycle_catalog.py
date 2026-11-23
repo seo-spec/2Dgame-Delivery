@@ -31,6 +31,10 @@ MOTORCYCLES = {
     'blue': {
         'id': 'blue',
         'name': '블루 바이크',
+        'stats': {
+            'max_speed': 240.0,  # 속도형 초기값, 픽셀/초
+            'cargo_shake_multiplier': 1.2,  # 기본형보다 흔들림 증가량 20% 높음
+        },
         'preview_path': ASSET_DIR / 'motorcycle_blue_side_v1.png',
         'preview_clip': (79, 35, 1369, 887),
         'render': {
