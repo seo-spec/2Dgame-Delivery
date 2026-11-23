@@ -35,6 +35,13 @@ CARD_COLOR = (32, 53, 65)
 TEXT_COLOR = (245, 238, 224)
 MUTED_COLOR = (157, 179, 188)
 SELECTED_COLOR = (255, 205, 104)
+STAT_PANEL_COLOR = (14, 26, 35)
+STAT_BORDER_COLOR = (83, 134, 155)
+STAT_TRACK_COLOR = (38, 61, 75)
+STAT_FILL_COLOR = (96, 183, 220)
+# 비교용 막대의 공통 상한. 안정성 100%는 흔들림 배율 1.0인 기본형이다.
+STAT_SPEED_MAX = 300.0
+STAT_STABILITY_MAX = 200.0
 
 
 def init():
@@ -137,6 +144,31 @@ def update():
     pass
 
 
+def draw_stat_row(label, value, ratio, left, right, y):
+    label_font.draw(left, y, label, TEXT_COLOR)
+    label_font.draw(right - 96, y, value, SELECTED_COLOR)
+    bar_bottom, bar_top = y - 26, y - 16
+    draw_rectangle(left, bar_bottom, right, bar_top, *STAT_TRACK_COLOR, filled=True)
+    fill_width = round((right - left) * max(0.0, min(1.0, ratio)))
+    if fill_width > 0:
+        draw_rectangle(left, bar_bottom, left + fill_width, bar_top,
+                       *STAT_FILL_COLOR, filled=True)
+
+
+def draw_stats_panel(stats, width, preview_y):
+    left, right = round(width * 0.69), width - 48
+    top = round(preview_y - 48)
+    bottom = PREVIEW_BOTTOM + 16
+    draw_rectangle(left, bottom, right, top, *STAT_PANEL_COLOR, filled=True)
+    draw_rectangle(left, bottom, right, top, *STAT_BORDER_COLOR)
+    speed = stats['max_speed']
+    stability = 100.0 / stats['cargo_shake_multiplier']
+    draw_stat_row('최고속도', f'{speed:.0f} px/s', speed / STAT_SPEED_MAX,
+                  left + 16, right - 16, top - 18)
+    draw_stat_row('화물 안정성', f'{stability:.0f}%', stability / STAT_STABILITY_MAX,
+                  left + 16, right - 16, top - 76)
+
+
 def draw():
     clear_canvas()
     width = get_canvas_width()
@@ -171,6 +203,10 @@ def draw():
     else:
         label_font.draw(round(width * 0.71), round(preview_y - 22),
                         '미리보기', MUTED_COLOR)
+
+    stats = motorcycle.get('stats')
+    if stats is not None:
+        draw_stats_panel(stats, width, preview_y)
 
     draw_rectangle(32, 24, width - 32, 226, *PANEL_COLOR, filled=True)
     label_font.draw(56, 204, '오토바이 목록', MUTED_COLOR)

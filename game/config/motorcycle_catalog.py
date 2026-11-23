@@ -11,6 +11,10 @@ MOTORCYCLES = {
     'standard': {
         'id': 'standard',
         'name': '기본 오토바이',
+        'stats': {
+            'max_speed': 210.0,  # 기본 전진 최고속도, 픽셀/초
+            'cargo_shake_multiplier': 1.0,  # 기존 화물 흔들림 계산을 기준으로 한 배율
+        },
         'preview_path': ASSET_DIR / 'motorcycle_side_v1.png',
         'preview_clip': (82, 53, 1343, 862),
         'render': {
