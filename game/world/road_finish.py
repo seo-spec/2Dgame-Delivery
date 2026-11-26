@@ -4,12 +4,13 @@ import ctypes
 from importlib import import_module
 from math import sin
 
-from game.world.road_geometry import MARKING_COLOR, SIDEWALK_COLOR
+from game.world.road_geometry import GRASS_COLOR, MARKING_COLOR, SIDEWALK_COLOR
 
 
 _pico = import_module('pico2d.pico2d')
 ASPHALT_TINT = (65, 72, 75)
-GRASS_TINT = (130, 150, 91)
+# 개선 구역만 밝은 사각형으로 보이지 않도록 기존 월드 잔디와 같은 색 계열을 쓴다.
+GRASS_TINT = tuple(channel + offset for channel, offset in zip(GRASS_COLOR, (6, 5, 1)))
 PAINT_TINT = (211, 207, 190)
 
 

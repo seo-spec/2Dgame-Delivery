@@ -39,11 +39,20 @@ def _soft_image(color, lobed=False):
 
 
 class DepotAmbience:
-    def __init__(self, decoration):
+    def __init__(self, decoration, layout='original'):
         self.camera = decoration.camera
         self.x, self.y = decoration.x, decoration.y
         self.width, self.height = decoration.width, decoration.height
         self.elapsed = 0.0
+        # 이미지 전체(투명 여백 포함)의 중심 기준 비율. 원본 폴백도 원래 부착점을 쓴다.
+        if layout == 'pixel':
+            self.light_offset = (0.0, 0.375)
+            self.light_size = (0.21, 0.055)
+            self.vent_offset = (0.296, 0.166)
+        else:
+            self.light_offset = (0.0, 0.32)
+            self.light_size = (0.22, 0.065)
+            self.vent_offset = (0.282, 0.151)
         self.light = _soft_image((255, 216, 143))
         self.steam = _soft_image((207, 214, 209), lobed=True)
 
@@ -63,8 +72,9 @@ class DepotAmbience:
                 or y - self.height / 2 >= camera.viewport_bottom + camera.viewport_height):
             return
         self.light.opacify(0.13 + 0.06 * sin(self.elapsed * 2 * pi / 6))
-        self.light.draw(x, y + self.height * 0.32,
-                        self.width * 0.22, self.height * 0.065)
+        self.light.draw(x + self.width * self.light_offset[0],
+                        y + self.height * self.light_offset[1],
+                        self.width * self.light_size[0], self.height * self.light_size[1])
         # 기존 이미지의 우측 지붕 환기구 중심. 고정된 세 입자로 생성/폐기 없이 반복한다.
         for phase in (0.0, 1 / 3, 2 / 3):
             progress = (self.elapsed / 4 + phase) % 1.0
@@ -73,5 +83,5 @@ class DepotAmbience:
             drift = self.width * (-0.045 * progress + 0.008 * sin(2 * pi * progress))
             rise = self.height * 0.07 * progress
             size = self.width * (0.035 + 0.055 * progress)
-            self.steam.draw(x + self.width * 0.282 + drift,
-                            y + self.height * 0.151 + rise, size, size * 0.65)
+            self.steam.draw(x + self.width * self.vent_offset[0] + drift,
+                            y + self.height * self.vent_offset[1] + rise, size, size * 0.65)

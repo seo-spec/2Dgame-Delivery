@@ -133,7 +133,7 @@ class MapDecoration:
     """건물·도시 소품·신호등의 이미지 표시만 담당하는 월드 객체."""
 
     def __init__(self, camera, image, position, size, collision=None, object_id=None,
-                 is_building=False, tree_sway=None):
+                 is_building=False, tree_sway=None, depot_layout='original'):
         self.camera = camera
         self.image = image
         self.x, self.y = position
@@ -146,7 +146,7 @@ class MapDecoration:
         self.ambience = None
         if object_id == 'delivery_depot':
             try:
-                self.ambience = DepotAmbience(self)
+                self.ambience = DepotAmbience(self, depot_layout)
             except OSError as error:
                 print(f'[배달소 환경 효과] {error}')
 
@@ -203,10 +203,21 @@ def create_decorations(camera, config, roads):
         'planter': 'planter.png',
     }
     images = {}
+    depot_layout = 'original'
 
     def add_decoration(item, asset, is_building=False):
+        nonlocal depot_layout
         if asset not in images:
-            images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
+            if asset == 'delivery_depot':
+                try:
+                    images[asset] = load_image(str(
+                        ROOT / 'assets/images/building_delivery_depot_pixel_v1.png'))
+                    depot_layout = 'pixel'
+                except OSError as error:
+                    print(f'[배달소 이미지] 기존 이미지 사용: {error}')
+                    images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
+            else:
+                images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
         tree_sway = None
         if asset == 'tree' and 'sway' in item:
             try:
@@ -218,7 +229,8 @@ def create_decorations(camera, config, roads):
                 print(f'[나무 흔들림] 기존 이미지 사용: {error}')
         decorations.append(MapDecoration(camera, images[asset], item['position'], item['size'],
                                          collision=item.get('collision'), object_id=item.get('id'),
-                                         is_building=is_building, tree_sway=tree_sway))
+                                         is_building=is_building, tree_sway=tree_sway,
+                                         depot_layout=depot_layout))
 
     for item in config['buildings']:
         add_decoration(item, item.get('asset', 'building'), is_building=True)
