@@ -12,6 +12,7 @@ from game.world.road_geometry import ASPHALT_COLOR, GRASS_COLOR, SIDEWALK_COLOR,
 from game.world.road_surface import RoadSurface
 from game.world.road_finish import RoadFinish
 from game.world.depot_ambience import DepotAmbience
+from game.world.tree_sway import TreeSway
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -132,7 +133,7 @@ class MapDecoration:
     """건물·도시 소품·신호등의 이미지 표시만 담당하는 월드 객체."""
 
     def __init__(self, camera, image, position, size, collision=None, object_id=None,
-                 is_building=False):
+                 is_building=False, tree_sway=None):
         self.camera = camera
         self.image = image
         self.x, self.y = position
@@ -141,6 +142,7 @@ class MapDecoration:
         self.collision = collision
         self.object_id = object_id
         self.is_building = is_building
+        self.tree_sway = tree_sway
         self.ambience = None
         if object_id == 'delivery_depot':
             try:
@@ -161,10 +163,15 @@ class MapDecoration:
     def update(self):
         if self.ambience is not None:
             self.ambience.update()
+        if self.tree_sway is not None:
+            self.tree_sway.update()
 
     def draw(self):
         x, y = self.camera.world_to_screen(self.x, self.y)
-        self.image.draw(round(x), round(y), self.width, self.height)
+        if self.tree_sway is not None:
+            self.tree_sway.draw(self.camera, round(x), round(y), self.width, self.height)
+        else:
+            self.image.draw(round(x), round(y), self.width, self.height)
         if self.ambience is not None:
             self.ambience.draw()
         bounds = self.get_collision_bounds()
@@ -187,6 +194,8 @@ def create_decorations(camera, config, roads):
         'fountain': 'fountain.png',
         'delivery_depot': 'building_delivery_depot.png',
         'tree': 'tree.png',
+        'tree_branches': 'tree_branches.png',
+        'tree_foliage': 'tree_foliage.png',
         'bus_stop': 'bus_stop.png',
         'bench': 'bench.png',
         'recycling_bin': 'recycling_bin.png',
@@ -198,9 +207,18 @@ def create_decorations(camera, config, roads):
     def add_decoration(item, asset, is_building=False):
         if asset not in images:
             images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
+        tree_sway = None
+        if asset == 'tree' and 'sway' in item:
+            try:
+                for layer in ('tree_branches', 'tree_foliage'):
+                    if layer not in images:
+                        images[layer] = load_image(str(ROOT / 'assets/images' / filenames[layer]))
+                tree_sway = TreeSway(images['tree_branches'], images['tree_foliage'], item['sway'])
+            except OSError as error:
+                print(f'[나무 흔들림] 기존 이미지 사용: {error}')
         decorations.append(MapDecoration(camera, images[asset], item['position'], item['size'],
                                          collision=item.get('collision'), object_id=item.get('id'),
-                                         is_building=is_building))
+                                         is_building=is_building, tree_sway=tree_sway))
 
     for item in config['buildings']:
         add_decoration(item, item.get('asset', 'building'), is_building=True)

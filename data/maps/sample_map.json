@@ -124,10 +124,10 @@
     {"id": "delivery_candidate_apartment_3150_2550", "asset": "apartment", "position": [3150, 2550], "size": [280, 280], "delivery_zone": {"offset": [0, -200], "size": [180, 90]}, "collision": {"offset": [0, -3], "size": [246, 182]}}
   ],
   "props": [
-    {"asset": "tree", "position": [900, 600], "size": [110, 110], "collision": {"offset": [0, 0], "size": [92, 92]}},
+    {"asset": "tree", "position": [900, 600], "size": [110, 110], "sway": {"period": 5.6, "phase": 0.0, "sway_pixels": 1.0}, "collision": {"offset": [0, 0], "size": [92, 92]}},
     {"asset": "tree", "position": [150, 1050], "size": [140, 140], "collision": {"offset": [0, 0], "size": [118, 118]}},
     {"asset": "tree", "position": [150, 1500], "size": [130, 130], "collision": {"offset": [0, 0], "size": [110, 110]}},
-    {"asset": "tree", "position": [1250, 1000], "size": [110, 110], "collision": {"offset": [0, 0], "size": [92, 92]}},
+    {"asset": "tree", "position": [1250, 1000], "size": [110, 110], "sway": {"period": 7.2, "phase": 0.37, "sway_pixels": 1.0}, "collision": {"offset": [0, 0], "size": [92, 92]}},
     {"asset": "tree", "position": [1650, 1650], "size": [130, 130], "collision": {"offset": [0, 0], "size": [110, 110]}},
     {"asset": "tree", "position": [1250, 150], "size": [110, 110], "collision": {"offset": [0, 0], "size": [92, 92]}},
     {"asset": "tree", "position": [1650, 1050], "size": [110, 110], "collision": {"offset": [0, 0], "size": [92, 92]}},

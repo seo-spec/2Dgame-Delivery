@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="720" viewBox="0 0 1280 720">
+  <title>출발지 도트풍 개선 시안 — 실제 실행 화면 아님</title>
+  <desc>생성 시안의 플레이 영역과 배송 패널을 각각 1000×720, 280×720로 배치한 검토용 화면. 글자와 수치는 예시.</desc>
+  <svg x="0" y="0" width="1000" height="720" viewBox="0 0 1310 941" preserveAspectRatio="none">
+    <image width="1672" height="941" xlink:href="concept-v2.png"/>
+  </svg>
+  <svg x="1000" y="0" width="280" height="720" viewBox="1310 0 362 941" preserveAspectRatio="none">
+    <image width="1672" height="941" xlink:href="concept-v2.png"/>
+  </svg>
+</svg>
