@@ -1,7 +1,8 @@
-"""실제 구역에 맞춘 짧은 바닥선과 독립된 작은 도트 기호."""
+"""실제 구역에 서 있는 고객의 표정과 수령·배송 안내 표시."""
 
 import ctypes
 from importlib import import_module
+from pathlib import Path
 
 from game.systems.delivery import select_delivery_target
 from game.systems.stage import StageState
@@ -12,6 +13,8 @@ ICON_SIZE = 24
 NORMAL = (187, 178, 145)
 ACTIVE = (244, 205, 112)
 COMPLETE = (139, 175, 151)
+CUSTOMER_PATH = Path(__file__).resolve().parents[2] / 'assets/images/markers/customer_moods_v1.png'
+MOOD_COLUMNS = {'만족': 0, '보통': 1, '불만': 2}
 # 초기화 시 텍스처로 준비할 단순 UI 기호: 수령 화살표, 배송 핀, 복귀 집, 완료 체크.
 GLYPHS = {
     'pickup': ('............', '.....##.....', '.....##.....', '.....##.....',
@@ -58,6 +61,12 @@ class ZoneMarkers:
         self.controller = controller
         self.delivery_houses = delivery_houses
         self.pickup_bounds = pickup_bounds
+        self.customer = None
+        try:
+            self.customer = _pico.load_image(str(CUSTOMER_PATH))
+            _pico.SDL_SetTextureScaleMode(self.customer.texture, 0)
+        except OSError as error:
+            print(f'[배송 고객 이미지] 바닥 기호 사용: {error}')
         self.icons = {
             kind: _image(12, 12, [(x, 11 - row, x + 1, 12 - row)
                                  for row, line in enumerate(lines)
@@ -66,6 +75,7 @@ class ZoneMarkers:
         }
         self.frames = {}
         self.positions = {}
+        self.customer_positions = {}
         left, bottom, right, _ = pickup_bounds
         # 배달소의 수령 구역은 건물 북쪽에 연결되어 있다.
         self._prepare(pickup_bounds, ((left + right) / 2, bottom - 1))
@@ -79,7 +89,7 @@ class ZoneMarkers:
         width, height = round(right - left), round(top - bottom)
         key = (width, height)
         if key not in self.frames:
-            length = min(10, width // 4, height // 4)
+            length = min(14, width // 4, height // 4)
             rectangles = []
             for x in (0, width - length):
                 rectangles.extend(((x, 0, x + length, 2),
@@ -95,6 +105,11 @@ class ZoneMarkers:
         self.positions[tuple(bounds)] = tuple(sorted(
             candidates, key=lambda point: (point[0] - building[0]) ** 2
             + (point[1] - building[1]) ** 2, reverse=True))
+        x, y = self.positions[tuple(bounds)][0]
+        # 고객은 이동하지 않는 시각적 안내다. 발과 몸이 기존 구역 안에 들어오게 맞춘다.
+        self.customer_positions[tuple(bounds)] = (
+            max(left + 20, min(right - 20, x)),
+            max(bottom + 8, min(top - 58, y)))
 
     def update(self):
         pass
@@ -104,7 +119,7 @@ class ZoneMarkers:
         _pico.SDL_SetTextureColorMod(image.texture, *color)
         _pico.SDL_SetTextureAlphaMod(image.texture, alpha)
 
-    def _draw_marker(self, bounds, kind, active=False):
+    def _draw_marker(self, bounds, kind, active=False, mood='보통'):
         left, bottom, right, top = bounds
         camera = self.camera
         sx, sy = camera.world_to_screen(left, bottom)
@@ -113,10 +128,25 @@ class ZoneMarkers:
                 or ey <= camera.viewport_bottom or sy >= camera.viewport_bottom + camera.viewport_height):
             return
         color = COMPLETE if kind == 'complete' else ACTIVE if active else NORMAL
-        alpha = 95 if kind == 'complete' else 240 if active else 145
+        alpha = 130 if kind == 'complete' else 255 if active else 195
         frame = self.frames[(round(right - left), round(top - bottom))]
         self._tint(frame, color, alpha)
         frame.draw((sx + ex) / 2, (sy + ey) / 2, right - left, top - bottom)
+        if self.customer is not None:
+            x, y = self.customer_positions[tuple(bounds)]
+            cx, cy = camera.world_to_screen(x, y)
+            column = MOOD_COLUMNS.get(mood, 1)
+            frame_width = self.customer.w // 3
+            # 세 표정은 같은 캔버스·발 높이로 제작해 전환 시 위치가 바뀌지 않는다.
+            _pico.SDL_SetTextureAlphaMod(self.customer.texture, 210 if kind == 'complete' else 255)
+            self.customer.clip_draw(column * frame_width, 0, frame_width, self.customer.h,
+                                    round(cx), round(cy + 28), 72, 72)
+            # 얼굴을 가리지 않는 옆쪽의 작은 역할 기호. 배송의 주 표시는 고객 자체다.
+            if kind != 'delivery' or active:
+                badge = self.icons[kind]
+                self._tint(badge, color, 255)
+                badge.draw(round(cx + 22), round(cy + 22), 16, 16)
+            return
         icon = self.icons[kind]
         self._tint(icon, color, alpha)
         for x, y in self.positions[tuple(bounds)]:
@@ -148,4 +178,11 @@ class ZoneMarkers:
         for house in self.delivery_houses:
             bounds = house.get_zone_bounds()
             if bounds is not None:
-                self._draw_marker(bounds, 'complete' if house.delivered else 'delivery', house is target)
+                if house.delivered:
+                    mood = house.delivered_mood or '보통'
+                elif state == StageState.WAITING:
+                    mood = '보통'
+                else:
+                    mood = house.get_customer_mood(self.controller.elapsed_time)
+                self._draw_marker(bounds, 'complete' if house.delivered else 'delivery',
+                                  house is target, mood)
