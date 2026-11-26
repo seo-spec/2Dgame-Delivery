@@ -256,6 +256,15 @@ def create_decorations(camera, config, roads):
                     print(f'[우편함 이미지] 기존 이미지 사용: {error}')
                     images[key] = images[asset]
             image = images[key]
+        if asset == 'planter' and tuple(item['position']) == (620, 280):
+            key = 'start_planter_pixel'
+            if key not in images:
+                try:
+                    images[key] = load_image(str(ROOT / 'assets/images/planter_pixel_v1.png'))
+                except OSError as error:
+                    print(f'[화분 이미지] 기존 이미지 사용: {error}')
+                    images[key] = images[asset]
+            image = images[key]
         tree_sway = None
         if asset == 'tree' and 'sway' in item:
             try:

@@ -129,13 +129,13 @@ class ZoneMarkers:
         _pico.SDL_SetTextureColorMod(image.texture, *color)
         _pico.SDL_SetTextureAlphaMod(image.texture, alpha)
 
-    def _draw_marker(self, bounds, kind, active=False, mood='보통'):
+    def _draw_marker(self, bounds, kind, active=False, mood='보통', show_customer=True):
         left, bottom, right, top = bounds
         camera = self.camera
         sx, sy = camera.world_to_screen(left, bottom)
         ex, ey = camera.world_to_screen(right, top)
         # 머리 위 미배송 표시가 보이는 동안에는 구역이 화면 아래로 나가도 그린다.
-        extra_top = 26 if kind == 'delivery' and self.customers else 0
+        extra_top = 26 if show_customer and kind == 'delivery' and self.customers else 0
         if (ex <= camera.viewport_left or sx >= camera.viewport_left + camera.viewport_width
                 or ey + extra_top <= camera.viewport_bottom
                 or sy >= camera.viewport_bottom + camera.viewport_height):
@@ -146,7 +146,7 @@ class ZoneMarkers:
         self._tint(frame, color, alpha)
         frame.draw((sx + ex) / 2, (sy + ey) / 2, right - left, top - bottom)
         # 기다리는 고객은 배송지에만 표시한다. 배달소는 수령·복귀 기호를 사용한다.
-        if self.customers and kind in ('delivery', 'complete'):
+        if show_customer and self.customers and kind in ('delivery', 'complete'):
             variant = self.customer_variants[tuple(bounds)]
             customer = self.customers.get(variant)
             if customer is None:
@@ -210,4 +210,4 @@ class ZoneMarkers:
                 else:
                     mood = house.get_customer_mood(self.controller.elapsed_time)
                 self._draw_marker(bounds, 'complete' if house.delivered else 'delivery',
-                                  house is target, mood)
+                                  house is target, mood, show_customer=state != StageState.WAITING)
