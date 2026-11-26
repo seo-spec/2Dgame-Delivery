@@ -132,7 +132,8 @@ class ZoneMarkers:
         frame = self.frames[(round(right - left), round(top - bottom))]
         self._tint(frame, color, alpha)
         frame.draw((sx + ex) / 2, (sy + ey) / 2, right - left, top - bottom)
-        if self.customer is not None:
+        # 기다리는 고객은 배송지에만 표시한다. 배달소는 수령·복귀 기호를 사용한다.
+        if self.customer is not None and kind in ('delivery', 'complete'):
             x, y = self.customer_positions[tuple(bounds)]
             cx, cy = camera.world_to_screen(x, y)
             column = MOOD_COLUMNS.get(mood, 1)
