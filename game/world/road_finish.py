@@ -1,4 +1,4 @@
-"""출발지 블록의 도로·보도·작업 마당을 초기화 시 합성하는 정적 재질."""
+"""출발지 블록의 잔디·도로·포장을 초기화 시 합성하는 정적 도트 재질."""
 
 import ctypes
 from importlib import import_module
@@ -8,7 +8,8 @@ from game.world.road_geometry import MARKING_COLOR, SIDEWALK_COLOR
 
 
 _pico = import_module('pico2d.pico2d')
-ASPHALT_TINT = (58, 65, 69)
+ASPHALT_TINT = (65, 72, 75)
+GRASS_TINT = (130, 150, 91)
 PAINT_TINT = (211, 207, 190)
 
 
@@ -20,9 +21,10 @@ class RoadFinish:
         self.height = top - self.bottom
         self.image = None
         mask = self._road_mask(road_map.road_surface.rectangles)
-        pixels = self._material_pixels(mask, config['fade_width'])
-        self._paint_paving(pixels, mask, road_map, config)
-        self._paint_markings(pixels, mask, road_map)
+        quiet = self._quiet_mask(road_map)
+        pixels = self._material_pixels(mask, quiet, config['fade_width'])
+        self._paint_paving(pixels, mask, quiet, road_map, config)
+        self._paint_markings(pixels, mask, quiet, road_map)
         self.image = self._upload(pixels)
 
     def _road_mask(self, rectangles):
@@ -47,33 +49,72 @@ class RoadFinish:
                     (extent - position - 0.5) / fade_width)
         return round(255 * ratio * ratio * (3 - 2 * ratio))
 
-    def _material_pixels(self, mask, fade_width):
+    def _quiet_mask(self, road_map):
+        """출발 위치와 실제 상호작용 구역 주변의 표시용 여백."""
+        spawn_x, spawn_y = road_map.spawn
+        rectangles = [(spawn_x - 70, spawn_y - 70, spawn_x + 70, spawn_y + 70)]
+        for building in road_map.config['buildings']:
+            for key in ('pickup_zone', 'delivery_zone'):
+                zone = building.get(key)
+                if zone is None:
+                    continue
+                x = building['position'][0] + zone['offset'][0]
+                y = building['position'][1] + zone['offset'][1]
+                half_w, half_h = zone['size'][0] / 2 + 12, zone['size'][1] / 2 + 12
+                rectangles.append((x - half_w, y - half_h, x + half_w, y + half_h))
+        return self._road_mask(rectangles)
+
+    @staticmethod
+    def _grass_color(wx, wy, quiet):
+        # 모든 무늬를 월드 2px 격자에 고정한다. 전역 게임 난수는 사용하지 않는다.
+        gx, gy = wx // 2, wy // 2
+        patch = ((gx // 48 * 37) ^ (gy // 40 * 61)) & 3
+        shade = (-4, -2, 0, 2)[patch]
+        cell_x, local_x = divmod(gx, 24)
+        cell_y, local_y = divmod(gy, 24)
+        seed = (cell_x * 73856093) ^ (cell_y * 19349663)
+        # 48px 구획 중 일부에만 2~6px 크기의 작은 풀잎을 둔다.
+        tuft_x, tuft_y = 4 + (seed >> 5 & 15), 4 + (seed >> 10 & 15)
+        if not quiet and seed % 7 == 0:
+            dx, dy = local_x - tuft_x, local_y - tuft_y
+            if (dx, dy) in ((0, 0), (0, 1), (-1, 1), (1, 2)):
+                shade -= 9
+            elif (dx, dy) in ((-1, 2), (1, 3)):
+                shade += 5
+        return tuple(channel + shade for channel in GRASS_TINT)
+
+    def _material_pixels(self, mask, quiet, fade_width):
         pixels = bytearray(self.width * self.height * 4)
         red, green, blue = ASPHALT_TINT
         fade_x = [self._fade_alpha(x, self.width, fade_width) for x in range(self.width)]
         fade_y = [self._fade_alpha(y, self.height, fade_width) for y in range(self.height)]
-        shade_x = [round(1.6 * sin((self.left + x) / 83.0)) for x in range(self.width)]
+        shade_x = [round(sin(((self.left + x) // 2 * 2) / 83.0)) * 2
+                   for x in range(self.width)]
         for row in range(self.height):
             world_y = self.bottom + self.height - 1 - row
-            shade_y = round(1.2 * sin(world_y / 113.0))
+            shade_y = round(sin((world_y // 2 * 2) / 113.0)) * 2
             for x in range(self.width):
                 index = row * self.width + x
+                alpha = min(fade_x[x // 2 * 2], fade_y[row // 2 * 2])
                 if not mask[index]:
+                    color = self._grass_color(self.left + x, world_y, quiet[index])
+                    pixels[index * 4:index * 4 + 4] = bytes((*color, alpha))
                     continue
                 # 월드 좌표로 결정한 입자라 게임 난수와 타일 경계에 영향을 받지 않는다.
-                grain = ((self.left + x) * 73856093) ^ (world_y * 19349663)
+                grain = (((self.left + x) // 2) * 73856093) ^ ((world_y // 2) * 19349663)
                 grain ^= grain >> 13
-                shade = (grain & 7) - 3 + shade_x[x] + shade_y
+                shade = (grain & 3) - 1 + shade_x[x] + shade_y
+                if quiet[index]:
+                    shade //= 3
                 if 2 <= x < self.width - 2 and 2 <= row < self.height - 2:
                     if not (mask[index - 2] and mask[index + 2]
                             and mask[index - self.width * 2] and mask[index + self.width * 2]):
                         shade -= 3
-                alpha = min(fade_x[x], fade_y[row])
                 pixels[index * 4:index * 4 + 4] = bytes(
                     (red + shade, green + shade, blue + shade, alpha))
         return pixels
 
-    def _paint_paving(self, pixels, road_mask, road_map, config):
+    def _paint_paving(self, pixels, road_mask, quiet, road_map, config):
         size = road_map.tile_size
         rectangles = [
             (tx * size + left, ty * size + bottom,
@@ -105,14 +146,16 @@ class RoadFinish:
                 block_row, local_y = divmod(wy, block_h)
                 block_col, local_x = divmod(wx + (block_row % 2) * (block_w // 2), block_w)
                 variation = ((block_col * 37 ^ block_row * 61) & 7) - 3
-                grain = ((wx * 17 ^ wy * 31) & 3) - 1
+                grain = (((wx // 2) * 17 ^ (wy // 2) * 31) & 3) - 1
                 shade = variation + grain
-                if local_x == 0 or local_y == 0:
-                    shade -= 13
-                elif local_x == 1 or local_y == 1:
-                    shade += 4
-                tint = (202, 190, 165) if is_walk else (166, 166, 151)
-                alpha = min(fade_x[x], fade_y[row])
+                if local_x < 2 or local_y < 2:
+                    shade -= 10 if is_walk else 7
+                elif local_x < 4 or local_y < 4:
+                    shade += 2
+                if quiet[index]:
+                    shade //= 3
+                tint = (200, 189, 164) if is_walk else (166, 166, 151)
+                alpha = min(fade_x[x // 2 * 2], fade_y[row // 2 * 2])
                 if is_walk:
                     # 차도 쪽 2px 면은 연석으로 표현한다. 모서리에서도 같은 마스크를 쓴다.
                     neighbors = (
@@ -126,7 +169,7 @@ class RoadFinish:
                     if curb:
                         shade = sum(curb) // len(curb) + grain
                     else:
-                        # 잔디와 맞닿는 바깥 1px은 낮은 대비의 이음부로 정리한다.
+                        # 잔디와 맞닿는 바깥 2px은 낮은 대비의 이음부로 정리한다.
                         for valid, adjacent, _ in neighbors:
                             if valid and not sidewalk[adjacent] and not yard[adjacent]:
                                 shade -= 5
@@ -137,11 +180,17 @@ class RoadFinish:
                                wy - bottom + 0.5, top - wy - 0.5)
                     # 작업 마당의 외곽만 잔디로 짧게 섞고 보도와 차도는 우선 유지한다.
                     ratio = min(1.0, max(0.0, edge / forecourt['edge_fade']))
-                    alpha = round(alpha * ratio * ratio * (3 - 2 * ratio))
+                    blend = ratio * ratio * (3 - 2 * ratio)
+                    grass = self._grass_color(wx, wy, quiet[index])
+                    # 외곽은 새 잔디와 먼저 섞은 뒤 구역 전체의 페이드를 적용한다.
+                    color = tuple(round(base * (1 - blend) + (channel + shade) * blend)
+                                  for base, channel in zip(grass, tint))
+                    pixels[index * 4:index * 4 + 4] = bytes((*color, alpha))
+                    continue
                 pixels[index * 4:index * 4 + 4] = bytes(
                     (*[channel + shade for channel in tint], alpha))
 
-    def _paint_markings(self, pixels, mask, road_map):
+    def _paint_markings(self, pixels, mask, quiet, road_map):
         for tile_x, tile_y, connection in road_map.tiles:
             for x1, y1, x2, y2, color in road_map.geometry.tiles[connection]:
                 if color != MARKING_COLOR:
@@ -162,7 +211,7 @@ class RoadFinish:
                     for x in range(left, right):
                         index = row * self.width + x
                         if mask[index]:
-                            wear = ((x * 17 + y * 31) & 3) - 1
+                            wear = 0 if quiet[index] else ((x // 2 * 17 + y // 2 * 31) & 3) - 1
                             pixels[index * 4:index * 4 + 3] = bytes(
                                 channel + wear for channel in PAINT_TINT)
 
