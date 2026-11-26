@@ -14,9 +14,13 @@ NORMAL = (187, 178, 145)
 ACTIVE = (244, 205, 112)
 COMPLETE = (139, 175, 151)
 CUSTOMER_PATH = Path(__file__).resolve().parents[2] / 'assets/images/markers/customer_moods_v1.png'
+CUSTOMER_FEMALE_PATH = CUSTOMER_PATH.with_name('customer_female_moods_v1.png')
 MOOD_COLUMNS = {'만족': 0, '보통': 1, '불만': 2}
 # 초기화 시 텍스처로 준비할 단순 UI 기호: 수령 화살표, 배송 핀, 복귀 집, 완료 체크.
 GLYPHS = {
+    'waiting': ('............', '.....##.....', '.....##.....', '.....##.....',
+                '.....##.....', '.....##.....', '.....##.....', '............',
+                '.....##.....', '.....##.....', '............', '............'),
     'pickup': ('............', '.....##.....', '.....##.....', '.....##.....',
                '...######...', '....####....', '.....##.....', '............',
                '..##....##..', '..##....##..', '..########..', '............'),
@@ -61,12 +65,14 @@ class ZoneMarkers:
         self.controller = controller
         self.delivery_houses = delivery_houses
         self.pickup_bounds = pickup_bounds
-        self.customer = None
-        try:
-            self.customer = _pico.load_image(str(CUSTOMER_PATH))
-            _pico.SDL_SetTextureScaleMode(self.customer.texture, 0)
-        except OSError as error:
-            print(f'[배송 고객 이미지] 바닥 기호 사용: {error}')
+        self.customers = {}
+        for variant, path in enumerate((CUSTOMER_PATH, CUSTOMER_FEMALE_PATH)):
+            try:
+                image = _pico.load_image(str(path))
+                _pico.SDL_SetTextureScaleMode(image.texture, 0)
+                self.customers[variant] = image
+            except OSError as error:
+                print(f'[배송 고객 이미지] 다른 외형 또는 바닥 기호 사용: {error}')
         self.icons = {
             kind: _image(12, 12, [(x, 11 - row, x + 1, 12 - row)
                                  for row, line in enumerate(lines)
@@ -74,15 +80,19 @@ class ZoneMarkers:
             for kind, lines in GLYPHS.items()
         }
         self.frames = {}
+        self.waiting_plate = _image(20, 24, [(0, 0, 20, 24)])
         self.positions = {}
         self.customer_positions = {}
+        self.customer_variants = {}
         left, bottom, right, _ = pickup_bounds
         # 배달소의 수령 구역은 건물 북쪽에 연결되어 있다.
         self._prepare(pickup_bounds, ((left + right) / 2, bottom - 1))
-        for house in delivery_houses:
+        for index, house in enumerate(delivery_houses):
             bounds = house.get_zone_bounds()
             if bounds is not None:
                 self._prepare(bounds, (house.x, house.y))
+                # 배송지 순서대로 남녀 외형을 섞고 실행 중에는 고정한다.
+                self.customer_variants[tuple(bounds)] = index % 2
 
     def _prepare(self, bounds, building):
         left, bottom, right, top = bounds
@@ -108,7 +118,7 @@ class ZoneMarkers:
         x, y = self.positions[tuple(bounds)][0]
         # 고객은 이동하지 않는 시각적 안내다. 발과 몸이 기존 구역 안에 들어오게 맞춘다.
         self.customer_positions[tuple(bounds)] = (
-            max(left + 20, min(right - 20, x)),
+            right - 20,
             max(bottom + 8, min(top - 58, y)))
 
     def update(self):
@@ -124,8 +134,11 @@ class ZoneMarkers:
         camera = self.camera
         sx, sy = camera.world_to_screen(left, bottom)
         ex, ey = camera.world_to_screen(right, top)
+        # 머리 위 미배송 표시가 보이는 동안에는 구역이 화면 아래로 나가도 그린다.
+        extra_top = 26 if kind == 'delivery' and self.customers else 0
         if (ex <= camera.viewport_left or sx >= camera.viewport_left + camera.viewport_width
-                or ey <= camera.viewport_bottom or sy >= camera.viewport_bottom + camera.viewport_height):
+                or ey + extra_top <= camera.viewport_bottom
+                or sy >= camera.viewport_bottom + camera.viewport_height):
             return
         color = COMPLETE if kind == 'complete' else ACTIVE if active else NORMAL
         alpha = 130 if kind == 'complete' else 255 if active else 195
@@ -133,15 +146,26 @@ class ZoneMarkers:
         self._tint(frame, color, alpha)
         frame.draw((sx + ex) / 2, (sy + ey) / 2, right - left, top - bottom)
         # 기다리는 고객은 배송지에만 표시한다. 배달소는 수령·복귀 기호를 사용한다.
-        if self.customer is not None and kind in ('delivery', 'complete'):
+        if self.customers and kind in ('delivery', 'complete'):
+            variant = self.customer_variants[tuple(bounds)]
+            customer = self.customers.get(variant)
+            if customer is None:
+                customer = next(iter(self.customers.values()))
             x, y = self.customer_positions[tuple(bounds)]
             cx, cy = camera.world_to_screen(x, y)
             column = MOOD_COLUMNS.get(mood, 1)
-            frame_width = self.customer.w // 3
+            frame_width = customer.w // 3
             # 세 표정은 같은 캔버스·발 높이로 제작해 전환 시 위치가 바뀌지 않는다.
-            _pico.SDL_SetTextureAlphaMod(self.customer.texture, 210 if kind == 'complete' else 255)
-            self.customer.clip_draw(column * frame_width, 0, frame_width, self.customer.h,
-                                    round(cx), round(cy + 28), 72, 72)
+            _pico.SDL_SetTextureAlphaMod(customer.texture, 210 if kind == 'complete' else 255)
+            customer.clip_draw(column * frame_width, 0, frame_width, customer.h,
+                               round(cx), round(cy + 28), 72, 72)
+            if kind == 'delivery':
+                # 거리와 무관한 미배송 표시. 배송 완료가 되면 즉시 사라진다.
+                self._tint(self.waiting_plate, (25, 40, 57), 240)
+                self.waiting_plate.draw(round(cx), round(cy + 72), 20, 24)
+                waiting = self.icons['waiting']
+                self._tint(waiting, ACTIVE, 255)
+                waiting.draw(round(cx), round(cy + 72), 20, 20)
             # 얼굴을 가리지 않는 옆쪽의 작은 역할 기호. 배송의 주 표시는 고객 자체다.
             if kind != 'delivery' or active:
                 badge = self.icons[kind]
