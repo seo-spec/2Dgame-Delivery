@@ -10,6 +10,7 @@ from game.core import debug_view
 from game.world.traffic_signal import TrafficSignal
 from game.world.road_geometry import ASPHALT_COLOR, GRASS_COLOR, SIDEWALK_COLOR, RoadGeometry
 from game.world.road_surface import RoadSurface
+from game.world.road_finish import RoadFinish
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -49,6 +50,13 @@ class RoadMap:
             rectangles.append((left + curb, bottom, right - curb, top + 1))
         self.road_surface = RoadSurface(rectangles)
         self.spawn = self.config['spawn']
+        self.road_finish = None
+        finish_config = self.config.get('road_finish')
+        if finish_config:
+            try:
+                self.road_finish = RoadFinish(self, finish_config)
+            except OSError as error:
+                print(f'[도로 표현] {error}')
 
     def is_point_on_road(self, x, y):
         """월드 좌표 점의 도로 포함 여부. 건물 충돌과는 독립적이다."""
@@ -94,6 +102,8 @@ class RoadMap:
             tile_left, tile_bottom = self.camera.world_to_screen(x * size, y * size)
             self.geometry.draw(mask, tile_left, tile_bottom)
         self._draw_access_paths()
+        if self.road_finish is not None:
+            self.road_finish.draw()
 
     def _draw_access_paths(self):
         # 건물 입구와 도로를 연결하는 진입로. 건물 이미지보다 먼저 출력한다.

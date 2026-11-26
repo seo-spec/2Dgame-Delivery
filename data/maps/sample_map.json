@@ -1,6 +1,10 @@
 {
   "tile_size": 300,
   "spawn": [750, 450],
+  "road_finish": {
+    "bounds": [300, 200, 1200, 1500],
+    "fade_width": 96
+  },
   "access_paths": [
     {"bounds": [690, 260, 810, 390], "curb_width": 6}
   ],
