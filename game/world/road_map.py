@@ -11,6 +11,7 @@ from game.world.traffic_signal import TrafficSignal
 from game.world.road_geometry import ASPHALT_COLOR, GRASS_COLOR, SIDEWALK_COLOR, RoadGeometry
 from game.world.road_surface import RoadSurface
 from game.world.road_finish import RoadFinish
+from game.world.depot_ambience import DepotAmbience
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -140,6 +141,12 @@ class MapDecoration:
         self.collision = collision
         self.object_id = object_id
         self.is_building = is_building
+        self.ambience = None
+        if object_id == 'delivery_depot':
+            try:
+                self.ambience = DepotAmbience(self)
+            except OSError as error:
+                print(f'[배달소 환경 효과] {error}')
 
     def get_collision_bounds(self):
         if self.collision is None:
@@ -152,11 +159,14 @@ class MapDecoration:
                 center_x + width / 2, center_y + height / 2)
 
     def update(self):
-        pass
+        if self.ambience is not None:
+            self.ambience.update()
 
     def draw(self):
         x, y = self.camera.world_to_screen(self.x, self.y)
         self.image.draw(round(x), round(y), self.width, self.height)
+        if self.ambience is not None:
+            self.ambience.draw()
         bounds = self.get_collision_bounds()
         if debug_view.enabled and bounds is not None:
             left, bottom, right, top = bounds
