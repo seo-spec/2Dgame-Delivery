@@ -218,6 +218,17 @@ def create_decorations(camera, config, roads):
                     images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
             else:
                 images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
+        image = images[asset]
+        # 동일 원본을 쓰는 다른 주택은 유지하고 지정한 한 채만 교체한다.
+        if is_building and item.get('id') == 'collision_preview_house':
+            key = 'collision_preview_house_pixel'
+            if key not in images:
+                try:
+                    images[key] = load_image(str(ROOT / 'assets/images/building_sample_pixel_v1.png'))
+                except OSError as error:
+                    print(f'[주택 이미지] 기존 이미지 사용: {error}')
+                    images[key] = images[asset]
+            image = images[key]
         tree_sway = None
         if asset == 'tree' and 'sway' in item:
             try:
@@ -227,7 +238,7 @@ def create_decorations(camera, config, roads):
                 tree_sway = TreeSway(images['tree_branches'], images['tree_foliage'], item['sway'])
             except OSError as error:
                 print(f'[나무 흔들림] 기존 이미지 사용: {error}')
-        decorations.append(MapDecoration(camera, images[asset], item['position'], item['size'],
+        decorations.append(MapDecoration(camera, image, item['position'], item['size'],
                                          collision=item.get('collision'), object_id=item.get('id'),
                                          is_building=is_building, tree_sway=tree_sway,
                                          depot_layout=depot_layout))
