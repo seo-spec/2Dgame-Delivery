@@ -1,6 +1,7 @@
 """공통 규격의 도로와 이미지 장식으로 구성한 샘플 맵."""
 
 import json
+from importlib import import_module
 from pathlib import Path
 
 from pico2d import draw_rectangle, load_image
@@ -181,8 +182,9 @@ class MapDecoration:
 
     def draw(self):
         x, y = self.camera.world_to_screen(self.x, self.y)
-        if self.object_id in ('collision_preview_house', 'delivery_house_b',
-                              'delivery_house_c', 'delivery_house_d', 'delivery_house_e'):
+        if self.tree_sway is None and (not self.is_building or self.object_id in (
+                'collision_preview_house', 'delivery_house_b', 'delivery_house_c',
+                'delivery_house_d', 'delivery_house_e')):
             camera = self.camera
             if (x + self.width / 2 <= camera.viewport_left
                     or x - self.width / 2 >= camera.viewport_left + camera.viewport_width
@@ -224,12 +226,30 @@ def create_decorations(camera, config, roads):
         'planter': 'planter.png',
     }
     images = {}
+    prop_files = {
+        'tree': 'tree_title_pixel_v1.png',
+        'bus_stop': 'bus_stop_pixel_v1.png',
+        'fountain': 'fountain_pixel_v1.png',
+        'bench': 'bench_pixel_v1.png',
+        'recycling_bin': 'recycling_bin_pixel_v1.png',
+        'mailbox': 'mailbox_pixel_v1.png',
+        'planter': 'planter_pixel_v1.png',
+    }
+    pixel_props = set()
     depot_layout = 'original'
 
     def add_decoration(item, asset, is_building=False):
         nonlocal depot_layout
         if asset not in images:
-            if asset == 'delivery_depot':
+            if not is_building and asset in prop_files:
+                try:
+                    images[asset] = load_image(str(ROOT / 'assets/images' / prop_files[asset]))
+                    import_module('pico2d.pico2d').SDL_SetTextureScaleMode(images[asset].texture, 0)
+                    pixel_props.add(asset)
+                except OSError as error:
+                    print(f'[도시 소품 {asset}] 원본 사용: {error}')
+                    images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
+            elif asset == 'delivery_depot':
                 try:
                     images[asset] = load_image(str(
                         ROOT / 'assets/images/building_delivery_depot_pixel_v1.png'))
@@ -294,49 +314,17 @@ def create_decorations(camera, config, roads):
                     print(f'[파란 주택 이미지] 기존 이미지 사용: {error}')
                     images[key] = images[asset]
             image = images[key]
-        if asset == 'bench' and tuple(item['position']) == (630, 580):
-            key = 'start_bench_pixel'
-            if key not in images:
-                try:
-                    images[key] = load_image(str(ROOT / 'assets/images/bench_pixel_v1.png'))
-                except OSError as error:
-                    print(f'[벤치 이미지] 기존 이미지 사용: {error}')
-                    images[key] = images[asset]
-            image = images[key]
-        if asset == 'recycling_bin' and tuple(item['position']) == (700, 580):
-            key = 'start_recycling_bin_pixel'
-            if key not in images:
-                try:
-                    images[key] = load_image(str(ROOT / 'assets/images/recycling_bin_pixel_v1.png'))
-                except OSError as error:
-                    print(f'[분리수거함 이미지] 기존 이미지 사용: {error}')
-                    images[key] = images[asset]
-            image = images[key]
-        if asset == 'mailbox' and tuple(item['position']) == (620, 330):
-            key = 'start_mailbox_pixel'
-            if key not in images:
-                try:
-                    images[key] = load_image(str(ROOT / 'assets/images/mailbox_pixel_v1.png'))
-                except OSError as error:
-                    print(f'[우편함 이미지] 기존 이미지 사용: {error}')
-                    images[key] = images[asset]
-            image = images[key]
-        if asset == 'planter' and tuple(item['position']) == (620, 280):
-            key = 'start_planter_pixel'
-            if key not in images:
-                try:
-                    images[key] = load_image(str(ROOT / 'assets/images/planter_pixel_v1.png'))
-                except OSError as error:
-                    print(f'[화분 이미지] 기존 이미지 사용: {error}')
-                    images[key] = images[asset]
-            image = images[key]
         tree_sway = None
         if asset == 'tree' and 'sway' in item:
             try:
-                for layer in ('tree_branches', 'tree_foliage'):
-                    if layer not in images:
-                        images[layer] = load_image(str(ROOT / 'assets/images' / filenames[layer]))
-                tree_sway = TreeSway(images['tree_branches'], images['tree_foliage'], item['sway'])
+                if 'tree' in pixel_props:
+                    # 새 나무는 줄기가 드러나지 않는 수관 자산이다. 기존 잎과 중복하지 않는다.
+                    tree_sway = TreeSway(None, image, item['sway'])
+                else:
+                    for layer in ('tree_branches', 'tree_foliage'):
+                        if layer not in images:
+                            images[layer] = load_image(str(ROOT / 'assets/images' / filenames[layer]))
+                    tree_sway = TreeSway(images['tree_branches'], images['tree_foliage'], item['sway'])
             except OSError as error:
                 print(f'[나무 흔들림] 기존 이미지 사용: {error}')
         decorations.append(MapDecoration(camera, image, item['position'], item['size'],

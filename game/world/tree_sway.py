@@ -1,4 +1,4 @@
-"""선정한 나무의 고정 가지 위에서 잎만 천천히 흔든다."""
+"""선정한 나무의 수관을 천천히 흔든다. 원본 폴백은 고정 가지를 함께 그린다."""
 
 from math import isfinite, pi, sin
 
@@ -27,5 +27,6 @@ class TreeSway:
                 or y - height / 2 - margin >= camera.viewport_bottom + camera.viewport_height):
             return
         wave = sin(2 * pi * self.elapsed / self.period)
-        self.branches.draw(x, y, width, height)
+        if self.branches is not None:
+            self.branches.draw(x, y, width, height)
         self.foliage.draw(x + self.sway_pixels * wave, y, width, height)
