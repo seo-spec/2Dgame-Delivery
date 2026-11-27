@@ -18,6 +18,9 @@ class RoadFinish:
         self.left, self.bottom, right, top = config['bounds']
         self.width = right - self.left
         self.height = top - self.bottom
+        # 월드 끝에는 이어질 바깥 지면이 없으므로 불필요한 기본색 띠를 만들지 않는다.
+        self.fade_edges = (self.left > 0, right < road_map.width,
+                           self.bottom > 0, top < road_map.height)
         self.image = None
         mask = self._road_mask(road_map.road_surface.rectangles)
         quiet = self._quiet_mask(road_map)
@@ -43,9 +46,9 @@ class RoadFinish:
         return mask
 
     @staticmethod
-    def _fade_alpha(position, extent, fade_width):
-        ratio = min(1.0, (position + 0.5) / fade_width,
-                    (extent - position - 0.5) / fade_width)
+    def _fade_alpha(position, extent, fade_width, fade_start=True, fade_end=True):
+        ratio = min(1.0, (position + 0.5) / fade_width if fade_start else 1.0,
+                    (extent - position - 0.5) / fade_width if fade_end else 1.0)
         return round(255 * ratio * ratio * (3 - 2 * ratio))
 
     def _quiet_mask(self, road_map):
@@ -70,8 +73,10 @@ class RoadFinish:
     def _material_pixels(self, mask, quiet, fade_width):
         pixels = bytearray(self.width * self.height * 4)
         red, green, blue = ASPHALT_TINT
-        fade_x = [self._fade_alpha(x, self.width, fade_width) for x in range(self.width)]
-        fade_y = [self._fade_alpha(y, self.height, fade_width) for y in range(self.height)]
+        fade_x = [self._fade_alpha(x, self.width, fade_width, *self.fade_edges[:2])
+                  for x in range(self.width)]
+        fade_y = [self._fade_alpha(y, self.height, fade_width, *self.fade_edges[2:])
+                  for y in range(self.height)]
         for row in range(self.height):
             world_y = self.bottom + self.height - 1 - row
             for x in range(self.width):
@@ -106,9 +111,9 @@ class RoadFinish:
         sidewalk = self._road_mask(rectangles)
         forecourt = config.get('forecourt')
         yard = self._road_mask([forecourt['bounds']]) if forecourt else bytearray(len(sidewalk))
-        fade_x = [self._fade_alpha(x, self.width, config['fade_width'])
+        fade_x = [self._fade_alpha(x, self.width, config['fade_width'], *self.fade_edges[:2])
                   for x in range(self.width)]
-        fade_y = [self._fade_alpha(y, self.height, config['fade_width'])
+        fade_y = [self._fade_alpha(y, self.height, config['fade_width'], *self.fade_edges[2:])
                   for y in range(self.height)]
         for row in range(self.height):
             wy = self.bottom + self.height - 1 - row
