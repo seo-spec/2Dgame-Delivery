@@ -3,7 +3,7 @@
 import ctypes
 from importlib import import_module
 
-from game.world.road_geometry import MARKING_COLOR, SIDEWALK_COLOR
+from game.world.road_geometry import GRASS_COLOR, MARKING_COLOR, SIDEWALK_COLOR
 from game.world.ground_materials import asphalt_shade, grass_color
 
 
@@ -23,6 +23,12 @@ class RoadFinish:
                            self.bottom > 0, top < road_map.height)
         self.image = None
         mask = self._road_mask(road_map.road_surface.rectangles)
+        if config.get('entrance_only'):
+            # 기존 재질 구역 밖에서는 진입부만 작은 투명 텍스처에 합성한다.
+            pixels = bytearray(bytes((*GRASS_COLOR, 0)) * (self.width * self.height))
+            self._paint_entrances(pixels, mask, road_map, config)
+            self.image = self._upload(pixels)
+            return
         quiet = self._quiet_mask(road_map)
         pixels = self._material_pixels(mask, quiet, config['fade_width'])
         self._paint_paving(pixels, mask, quiet, road_map, config)
@@ -178,6 +184,8 @@ class RoadFinish:
         """표시용 진입부만 합성한다. RoadSurface나 건물 판정에 등록하지 않는다."""
         buildings = {item.get('id') for item in road_map.config['buildings']}
         for path in config.get('entry_paths', []):
+            if path.get('standalone', False) and not config.get('entrance_only'):
+                continue
             if path['building_id'] not in buildings:
                 continue
             for bounds, is_step in ((path['bounds'], False), (path['threshold'], True)):
@@ -206,6 +214,8 @@ class RoadFinish:
                             color = tuple((channel + pixels[offset + c]) // 2
                                           for c, channel in enumerate(color))
                         pixels[offset:offset + 3] = bytes(color)
+                        if config.get('entrance_only'):
+                            pixels[offset + 3] = 255
 
     def _paint_markings(self, pixels, mask, quiet, road_map):
         for tile_x, tile_y, connection in road_map.tiles:

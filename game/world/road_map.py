@@ -53,12 +53,23 @@ class RoadMap:
         self.road_surface = RoadSurface(rectangles)
         self.spawn = self.config['spawn']
         self.road_finish = None
+        self.entrance_finishes = []
         finish_config = self.config.get('road_finish')
         if finish_config:
             try:
                 self.road_finish = RoadFinish(self, finish_config)
             except OSError as error:
                 print(f'[도로 표현] {error}')
+            for path in finish_config.get('entry_paths', []):
+                if not path.get('standalone', False):
+                    continue
+                try:
+                    self.entrance_finishes.append(RoadFinish(self, {
+                        'bounds': path['bounds'], 'entrance_only': True,
+                        'entry_paths': [path],
+                    }))
+                except OSError as error:
+                    print(f'[주택 진입부] {error}')
 
     def is_point_on_road(self, x, y):
         """월드 좌표 점의 도로 포함 여부. 건물 충돌과는 독립적이다."""
@@ -106,6 +117,8 @@ class RoadMap:
         self._draw_access_paths()
         if self.road_finish is not None:
             self.road_finish.draw()
+        for entrance in self.entrance_finishes:
+            entrance.draw()
 
     def _draw_access_paths(self):
         # 건물 입구와 도로를 연결하는 진입로. 건물 이미지보다 먼저 출력한다.
@@ -168,7 +181,7 @@ class MapDecoration:
 
     def draw(self):
         x, y = self.camera.world_to_screen(self.x, self.y)
-        if self.object_id == 'collision_preview_house':
+        if self.object_id in ('collision_preview_house', 'delivery_house_b'):
             camera = self.camera
             if (x + self.width / 2 <= camera.viewport_left
                     or x - self.width / 2 >= camera.viewport_left + camera.viewport_width
@@ -227,7 +240,7 @@ def create_decorations(camera, config, roads):
                 images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
         image = images[asset]
         # 지정한 주택들은 같은 도트 자산/폴백 캐시를 공유한다. 나머지는 원본을 유지한다.
-        if is_building and (item.get('id') == 'collision_preview_house'
+        if is_building and (item.get('id') in ('collision_preview_house', 'delivery_house_b')
                             or (asset == 'building' and tuple(item['position'])
                                 in ((150, 450), (150, 750)))):
             key = 'collision_preview_house_pixel'
@@ -238,7 +251,7 @@ def create_decorations(camera, config, roads):
                     print(f'[주택 이미지] 기존 이미지 사용: {error}')
                     images[key] = images[asset]
             image = images[key]
-        if is_building and item.get('id') == 'collision_preview_house':
+        if is_building and item.get('id') in ('collision_preview_house', 'delivery_house_b'):
             key = 'north_house_entrance_pixel'
             if key not in images:
                 try:

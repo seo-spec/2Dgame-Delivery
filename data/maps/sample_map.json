@@ -13,6 +13,12 @@
         "building_id": "collision_preview_house",
         "bounds": [726, 768, 774, 826],
         "threshold": [732, 814, 768, 826]
+      },
+      {
+        "building_id": "delivery_house_b",
+        "bounds": [1426, 918, 1474, 976],
+        "threshold": [1432, 964, 1468, 976],
+        "standalone": true
       }
     ]
   },
