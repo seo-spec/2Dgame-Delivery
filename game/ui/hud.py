@@ -4,6 +4,7 @@ from math import ceil
 
 from pico2d import get_canvas_height, load_image, draw_rectangle
 from game.ui.cached_font import CachedFont
+from game.ui.progress_hud import ProgressHUD
 from game.core import debug_view
 from game.core import game_framework
 from game.config import settings
@@ -25,11 +26,13 @@ class CargoDebugText:
     def __init__(self):
         self.font = CachedFont(FONT_PATH, FONT_SIZE)
         self.menu_font = CachedFont(FONT_PATH, 30)
+        self.progress_hud = ProgressHUD()
         self.cargo_icons = {}
 
     def close(self):
         self.font.close()
         self.menu_font.close()
+        self.progress_hud.close()
         self.cargo_icons.clear()
 
     def prepare_cargo_icons(self, cargo_list):
@@ -62,11 +65,8 @@ class CargoDebugText:
         waiting = controller.state == StageState.WAITING
         completed = sum(house.delivered for house in delivery_houses)
         remaining = max(0, ceil(controller.time_limit - elapsed))
-        self._box(12, height - 64, width - 12, height - 12, NAVY)
-        self._text(f'TIME {remaining // 60:02d}:{remaining % 60:02d}', 28, height - 44)
-        self._text(f'배송 {completed} / {len(delivery_houses)}', 225, height - 44)
-        self._text(f'{total_revenue:,} / {controller.target_revenue:,}원', 420, height - 44, YELLOW)
-        self._text(controller.state.value, width - 125, height - 44, GREEN)
+        self.progress_hud.draw(width, height, remaining, completed, len(delivery_houses),
+                               total_revenue, controller)
 
         # 주행 중앙은 비워 두고, 화물 상태는 하단의 얕은 한 줄 패널에 모은다.
         self._box(12, 12, width - 12, 120, NAVY)

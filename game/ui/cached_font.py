@@ -15,7 +15,7 @@ class CachedFont:
         if not self.font:
             raise OSError(f'폰트를 불러올 수 없습니다: {path}')
 
-    def draw(self, x, y, text, color=(0, 0, 0)):
+    def draw(self, x, y, text, color=(0, 0, 0), max_width=None):
         if not text or not self.font:
             return
         key = text, tuple(color)
@@ -35,7 +35,9 @@ class CachedFont:
         if len(self.images) > self.capacity:
             self.images.popitem(last=False)
         # pico2d.Font.draw와 동일: x는 왼쪽, y는 이미지 중심 높이.
-        image.draw(x + image.w / 2, y)
+        # 폭 제한은 표시 배율만 바꾼다. 원본 텍스처와 캐시 키는 그대로 재사용한다.
+        scale = min(1.0, max(0.0, max_width) / image.w) if max_width is not None else 1.0
+        image.draw(x + image.w * scale / 2, y, image.w * scale, image.h * scale)
 
     def close(self):
         self.images.clear()
