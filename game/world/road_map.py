@@ -219,8 +219,9 @@ def create_decorations(camera, config, roads):
             else:
                 images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
         image = images[asset]
-        # 동일 원본을 쓰는 다른 주택은 유지하고 지정한 한 채만 교체한다.
-        if is_building and item.get('id') == 'collision_preview_house':
+        # 지정한 두 주택은 같은 도트 자산/폴백 캐시를 공유한다. 나머지는 원본을 유지한다.
+        if is_building and (item.get('id') == 'collision_preview_house'
+                            or (asset == 'building' and tuple(item['position']) == (150, 450))):
             key = 'collision_preview_house_pixel'
             if key not in images:
                 try:
