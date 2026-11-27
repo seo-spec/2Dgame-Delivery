@@ -26,6 +26,7 @@ class RoadFinish:
         quiet = self._quiet_mask(road_map)
         pixels = self._material_pixels(mask, quiet, config['fade_width'])
         self._paint_paving(pixels, mask, quiet, road_map, config)
+        self._paint_entrances(pixels, mask, road_map, config)
         self._paint_markings(pixels, mask, quiet, road_map)
         self.image = self._upload(pixels)
 
@@ -172,6 +173,39 @@ class RoadFinish:
                     continue
                 pixels[index * 4:index * 4 + 4] = bytes(
                     (*[channel + shade for channel in tint], alpha))
+
+    def _paint_entrances(self, pixels, road_mask, road_map, config):
+        """표시용 진입부만 합성한다. RoadSurface나 건물 판정에 등록하지 않는다."""
+        buildings = {item.get('id') for item in road_map.config['buildings']}
+        for path in config.get('entry_paths', []):
+            if path['building_id'] not in buildings:
+                continue
+            for bounds, is_step in ((path['bounds'], False), (path['threshold'], True)):
+                left, bottom, right, top = bounds
+                x1, x2 = max(self.left, left), min(self.left + self.width, right)
+                y1, y2 = max(self.bottom, bottom), min(self.bottom + self.height, top)
+                tint = (205, 191, 160) if is_step else (179, 174, 154)
+                for wy in range(y1, y2):
+                    row = self.height - 1 - (wy - self.bottom)
+                    for wx in range(x1, x2):
+                        index = row * self.width + wx - self.left
+                        if road_mask[index]:
+                            continue
+                        local_x, local_y = wx - left, wy - bottom
+                        shade = 0
+                        if is_step:
+                            shade = 5 if local_y >= top - bottom - 2 else -6 if local_y < 2 else 0
+                        elif local_x % 24 < 2 or local_y % 16 < 2:
+                            shade = -5
+                        elif local_x % 24 < 4 or local_y % 16 >= 14:
+                            shade = 3
+                        offset = index * 4
+                        color = tuple(channel + shade for channel in tint)
+                        # 진입부 바깥2px은 기존 지면과 섞어 잔디 위에 얹힌 느낌을 줄인다.
+                        if not is_step and min(local_x, right - wx - 1) < 2:
+                            color = tuple((channel + pixels[offset + c]) // 2
+                                          for c, channel in enumerate(color))
+                        pixels[offset:offset + 3] = bytes(color)
 
     def _paint_markings(self, pixels, mask, quiet, road_map):
         for tile_x, tile_y, connection in road_map.tiles:

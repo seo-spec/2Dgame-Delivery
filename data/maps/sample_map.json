@@ -7,7 +7,14 @@
     "forecourt": {
       "bounds": [590, 220, 910, 390],
       "edge_fade": 8
-    }
+    },
+    "entry_paths": [
+      {
+        "building_id": "collision_preview_house",
+        "bounds": [726, 768, 774, 826],
+        "threshold": [732, 814, 768, 826]
+      }
+    ]
   },
   "access_paths": [
     {"bounds": [690, 260, 810, 390], "curb_width": 6}

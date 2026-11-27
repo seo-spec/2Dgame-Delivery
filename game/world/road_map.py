@@ -168,6 +168,13 @@ class MapDecoration:
 
     def draw(self):
         x, y = self.camera.world_to_screen(self.x, self.y)
+        if self.object_id == 'collision_preview_house':
+            camera = self.camera
+            if (x + self.width / 2 <= camera.viewport_left
+                    or x - self.width / 2 >= camera.viewport_left + camera.viewport_width
+                    or y + self.height / 2 <= camera.viewport_bottom
+                    or y - self.height / 2 >= camera.viewport_bottom + camera.viewport_height):
+                return
         if self.tree_sway is not None:
             self.tree_sway.draw(self.camera, round(x), round(y), self.width, self.height)
         else:
@@ -230,6 +237,15 @@ def create_decorations(camera, config, roads):
                 except OSError as error:
                     print(f'[주택 이미지] 기존 이미지 사용: {error}')
                     images[key] = images[asset]
+            image = images[key]
+        if is_building and item.get('id') == 'collision_preview_house':
+            key = 'north_house_entrance_pixel'
+            if key not in images:
+                try:
+                    images[key] = load_image(str(ROOT / 'assets/images/building_sample_entrance_pixel_v1.png'))
+                except OSError as error:
+                    print(f'[주택 입구 이미지] 기존 도트 주택 사용: {error}')
+                    images[key] = image
             image = images[key]
         if is_building and item.get('id') == 'delivery_candidate_cafe_450_150':
             key = 'start_cafe_pixel'
