@@ -5,6 +5,7 @@ from math import ceil
 from pico2d import get_canvas_height, load_image, draw_rectangle
 from game.ui.cached_font import CachedFont
 from game.ui.progress_hud import ProgressHUD
+from game.ui.delivery_panel import DeliveryPanel
 from game.core import debug_view
 from game.core import game_framework
 from game.config import settings
@@ -28,6 +29,8 @@ class CargoDebugText:
         self.menu_font = CachedFont(FONT_PATH, 30)
         self.progress_hud = ProgressHUD()
         self.cargo_icons = {}
+        self.delivery_panel = DeliveryPanel(self.font, self.progress_hud.label_font,
+                                            self.progress_hud.value_font, self.cargo_icons)
 
     def close(self):
         self.font.close()
@@ -91,34 +94,7 @@ class CargoDebugText:
             self._bar(x, 46, card_width - 22, ratio, color)
             self._text(state, x, 23, color)
 
-        # 월드가 그려진 뒤 밝은 패널로 덮어, 플레이 뷰포트와 시각적으로 분리한다.
-        panel_x = settings.VIEWPORT_LEFT + width
-        self._box(panel_x, 0, settings.WINDOW_WIDTH, height, (242, 246, 246))
-        self._box(panel_x + 8, 12, settings.WINDOW_WIDTH - 8, height - 12, (255, 255, 255))
-        self._text('배송지별 남은 시간', panel_x + 24, height - 43, NAVY)
-        self._text('출발 기준 마감 / 고객 기분', panel_x + 24, height - 69, MUTED)
-        for index, house in enumerate(delivery_houses):
-            y = height - 110 - index * 102
-            if waiting:
-                message, mood, ratio, color = '수령 대기', '배송 시작 전', 0.0, MUTED
-            elif house.delivered:
-                message, mood, ratio, color = '배송 완료', house.delivered_mood, 1.0, GREEN
-            else:
-                late = elapsed > house.deadline
-                seconds = ceil(elapsed - house.deadline) if late else ceil(house.deadline - elapsed)
-                message = f'! {seconds}초 초과' if late else f'마감까지 {seconds}초'
-                mood = house.get_customer_mood(elapsed)
-                ratio = elapsed / house.deadline
-                color = RED if late else (GREEN if mood == '만족' else YELLOW)
-            self._text(house.label.removesuffix('집'), panel_x + 26, y, NAVY)
-            self._text(message, panel_x + 60, y, RED if message.startswith('!') else NAVY)
-            self._bar(panel_x + 24, y - 26, settings.DELIVERY_PANEL_WIDTH - 48, ratio, color)
-            self._text(f'기분: {mood}', panel_x + 24, y - 52, MUTED)
-            cargo = cargo_by_id.get(house.cargo_id)
-            if cargo is not None and cargo.cargo_type is not None:
-                self._text(cargo.cargo_type.name, panel_x + 24, y - 76, NAVY)
-                self.cargo_icons[cargo.cargo_type.type_id].draw(panel_x + 226, y - 63, 40, 40)
-        self._text('지각: ! 표시와 초과시간', panel_x + 24, 29, RED)
+        self.delivery_panel.draw(width, height, delivery_houses, cargo_by_id, controller)
 
         if controller.state == StageState.RETURNING:
             self._notice('배달소로 돌아가세요')
