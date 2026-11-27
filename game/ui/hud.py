@@ -6,6 +6,7 @@ from pico2d import get_canvas_height, load_image, draw_rectangle
 from game.ui.cached_font import CachedFont
 from game.ui.progress_hud import ProgressHUD
 from game.ui.delivery_panel import DeliveryPanel
+from game.ui.cargo_panel import CargoPanel
 from game.core import debug_view
 from game.core import game_framework
 from game.config import settings
@@ -31,6 +32,7 @@ class CargoDebugText:
         self.cargo_icons = {}
         self.delivery_panel = DeliveryPanel(self.font, self.progress_hud.label_font,
                                             self.progress_hud.value_font, self.cargo_icons)
+        self.cargo_panel = CargoPanel(self.font, self.progress_hud.label_font, self.cargo_icons)
 
     def close(self):
         self.font.close()
@@ -71,28 +73,8 @@ class CargoDebugText:
         self.progress_hud.draw(width, height, remaining, completed, len(delivery_houses),
                                total_revenue, controller)
 
-        # 주행 중앙은 비워 두고, 화물 상태는 하단의 얕은 한 줄 패널에 모은다.
-        self._box(12, 12, width - 12, 120, NAVY)
         cargo_by_id = {cargo.cargo_id: cargo for cargo in cargo_list}
-        card_width = (width - 48) / max(1, len(delivery_houses))
-        for index, house in enumerate(delivery_houses):
-            x = 24 + index * card_width
-            cargo = cargo_by_id.get(house.cargo_id)
-            if cargo is None:
-                state, ratio, color = '수령 대기', 0.0, MUTED
-                value = '--'
-            else:
-                ratio = cargo.current_durability / cargo.max_durability
-                state = '완료' if cargo.delivered else ('파손' if ratio <= 0 else '적재')
-                color = GREEN if ratio >= 0.5 else RED
-                value = f'{ratio * 100:.0f}%'
-            self._text(f'{house.label.removesuffix("집")}  내구 {value}', x, 98)
-            if cargo is not None and cargo.cargo_type is not None:
-                icon = self.cargo_icons[cargo.cargo_type.type_id]
-                icon.draw(round(x + 20), 74, 48, 48)
-                self._text(cargo.cargo_type.name, x + 44, 74)
-            self._bar(x, 46, card_width - 22, ratio, color)
-            self._text(state, x, 23, color)
+        self.cargo_panel.draw(width, delivery_houses, cargo_by_id)
 
         self.delivery_panel.draw(width, height, delivery_houses, cargo_by_id, controller)
 
