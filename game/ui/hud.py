@@ -158,11 +158,29 @@ class CargoDebugText:
 
     def draw_clear_result(self, delivery_houses, total_revenue, target_revenue):
         completed = sum(house.delivered for house in delivery_houses)
-        self._box(270, 264, settings.VIEWPORT_WIDTH - 270, 442, NAVY)
-        self._draw_lines(('STAGE CLEAR', f'최종 배송: {completed} / {len(delivery_houses)}',
-                          f'최종 수익: {total_revenue:,}원',
-                          f'목표 {target_revenue:,}원: ' + ('달성' if total_revenue >= target_revenue else '미달성')),
-                         292, 409, max_width=settings.VIEWPORT_WIDTH - 584)
+        left, bottom, right, top = 270, 264, settings.VIEWPORT_WIDTH - 270, 442
+        self._box(left + 2, bottom, right - 2, top, hud_style.EDGE)
+        self._box(left, bottom + 2, right, top - 2, hud_style.EDGE)
+        self._box(left + 2, bottom + 2, right - 2, top - 2, hud_style.PANEL)
+        self._box(left + 4, top - 4, right - 4, top - 2, hud_style.HIGHLIGHT)
+        self._box(left + 2, bottom + 10, left + 4, top - 10, hud_style.MINT)
+        inner_width = right - left - 44
+        self.menu_font.draw(left + 22, 414, 'STAGE CLEAR', hud_style.CREAM,
+                            max_width=inner_width)
+        self._box(left + 22, 392, right - 22, 394, hud_style.EDGE)
+        self.progress_hud.label_font.draw(left + 22, 371, '최종 배송', hud_style.MUTED,
+                                          max_width=100)
+        self.progress_hud.value_font.draw(left + 132, 371,
+                                          f'{completed} / {len(delivery_houses)}', hud_style.CREAM,
+                                          max_width=inner_width - 110)
+        self.progress_hud.label_font.draw(left + 22, 337, '최종 수익', hud_style.MUTED,
+                                          max_width=100)
+        self.progress_hud.timer_font.draw(left + 132, 337, f'{total_revenue:,}원',
+                                          hud_style.AMBER, max_width=inner_width - 110)
+        achieved = total_revenue >= target_revenue
+        self.font.draw(left + 22, 289,
+                       f'목표 {target_revenue:,}원: ' + ('달성' if achieved else '미달성'),
+                       hud_style.MINT if achieved else hud_style.RED, max_width=inner_width)
 
     def draw_restart_hint(self):
         self._notice('R: 다시 시작', kind='조작', priority=80)
