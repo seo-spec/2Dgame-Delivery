@@ -7,6 +7,7 @@ from game.ui.cached_font import CachedFont
 from game.ui.progress_hud import ProgressHUD
 from game.ui.delivery_panel import DeliveryPanel
 from game.ui.cargo_panel import CargoPanel
+from game.ui.notice_stack import NoticeStack
 from game.core import debug_view
 from game.core import game_framework
 from game.config import settings
@@ -33,6 +34,7 @@ class CargoDebugText:
         self.delivery_panel = DeliveryPanel(self.font, self.progress_hud.label_font,
                                             self.progress_hud.value_font, self.cargo_icons)
         self.cargo_panel = CargoPanel(self.font, self.progress_hud.label_font, self.cargo_icons)
+        self.notices = NoticeStack(self.font, self.progress_hud.label_font)
 
     def close(self):
         self.font.close()
@@ -82,11 +84,7 @@ class CargoDebugText:
             self._notice('배달소로 돌아가세요')
         elif controller.state == StageState.FAILED:
             reason = controller.failure_reason
-            if len(reason) > 24:
-                self._notice('실패: 배송 수익·손상·벌금 확인', 158)
-                self._notice('목표 수익 달성 불가', 130)
-            else:
-                self._notice(f'실패: {reason}')
+            self._notice(reason, kind='실패', priority=100)
         elif waiting:
             self._notice('배달소에서 화물을 수령하세요')
 
@@ -113,23 +111,22 @@ class CargoDebugText:
             self._box(12, top - 14 - len(lines) * LINE_SPACING, 680, top, NAVY)
             self._draw_lines(lines, 24, top - 26)
 
-    def _notice(self, text, y=130):
-        center = settings.VIEWPORT_WIDTH / 2
-        half = max(260, len(text) * 9)
-        self._box(center - half, y - 12, center + half, y + 24, NAVY)
-        self._text(text, center - half + 12, y, WHITE)
+    def begin_notices(self, obstacles):
+        self.notices.begin(settings.VIEWPORT_WIDTH, get_canvas_height(), obstacles)
+
+    def draw_notices(self):
+        self.notices.draw()
+
+    def _notice(self, text, kind='상태', priority=20):
+        self.notices.add(text, kind, priority)
 
     def draw_delivery_hint(self, target):
         if target is not None:
-            self._notice(f'Space: {target.label} 배달')
+            self._notice(f'Space: {target.label} 배달', kind='조작', priority=70)
 
     def draw_signal_penalty(self, penalties):
         if penalties.notice_remaining > 0:
-            x = settings.VIEWPORT_LEFT + settings.VIEWPORT_WIDTH / 2
-            y = get_canvas_height() - 96
-            self._box(x - 165, y - 21, x + 165, y + 21, NAVY)
-            self._box(x - 165, y - 21, x - 161, y + 21, RED)
-            self._text(f'신호 위반! 벌금 {FINE_AMOUNT}원', x - 135, y, RED)
+            self._notice(f'신호 위반! 벌금 {FINE_AMOUNT:,}원', kind='경고', priority=90)
 
     def draw_delivery_indicator(self, target, motorcycle, camera):
         """실제 배송 입력과 같은 대상 판정으로 차체 위에 작은 느낌표를 표시한다."""
@@ -155,7 +152,7 @@ class CargoDebugText:
 
     def draw_pickup_hint(self, visible):
         if visible:
-            self._notice('Space: 화물 수령')
+            self._notice('Space: 화물 수령', kind='조작', priority=70)
 
     def draw_clear_result(self, delivery_houses, total_revenue, target_revenue):
         completed = sum(house.delivered for house in delivery_houses)
@@ -166,7 +163,7 @@ class CargoDebugText:
                          292, 409)
 
     def draw_restart_hint(self):
-        self._notice('R: 다시 시작', 190)
+        self._notice('R: 다시 시작', kind='조작', priority=80)
 
     def pause_button_bounds(self, index):
         center_x, center_y = settings.WINDOW_WIDTH / 2, get_canvas_height() / 2

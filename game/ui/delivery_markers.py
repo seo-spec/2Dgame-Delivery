@@ -189,6 +189,20 @@ class ZoneMarkers:
             icon.draw(round(ix), round(iy), ICON_SIZE, ICON_SIZE)
             break
 
+    def notice_bounds(self):
+        """안내 배너가 피해야 할 고객 몸체와 머리 위 표시의 화면 사각형."""
+        if self.controller.state == StageState.WAITING or not self.customers:
+            return []
+        bounds = []
+        for house in self.delivery_houses:
+            zone = house.get_zone_bounds()
+            if zone is None:
+                continue
+            x, y = self.customer_positions[tuple(zone)]
+            sx, sy = self.camera.world_to_screen(x, y)
+            bounds.append((sx - 40, sy - 10, sx + 42, sy + (64 if house.delivered else 86)))
+        return bounds
+
     def draw(self):
         state = self.controller.state
         left, bottom, right, top = self.pickup_bounds

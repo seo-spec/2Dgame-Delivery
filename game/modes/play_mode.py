@@ -485,7 +485,25 @@ def draw():
         left, bottom, right, top = bounds
         screen_left, screen_top = camera.world_to_screen(left, top)
         cargo_debug_text.draw_house_label(house, round(screen_left), round(screen_top) + 8)
-    cargo_debug_text.draw_delivery_indicator(target, motorcycle, camera)
+    # 조작 안내는 공통 배너로 모아 고객 느낌표와 중복되는 차체 위 표시를 피한다.
+    notice_obstacles = [minimap.overlay_bounds(),
+                        (player_sx - player_margin, player_sy - player_margin,
+                         player_sx + player_margin, player_sy + player_margin)]
+    for decoration in game_world.world[game_world.BACKGROUND]:
+        if isinstance(decoration, ZoneMarkers):
+            notice_obstacles.extend(decoration.notice_bounds())
+    for house in delivery_houses:
+        bounds = house.get_zone_bounds()
+        if bounds is not None:
+            lx, ly = camera.world_to_screen(bounds[0], bounds[3])
+            text = f'{house.label} 완료' if house.delivered else house.label
+            notice_obstacles.append((lx - 2, ly - 6, lx + len(text) * 18 + 4, ly + 22))
+    if debug_view.enabled:
+        notice_obstacles.extend(((12, 158, camera.viewport_width - 12, 267),
+                                 (12, 280, 680, get_canvas_height() - 78)))
+    if controller.state == StageState.CLEAR:
+        notice_obstacles.append((270, 264, camera.viewport_width - 270, 442))
+    cargo_debug_text.begin_notices(notice_obstacles)
     diagnostics = traffic_penalties.diagnostics(motorcycle) if debug_view.enabled else ()
     cargo_debug_text.draw(motorcycle.cargo_list, total_revenue, delivery_houses, controller,
                           traffic_diagnostics=diagnostics)
@@ -501,6 +519,8 @@ def draw():
     if debug_view.enabled:
         meteor_system.draw_help(camera, cargo_debug_text.font)
     cargo_debug_text.draw_signal_penalty(traffic_penalties)
+    if not paused:
+        cargo_debug_text.draw_notices()
     if paused:
         cargo_debug_text.draw_pause_menu(pause_selection)
     present_started = perf_counter()
