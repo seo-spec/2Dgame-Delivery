@@ -55,9 +55,10 @@ class CargoDebugText:
     def _text(self, text, x, y, color=WHITE):
         self.font.draw(round(x), round(y), text, color)
 
-    def _draw_lines(self, lines, left, top):
+    def _draw_lines(self, lines, left, top, max_width=None):
         for index, text in enumerate(lines):
-            self._text(text, left, top - index * LINE_SPACING)
+            self.font.draw(round(left), round(top - index * LINE_SPACING), text, WHITE,
+                           max_width=max_width)
 
     def _bar(self, x, y, width, ratio, color):
         self._box(x, y, x + width, y + 8, (218, 226, 230))
@@ -160,7 +161,7 @@ class CargoDebugText:
         self._draw_lines(('STAGE CLEAR', f'최종 배송: {completed} / {len(delivery_houses)}',
                           f'최종 수익: {total_revenue:,}원',
                           f'목표 {target_revenue:,}원: ' + ('달성' if total_revenue >= target_revenue else '미달성')),
-                         292, 409)
+                         292, 409, max_width=settings.VIEWPORT_WIDTH - 584)
 
     def draw_restart_hint(self):
         self._notice('R: 다시 시작', kind='조작', priority=80)

@@ -478,7 +478,8 @@ def draw():
         label_reserved.append((0, 0, camera.viewport_width, get_canvas_height()))
     meteor_system.draw(camera, cargo_debug_text.font, debug_view.enabled, label_reserved)
     target = current_delivery_target()
-    for house in delivery_houses:
+    visible_delivery_houses = delivery_houses if controller.state != StageState.WAITING else ()
+    for house in visible_delivery_houses:
         bounds = house.get_zone_bounds()
         if bounds is None:
             continue
@@ -492,7 +493,7 @@ def draw():
     for decoration in game_world.world[game_world.BACKGROUND]:
         if isinstance(decoration, ZoneMarkers):
             notice_obstacles.extend(decoration.notice_bounds())
-    for house in delivery_houses:
+    for house in visible_delivery_houses:
         bounds = house.get_zone_bounds()
         if bounds is not None:
             lx, ly = camera.world_to_screen(bounds[0], bounds[3])
@@ -513,7 +514,7 @@ def draw():
         cargo_debug_text.draw_clear_result(delivery_houses, total_revenue, controller.target_revenue)
     if controller.state in (StageState.CLEAR, StageState.FAILED):
         cargo_debug_text.draw_restart_hint()
-    minimap.draw(motorcycle, delivery_houses, meteor_system,
+    minimap.draw(motorcycle, visible_delivery_houses, meteor_system,
                  returning=controller.state == StageState.RETURNING)
     meteor_notices.draw(controller, meteor_system, minimap)
     if debug_view.enabled:

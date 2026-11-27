@@ -209,6 +209,8 @@ class ZoneMarkers:
         inside = left <= self.motorcycle.x <= right and bottom <= self.motorcycle.y <= top
         if state == StageState.WAITING:
             self._draw_marker(self.pickup_bounds, 'pickup', inside)
+            # 수령 전에는 배달소만 안내하고 목적지 바닥선·기호도 공개하지 않는다.
+            return
         elif state == StageState.RETURNING:
             self._draw_marker(self.pickup_bounds, 'return', inside)
         target = (select_delivery_target(self.delivery_houses, self.motorcycle.cargo_list,

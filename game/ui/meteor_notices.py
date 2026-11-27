@@ -9,6 +9,7 @@ from pico2d import (
 
 from game.config import meteor as config
 from game.systems.stage import StageState
+from game.ui.progress_hud import PANEL, EDGE, HIGHLIGHT, AMBER, RED
 
 SOUND_PATH = Path(__file__).resolve().parents[2] / 'assets/sounds/meteor_warning.wav'
 
@@ -72,14 +73,34 @@ class MeteorNotices:
         started = meteor_system.alert_started_at
         emphasis = (meteor_system.alert_serial == 1 and started is not None
                     and 0 <= meteor_system.clock - started < config.FIRST_ALERT_DURATION)
-        accent = (255, 120, 85) if falling else (255, 193, 95)
-        draw_rectangle(round(left), round(bottom), round(right), round(top), 25, 40, 57, filled=True)
-        if emphasis and int((meteor_system.clock - started) * 6) % 2 == 0:
-            draw_rectangle(round(left), round(bottom), round(right), round(top), *accent)
-        # 작은 삼각 경고 아이콘과 한 줄 상태만 표시한다.
-        x, y = round(left + 18), round((bottom + top) / 2)
-        draw_line(x, y + 10, x - 10, y - 9, *accent)
-        draw_line(x - 10, y - 9, x + 10, y - 9, *accent)
-        draw_line(x + 10, y - 9, x, y + 10, *accent)
-        self.font.draw(x - 3, y - 1, '!', accent)
-        self.font.draw(round(left + 38), y, '운석 주의', accent)
+        accent = RED if falling else AMBER
+        flashing = emphasis and int((meteor_system.clock - started) * 6) % 2 == 0
+        border = accent if flashing else EDGE
+
+        def box(x1, y1, x2, y2, color):
+            draw_rectangle(round(x1), round(y1), round(x2), round(y2), *color, filled=True)
+
+        # 예약된140×36px 안에서2px 계단 모서리와 윗면을 표현한다.
+        box(left + 2, bottom, right - 2, top, border)
+        box(left, bottom + 2, right, top - 2, border)
+        box(left + 2, bottom + 2, right - 2, top - 2, PANEL)
+        box(left + 4, top - 4, right - 4, top - 2, accent if flashing else HIGHLIGHT)
+        box(left + 2, bottom + 6, left + 4, top - 6, accent)
+        x, y = round(left + 20), round((bottom + top) / 2)
+        if falling:
+            # 꼬리와 각진 운석 본체: 예고 삼각형과 실루엣부터 구분한다.
+            box(x + 3, y + 5, x + 5, y + 11, accent)
+            box(x + 7, y + 4, x + 9, y + 8, accent)
+            box(x - 6, y - 5, x + 4, y + 5, accent)
+            box(x - 4, y - 7, x + 2, y + 7, accent)
+            box(x - 4, y - 3, x, y + 1, PANEL)
+            message = '낙하 중!'
+        else:
+            draw_line(x, y + 10, x - 10, y - 9, *accent)
+            draw_line(x - 10, y - 9, x + 10, y - 9, *accent)
+            draw_line(x + 10, y - 9, x, y + 10, *accent)
+            box(x - 1, y - 1, x + 1, y + 5, accent)
+            box(x - 1, y - 6, x + 1, y - 4, accent)
+            message = '운석 예고'
+        # 기존 Galmuri 캐시를 재사용하고 폭에 맞춰 표시 배율만 제한한다.
+        self.font.draw(round(left + 38), y, message, accent, max_width=right - left - 48)
