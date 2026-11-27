@@ -229,6 +229,15 @@ def create_decorations(camera, config, roads):
                     print(f'[주택 이미지] 기존 이미지 사용: {error}')
                     images[key] = images[asset]
             image = images[key]
+        if is_building and item.get('id') == 'delivery_candidate_cafe_450_150':
+            key = 'start_cafe_pixel'
+            if key not in images:
+                try:
+                    images[key] = load_image(str(ROOT / 'assets/images/building_cafe_pixel_v1.png'))
+                except OSError as error:
+                    print(f'[카페 이미지] 기존 이미지 사용: {error}')
+                    images[key] = images[asset]
+            image = images[key]
         if asset == 'bench' and tuple(item['position']) == (630, 580):
             key = 'start_bench_pixel'
             if key not in images:
