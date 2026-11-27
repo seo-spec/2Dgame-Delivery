@@ -5,6 +5,7 @@ from math import ceil
 from pico2d import get_canvas_height, load_image, draw_rectangle
 from game.ui.cached_font import CachedFont
 from game.ui.progress_hud import ProgressHUD
+from game.ui import progress_hud as hud_style
 from game.ui.delivery_panel import DeliveryPanel
 from game.ui.cargo_panel import CargoPanel
 from game.ui.notice_stack import NoticeStack
@@ -184,12 +185,33 @@ class CargoDebugText:
         for y in range(0, height, 3):
             self._box(0, y, width, y + 1, (12, 22, 32))
         cx, cy = width / 2, height / 2
-        self._box(cx - 205, cy - 215, cx + 205, cy + 190, NAVY)
-        self._box(cx - 205, cy + 183, cx + 205, cy + 190, GREEN)
-        self.menu_font.draw(round(cx - 63), round(cy + 135), 'PAUSED', WHITE)
+        def panel(left, bottom, right, top, border, fill):
+            # 2px 계단 모서리를 기존 패널/버튼 범위 안에 그린다.
+            self._box(left + 2, bottom, right - 2, top, border)
+            self._box(left, bottom + 2, right, top - 2, border)
+            self._box(left + 2, bottom + 2, right - 2, top - 2, fill)
+            self._box(left + 4, top - 4, right - 4, top - 2, hud_style.HIGHLIGHT)
+
+        panel(cx - 205, cy - 215, cx + 205, cy + 190, hud_style.EDGE, hud_style.PANEL)
+        self.menu_font.draw(round(cx - 63), round(cy + 135), 'PAUSED', hud_style.CREAM,
+                            max_width=220)
+        self._box(cx - 165, cy + 103, cx + 165, cy + 105, hud_style.EDGE)
         for index, text in enumerate(('Resume', 'Restart', 'Exit')):
             left, bottom, right, top = self.pause_button_bounds(index)
             active = index == selected
-            self._box(left, bottom, right, top, GREEN if active else (43, 61, 77))
-            self.menu_font.draw(round(left + 28), round(bottom + 18), text, NAVY if active else WHITE)
-        self._text('↑↓ 선택 · Enter 확인 · Esc 재개', cx - 165, cy - 190, WHITE)
+            border = hud_style.MINT if active else hud_style.EDGE
+            fill = (43, 64, 70) if active else hud_style.PANEL
+            panel(left, bottom, right, top, border, fill)
+            middle = (bottom + top) / 2
+            if active:
+                self._box(left + 2, bottom + 8, left + 4, top - 8, hud_style.MINT)
+                # 글자 지원 여부와 무관하게 읽히는 작은 도트 선택 화살표.
+                for step in range(5):
+                    x = left + 18 + step * 2
+                    for y in (middle + 8 - step * 2, middle - 8 + step * 2):
+                        self._box(x, y, x + 2, y + 2, hud_style.MINT)
+            self.menu_font.draw(round(left + 50), round(middle), text,
+                                hud_style.CREAM if active else hud_style.MUTED,
+                                max_width=right - left - 66)
+        self.font.draw(round(cx - 165), round(cy - 190),
+                       '↑↓ 선택 · Enter 확인 · Esc 재개', hud_style.MUTED, max_width=330)
