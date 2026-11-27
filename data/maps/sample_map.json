@@ -19,6 +19,24 @@
         "bounds": [1426, 918, 1474, 976],
         "threshold": [1432, 964, 1468, 976],
         "standalone": true
+      },
+      {
+        "building_id": "delivery_house_c",
+        "bounds": [724, 1512, 776, 1576],
+        "threshold": [730, 1564, 770, 1576],
+        "standalone": true
+      },
+      {
+        "building_id": "delivery_house_d",
+        "bounds": [1422, 1512, 1478, 1568],
+        "threshold": [1428, 1556, 1472, 1568],
+        "standalone": true
+      },
+      {
+        "building_id": "delivery_house_e",
+        "bounds": [2226, 918, 2274, 978],
+        "threshold": [2232, 966, 2268, 978],
+        "standalone": true
       }
     ]
   },

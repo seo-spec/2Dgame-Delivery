@@ -181,7 +181,8 @@ class MapDecoration:
 
     def draw(self):
         x, y = self.camera.world_to_screen(self.x, self.y)
-        if self.object_id in ('collision_preview_house', 'delivery_house_b'):
+        if self.object_id in ('collision_preview_house', 'delivery_house_b',
+                              'delivery_house_c', 'delivery_house_d', 'delivery_house_e'):
             camera = self.camera
             if (x + self.width / 2 <= camera.viewport_left
                     or x - self.width / 2 >= camera.viewport_left + camera.viewport_width
@@ -239,6 +240,21 @@ def create_decorations(camera, config, roads):
             else:
                 images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
         image = images[asset]
+        # 배송 건물 세 곳만 교체하고, 두 상점은 하나의 이미지/폴백 캐시를 공유한다.
+        entrance_assets = {
+            'delivery_house_c': 'building_blue_house_entrance_pixel_v1.png',
+            'delivery_house_d': 'building_shop_entrance_pixel_v1.png',
+            'delivery_house_e': 'building_shop_entrance_pixel_v1.png',
+        }
+        entrance_file = entrance_assets.get(item.get('id')) if is_building else None
+        if entrance_file:
+            if entrance_file not in images:
+                try:
+                    images[entrance_file] = load_image(str(ROOT / 'assets/images' / entrance_file))
+                except OSError as error:
+                    print(f'[배송 건물 이미지] 원본 사용: {error}')
+                    images[entrance_file] = images[asset]
+            image = images[entrance_file]
         # 지정한 주택들은 같은 도트 자산/폴백 캐시를 공유한다. 나머지는 원본을 유지한다.
         if is_building and (item.get('id') in ('collision_preview_house', 'delivery_house_b')
                             or (asset == 'building' and tuple(item['position'])
