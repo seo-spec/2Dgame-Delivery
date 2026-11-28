@@ -59,7 +59,7 @@ class RoadMap:
         finish_config = self.config.get('road_finish')
         if finish_config:
             regions = [finish_config['bounds'], *finish_config.get('extensions', [])]
-            # 현재 다섯 구역은 빈틈없는 직사각형을 이룬다. 내부 경계는 페이드하지 않는다.
+            # 적용 구역들은 빈틈없는 직사각형을 이룬다. 내부 경계는 페이드하지 않는다.
             fade_bounds = [min(bounds[0] for bounds in regions),
                            min(bounds[1] for bounds in regions),
                            max(bounds[2] for bounds in regions),
