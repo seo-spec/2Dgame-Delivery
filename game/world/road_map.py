@@ -14,6 +14,7 @@ from game.world.road_surface import RoadSurface
 from game.world.road_finish import RoadFinish
 from game.world.depot_ambience import DepotAmbience
 from game.world.tree_sway import TreeSway
+from game.world.start_scene_art import ASSETS as START_ASSETS, load_compact_image
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -56,6 +57,7 @@ class RoadMap:
         self.road_finish = None
         self.road_finish_extensions = []
         self.entrance_finishes = []
+        self.start_finish_gap = None
         finish_config = self.config.get('road_finish')
         if finish_config:
             regions = [finish_config['bounds'], *finish_config.get('extensions', [])]
@@ -84,6 +86,14 @@ class RoadMap:
                     }))
                 except OSError as error:
                     print(f'[주택 진입부] {error}')
+            # 기존 재질 범위 아래(y90~200)도 출발 화면에 보이는 폭만 보완한다.
+            try:
+                self.start_finish_gap = RoadFinish(self, {
+                    **finish_config, 'bounds': [250, 90, 1250, 200],
+                    'fade_bounds': [0, 0, self.width, self.height],
+                })
+            except OSError as error:
+                print(f'[출발지 지면] 기존 바닥 사용: {error}')
 
     def is_point_on_road(self, x, y):
         """월드 좌표 점의 도로 포함 여부. 건물 충돌과는 독립적이다."""
@@ -133,6 +143,8 @@ class RoadMap:
             self.road_finish.draw()
         for finish in self.road_finish_extensions:
             finish.draw()
+        if self.start_finish_gap is not None:
+            self.start_finish_gap.draw()
         for entrance in self.entrance_finishes:
             entrance.draw()
 
@@ -264,7 +276,20 @@ def create_decorations(camera, config, roads):
 
     def add_decoration(item, asset, is_building=False):
         nonlocal depot_layout
-        if asset not in images:
+        start_spec = START_ASSETS.get((asset, tuple(item['position'])))
+        start_image = None
+        if start_spec:
+            key = 'start_title_v2_' + asset
+            if key not in images:
+                try:
+                    images[key] = load_compact_image(*start_spec)
+                except OSError as error:
+                    print(f'[출발지 {asset}] v1 사용: {error}')
+                    images[key] = None
+            start_image = images[key]
+            if start_image is not None and asset == 'delivery_depot':
+                depot_layout = 'title_v2'
+        if start_image is None and asset not in images:
             if not is_building and asset in prop_files:
                 try:
                     images[asset] = load_image(str(ROOT / 'assets/images' / prop_files[asset]))
@@ -290,7 +315,7 @@ def create_decorations(camera, config, roads):
                     images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
             else:
                 images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
-        image = images[asset]
+        image = start_image if start_image is not None else images[asset]
         # 배송 건물 세 곳만 교체하고, 두 상점은 하나의 이미지/폴백 캐시를 공유한다.
         entrance_assets = {
             'delivery_house_c': 'building_blue_house_entrance_pixel_v1.png',
@@ -318,7 +343,7 @@ def create_decorations(camera, config, roads):
         tree_sway = None
         if asset == 'tree' and 'sway' in item:
             try:
-                if 'tree' in pixel_props:
+                if start_image is not None or 'tree' in pixel_props:
                     # 새 나무는 줄기가 드러나지 않는 수관 자산이다. 기존 잎과 중복하지 않는다.
                     tree_sway = TreeSway(None, image, item['sway'])
                 else:
@@ -332,7 +357,8 @@ def create_decorations(camera, config, roads):
                                          collision=item.get('collision'), object_id=item.get('id'),
                                          is_building=is_building, tree_sway=tree_sway,
                                          depot_layout=depot_layout,
-                                         cull_when_offscreen=is_building and asset in common_buildings))
+                                         cull_when_offscreen=(start_image is not None
+                                                              or is_building and asset in common_buildings)))
 
     for item in config['buildings']:
         add_decoration(item, item.get('asset', 'building'), is_building=True)

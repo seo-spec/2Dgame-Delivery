@@ -5,6 +5,7 @@ from importlib import import_module
 
 from game.world.road_geometry import GRASS_COLOR, MARKING_COLOR, SIDEWALK_COLOR
 from game.world.ground_materials import asphalt_shade, grass_color
+from game.world.start_scene_art import ground_strength, ground_tint
 
 
 _pico = import_module('pico2d.pico2d')
@@ -83,7 +84,7 @@ class RoadFinish:
 
     @staticmethod
     def _grass_color(wx, wy, quiet):
-        return grass_color(wx, wy, quiet)
+        return ground_tint(wx, wy, grass_color(wx, wy, quiet), 'grass', GRASS_COLOR)
 
     def _material_pixels(self, mask, quiet, fade_width):
         pixels = bytearray(self.width * self.height * 4)
@@ -94,6 +95,7 @@ class RoadFinish:
             for x in range(self.width):
                 index = row * self.width + x
                 alpha = min(fade_x[x], fade_y[row])
+                alpha = max(alpha, round(255 * ground_strength(self.left + x, world_y)))
                 if not mask[index]:
                     color = self._grass_color(self.left + x, world_y, quiet[index])
                     pixels[index * 4:index * 4 + 4] = bytes((*color, alpha))
@@ -104,8 +106,10 @@ class RoadFinish:
                     if not (mask[index - 2] and mask[index + 2]
                             and mask[index - self.width * 2] and mask[index + self.width * 2]):
                         shade -= 2
-                pixels[index * 4:index * 4 + 4] = bytes(
-                    (red + shade, green + shade, blue + shade, alpha))
+                color = ground_tint(self.left + x, world_y,
+                                    (red + shade, green + shade, blue + shade),
+                                    'asphalt', ASPHALT_TINT)
+                pixels[index * 4:index * 4 + 4] = bytes((*color, alpha))
         return pixels
 
     def _fade_axes(self, fade_width):
@@ -158,7 +162,9 @@ class RoadFinish:
                 if quiet[index]:
                     shade //= 3
                 tint = (200, 189, 164) if is_walk else (166, 166, 151)
+                tint = ground_tint(wx, wy, tint, 'sidewalk' if is_walk else 'yard')
                 alpha = min(fade_x[x], fade_y[row])
+                alpha = max(alpha, round(255 * ground_strength(wx, wy)))
                 if is_walk:
                     # 차도 쪽 2px 면은 연석으로 표현한다. 모서리에서도 같은 마스크를 쓴다.
                     neighbors = (
@@ -251,7 +257,9 @@ class RoadFinish:
                     for x in range(left, right):
                         index = row * self.width + x
                         if mask[index]:
-                            pixels[index * 4:index * 4 + 3] = bytes(PAINT_TINT)
+                            wx, wy = self.left + x, self.bottom + y
+                            pixels[index * 4:index * 4 + 3] = bytes(
+                                ground_tint(wx, wy, PAINT_TINT, 'marking'))
 
     def _upload(self, pixels):
         renderer = getattr(_pico, 'renderer', None)

@@ -45,7 +45,11 @@ class DepotAmbience:
         self.width, self.height = decoration.width, decoration.height
         self.elapsed = 0.0
         # 이미지 전체(투명 여백 포함)의 중심 기준 비율. 원본 폴백도 원래 부착점을 쓴다.
-        if layout == 'pixel':
+        if layout == 'title_v2':
+            self.light_offset = (0.0, 0.375)
+            self.light_size = (0.18, 0.045)
+            self.vent_offset = (0.296, 0.166)
+        elif layout == 'pixel':
             self.light_offset = (0.0, 0.375)
             self.light_size = (0.21, 0.055)
             self.vent_offset = (0.296, 0.166)
