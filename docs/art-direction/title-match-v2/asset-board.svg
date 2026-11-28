@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<title>실제 타이틀·현재 자산·고객 참고 보드 — 월드 배치 화면 아님</title>
+<defs><style>@font-face{font-family:Galmuri;src:url('../../../assets/fonts/Galmuri11.ttf')}text{font-family:Galmuri,monospace;fill:#F1E8D2;font-size:18px}</style></defs>
+<rect width="1280" height="720" fill="#22323D"/>
+<text x="24" y="32">타이틀과 현재 자산 비교 / 고객은 외형 참고이며 배달소 배치가 아닙니다</text>
+<image href="../../../assets/images/title/title_city_v1.png" x="20" y="55" width="650" height="360" preserveAspectRatio="xMidYMid meet"/>
+<text x="30" y="442">타이틀: 재질·접지·작은 생활 요소가 연결된 거리</text>
+<image href="../../../assets/images/building_delivery_depot_pixel_v1.png" x="710" y="50" width="270" height="270"/>
+<image href="../../../assets/images/tree_title_pixel_v1.png" x="1010" y="80" width="190" height="190"/>
+<text x="716" y="346">현재 배달소 / 큰 표식·테두리 재작업</text><text x="716" y="378">나무 / 밝은 면적과 잎 덩어리 축소</text>
+<svg x="40" y="465" width="150" height="150" viewBox="0 0 724 724"><image href="../../../assets/images/markers/customer_moods_v1.png" width="2172" height="724"/></svg>
+<svg x="220" y="465" width="150" height="150" viewBox="0 0 724 724"><image href="../../../assets/images/markers/customer_female_moods_v1.png" width="2172" height="724"/></svg>
+<text x="30" y="650">현재 고객: 남녀·세 표정 유지</text><text x="30" y="680">목표: 몸통 명암 3단계·머리 비율 절제</text>
+<image href="../../../assets/images/motorcycle/motorcycle_side_v1.png" x="440" y="480" width="290" height="160" preserveAspectRatio="xMidYMid meet"/>
+<text x="440" y="673">차종 정체성 유지 / 주행용 광택 재작업</text>
+<text x="800" y="492">시안 적용의 핵심</text><text x="800" y="536">1. 도로와 건물 앞 지면 연결</text><text x="800" y="574">2. 얇은 윤곽·작은 강조 표식</text><text x="800" y="612">3. 짧은 그림자·절제된 녹지</text><text x="800" y="650">4. 주행·고객 정보의 대비 우선</text>
+</svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<title>출발 카메라 실제 좌표 기준 — 래스터 시안의 위치 오차를 대체하는 배치도</title>
+<defs><clipPath id="play"><rect width="1000" height="720"/></clipPath><style>text{font-family:monospace;fill:#F1E8D2;font-size:15px}</style></defs>
+<rect width="1000" height="720" fill="#82965A"/>
+<g clip-path="url(#play)">
+<path d="M200 -80V210 A150 150 0 0 0 350 360H1080 M800 -80V800" fill="none" stroke="#C8BEA5" stroke-width="148"/>
+<path d="M200 -80V210 A150 150 0 0 0 350 360H1080 M800 -80V800" fill="none" stroke="#454B49" stroke-width="120"/>
+<path d="M200 0V210 A150 150 0 0 0 350 360H1000 M800 0V720" fill="none" stroke="#E5D7B9" stroke-width="3" stroke-dasharray="18 26"/>
+<rect x="340" y="420" width="320" height="170" fill="#AEA99A" stroke="#E3D0A5"/>
+<rect x="440" y="420" width="120" height="130" fill="none" stroke="#F0C15A" stroke-dasharray="4 4"/>
+<rect x="340" y="500" width="320" height="320" fill="#BE7448" fill-opacity=".7" stroke="#F1E8D2"/>
+<rect x="60" y="520" width="280" height="280" fill="#99545A" fill-opacity=".8" stroke="#F1E8D2"/>
+<rect x="595" y="155" width="110" height="110" fill="#597B43" stroke="#F1E8D2"/>
+<rect x="325" y="175" width="110" height="110" fill="none" stroke="#D39959"/>
+<rect x="434" y="214" width="32" height="32" fill="#6B8055"/>
+<rect x="338" y="448" width="64" height="64" fill="#A9634B"/>
+<rect x="260" y="100" width="120" height="120" fill="none" stroke="#EE806C" stroke-dasharray="4 4"/>
+<circle cx="500" cy="360" r="37" fill="none" stroke="#8ED7AE"/><rect x="456" y="316" width="88" height="88" fill="none" stroke="#8ED7AE"/>
+<circle cx="500" cy="460" r="8" fill="#F0C15A"/>
+<text x="462" y="481">pickup</text><text x="365" y="570">depot canvas</text><text x="110" y="595">cafe canvas</text>
+<text x="270" y="120">planter (570,650)</text>
+</g>
+<rect x="12" y="12" width="976" height="52" fill="#22323D" fill-opacity=".8"/><rect x="12" y="600" width="976" height="108" fill="#22323D" fill-opacity=".8"/>
+<rect x="1000" width="280" height="720" fill="#22323D"/>
+<text x="1018" y="35">LAYOUT GUIDE / v2</text><text x="1018" y="75">camera (250,90)</text><text x="1018" y="105">world: x250..1250</text><text x="1018" y="135">world: y90..810</text><text x="1018" y="185">left: curved elbow</text><text x="1018" y="215">right: intersection</text><text x="1018" y="270">rects: full PNG canvas</text><text x="1018" y="300">not opaque footprint</text><text x="1018" y="355">roads: schematic arcs</text><text x="1018" y="385">physics: existing data</text><text x="1018" y="445">customers: state gated</text><text x="1018" y="475">before pickup: hidden</text><text x="1018" y="535">HUD bands are reserved</text><text x="1018" y="685">NOT GAME SCREENSHOT</text>
+</svg>
