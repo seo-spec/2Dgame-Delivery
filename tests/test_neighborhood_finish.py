@@ -44,3 +44,35 @@ class NeighborhoodFinishTests(unittest.TestCase):
     def test_no_layout_does_not_modify_pixels(self):
         self.layout = None
         self.assertEqual(self.render(), self.original)
+
+    def test_overlapping_paving_has_no_internal_outline(self):
+        self.layout = {'bounds': [0, 0, 12, 12], 'surfaces': [
+            {'bounds': [0, 0, 12, 12], 'material': 'stone'}]}
+        expected = self.render()
+        self.layout['surfaces'] = [
+            {'bounds': [0, 0, 8, 12], 'material': 'stone'},
+            {'bounds': [4, 0, 12, 12], 'material': 'stone'},
+        ]
+        self.assertEqual(self.render(), expected)
+
+    def test_tree_island_fades_into_underlying_paving(self):
+        self.finish = SimpleNamespace(left=0, bottom=0, width=32, height=32)
+        self.original = bytes((130, 150, 90, 255)) * 1024
+        self.layout = {'bounds': [0, 0, 32, 32], 'surfaces': [
+            {'bounds': [0, 0, 32, 32], 'material': 'stone'}]}
+        blank = bytearray(1024)
+        def draw():
+            pixels = bytearray(self.original)
+            paint_neighborhood(self.finish, pixels, blank, blank, blank, self.layout, lambda: None)
+            return pixels
+        base = draw()
+        self.layout['surfaces'].append(
+            {'bounds': [4, 4, 28, 28], 'material': 'garden', 'shape': 'ellipse'})
+        pixels = draw()
+        def difference(x, y):
+            offset = ((31 - y) * 32 + x) * 4
+            return sum(abs(pixels[offset + c] - base[offset + c]) for c in range(3))
+        self.assertEqual(difference(2, 16), 0)
+        self.assertGreater(difference(4, 16), 0)
+        self.assertLess(difference(4, 16), difference(16, 16))
+        self.assertEqual(pixels[3::4], base[3::4])

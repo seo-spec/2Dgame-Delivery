@@ -36,16 +36,12 @@
         {"bounds": [18, 24, 286, 312], "material": "stone", "radius": 14},
         {"bounds": [18, 346, 284, 578], "material": "stone", "radius": 14},
         {"bounds": [26, 646, 276, 858], "material": "stone", "radius": 12},
-        {"bounds": [302, 24, 586, 294], "material": "brick", "radius": 14},
+        {"bounds": [302, 24, 590, 294], "material": "brick", "radius": 10},
         {"bounds": [590, 12, 956, 302], "material": "service", "radius": 10},
         {"bounds": [542, 96, 590, 260], "material": "service", "radius": 6},
-        {"bounds": [530, 526, 804, 682], "material": "stone", "radius": 18},
-        {"bounds": [790, 540, 862, 578], "material": "stone", "radius": 10},
-        {"bounds": [838, 538, 962, 668], "material": "garden", "radius": 40},
-        {"bounds": [602, 800, 898, 1010], "material": "stone", "radius": 12},
-        {"bounds": [294, 34, 316, 236], "material": "garden", "radius": 10},
-        {"bounds": [920, 72, 958, 264], "material": "garden", "radius": 12},
-        {"bounds": [538, 662, 686, 680], "material": "garden", "radius": 8}
+        {"bounds": [524, 524, 976, 678], "material": "stone", "radius": 8},
+        {"bounds": [846, 544, 954, 656], "material": "garden", "shape": "ellipse"},
+        {"bounds": [602, 800, 898, 1010], "material": "stone", "radius": 12}
       ],
       "parking_bays": [
         [544, 110, 584, 174],
@@ -57,31 +53,24 @@
         "id": "blue_house_garden",
         "bounds": [560, 1410, 940, 1800],
         "surfaces": [
-          {"bounds": [588, 1538, 912, 1760], "material": "stone", "radius": 14},
-          {"bounds": [570, 1560, 594, 1710], "material": "garden", "radius": 10},
-          {"bounds": [906, 1560, 930, 1744], "material": "garden", "radius": 10},
-          {"bounds": [606, 1760, 886, 1784], "material": "garden", "radius": 10}
+          {"bounds": [588, 1536, 912, 1760], "material": "stone", "radius": 8}
         ]
       },
       {
         "id": "north_shop_workyard",
         "bounds": [1240, 1410, 1750, 1800],
         "surfaces": [
-          {"bounds": [1264, 1538, 1618, 1768], "material": "brick", "radius": 12},
-          {"bounds": [1598, 1528, 1738, 1630], "material": "service", "radius": 12},
-          {"bounds": [1266, 1540, 1320, 1662], "material": "service", "radius": 8},
-          {"bounds": [1588, 1628, 1726, 1730], "material": "garden", "radius": 32},
-          {"bounds": [1280, 1768, 1536, 1788], "material": "garden", "radius": 8}
+          {"bounds": [1264, 1536, 1618, 1768], "material": "brick", "radius": 8},
+          {"bounds": [1596, 1536, 1738, 1660], "material": "service", "radius": 8},
+          {"bounds": [1588, 1588, 1712, 1712], "material": "garden", "shape": "ellipse"}
         ]
       },
       {
         "id": "east_shop_transit_front",
         "bounds": [2040, 810, 2450, 1290],
         "surfaces": [
-          {"bounds": [2070, 944, 2428, 1158], "material": "service", "radius": 12},
-          {"bounds": [2066, 1158, 2444, 1276], "material": "stone", "radius": 12},
-          {"bounds": [2402, 1020, 2430, 1188], "material": "garden", "radius": 12},
-          {"bounds": [2070, 1248, 2110, 1272], "material": "garden", "radius": 10}
+          {"bounds": [2070, 942, 2428, 1158], "material": "service", "radius": 8},
+          {"bounds": [2066, 1158, 2444, 1276], "material": "stone", "radius": 8}
         ]
       }
     ],
