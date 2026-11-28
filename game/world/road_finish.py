@@ -16,11 +16,19 @@ class RoadFinish:
     def __init__(self, road_map, config):
         self.camera = road_map.camera
         self.left, self.bottom, right, top = config['bounds']
+        # 합성 시 이웃 2px도 읽고 출력 시에는 잘라 내부 경계의 연석/음영을 일치시킨다.
+        self.padding = 0 if config.get('entrance_only') else 2
+        self.left -= self.padding
+        self.bottom -= self.padding
+        right += self.padding
+        top += self.padding
         self.width = right - self.left
         self.height = top - self.bottom
         # 월드 끝에는 이어질 바깥 지면이 없으므로 불필요한 기본색 띠를 만들지 않는다.
-        self.fade_edges = (self.left > 0, right < road_map.width,
-                           self.bottom > 0, top < road_map.height)
+        self.fade_bounds = config.get('fade_bounds', config['bounds'])
+        fade_left, fade_bottom, fade_right, fade_top = self.fade_bounds
+        self.fade_edges = (fade_left > 0, fade_right < road_map.width,
+                           fade_bottom > 0, fade_top < road_map.height)
         self.image = None
         mask = self._road_mask(road_map.road_surface.rectangles)
         if config.get('entrance_only'):
@@ -80,15 +88,12 @@ class RoadFinish:
     def _material_pixels(self, mask, quiet, fade_width):
         pixels = bytearray(self.width * self.height * 4)
         red, green, blue = ASPHALT_TINT
-        fade_x = [self._fade_alpha(x, self.width, fade_width, *self.fade_edges[:2])
-                  for x in range(self.width)]
-        fade_y = [self._fade_alpha(y, self.height, fade_width, *self.fade_edges[2:])
-                  for y in range(self.height)]
+        fade_x, fade_y = self._fade_axes(fade_width)
         for row in range(self.height):
             world_y = self.bottom + self.height - 1 - row
             for x in range(self.width):
                 index = row * self.width + x
-                alpha = min(fade_x[x // 2 * 2], fade_y[row // 2 * 2])
+                alpha = min(fade_x[x], fade_y[row])
                 if not mask[index]:
                     color = self._grass_color(self.left + x, world_y, quiet[index])
                     pixels[index * 4:index * 4 + 4] = bytes((*color, alpha))
@@ -102,6 +107,17 @@ class RoadFinish:
                 pixels[index * 4:index * 4 + 4] = bytes(
                     (red + shade, green + shade, blue + shade, alpha))
         return pixels
+
+    def _fade_axes(self, fade_width):
+        """페이드는 구역의 내부 경계 대신 전체 적용 범위 바깥쪽에만 둔다."""
+        left, bottom, right, top = self.fade_bounds
+        fade_x = [self._fade_alpha((self.left + x) // 2 * 2 - left, right - left,
+                                   fade_width, *self.fade_edges[:2])
+                  for x in range(self.width)]
+        fade_y = [self._fade_alpha((self.bottom + self.height - 1 - row) // 2 * 2 - bottom,
+                                   top - bottom, fade_width, *self.fade_edges[2:])
+                  for row in range(self.height)]
+        return fade_x, fade_y
 
     def _paint_paving(self, pixels, road_mask, quiet, road_map, config):
         size = road_map.tile_size
@@ -118,10 +134,7 @@ class RoadFinish:
         sidewalk = self._road_mask(rectangles)
         forecourt = config.get('forecourt')
         yard = self._road_mask([forecourt['bounds']]) if forecourt else bytearray(len(sidewalk))
-        fade_x = [self._fade_alpha(x, self.width, config['fade_width'], *self.fade_edges[:2])
-                  for x in range(self.width)]
-        fade_y = [self._fade_alpha(y, self.height, config['fade_width'], *self.fade_edges[2:])
-                  for y in range(self.height)]
+        fade_x, fade_y = self._fade_axes(config['fade_width'])
         for row in range(self.height):
             wy = self.bottom + self.height - 1 - row
             for x in range(self.width):
@@ -145,7 +158,7 @@ class RoadFinish:
                 if quiet[index]:
                     shade //= 3
                 tint = (200, 189, 164) if is_walk else (166, 166, 151)
-                alpha = min(fade_x[x // 2 * 2], fade_y[row // 2 * 2])
+                alpha = min(fade_x[x], fade_y[row])
                 if is_walk:
                     # 차도 쪽 2px 면은 연석으로 표현한다. 모서리에서도 같은 마스크를 쓴다.
                     neighbors = (
@@ -260,12 +273,16 @@ class RoadFinish:
         return _pico.Image(texture)
 
     def draw(self):
-        left, bottom = self.camera.world_to_screen(self.left, self.bottom)
+        left, bottom = self.camera.world_to_screen(self.left + self.padding,
+                                                   self.bottom + self.padding)
+        width = self.width - 2 * self.padding
+        height = self.height - 2 * self.padding
         camera = self.camera
-        if (left + self.width <= camera.viewport_left
+        if (left + width <= camera.viewport_left
                 or left >= camera.viewport_left + camera.viewport_width
-                or bottom + self.height <= camera.viewport_bottom
+                or bottom + height <= camera.viewport_bottom
                 or bottom >= camera.viewport_bottom + camera.viewport_height):
             return
-        self.image.draw(round(left) + self.width / 2, round(bottom) + self.height / 2,
-                        self.width, self.height)
+        self.image.clip_draw(self.padding, self.padding, width, height,
+                             round(left) + width / 2, round(bottom) + height / 2,
+                             width, height)

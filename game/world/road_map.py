@@ -54,13 +54,26 @@ class RoadMap:
         self.road_surface = RoadSurface(rectangles)
         self.spawn = self.config['spawn']
         self.road_finish = None
+        self.road_finish_extensions = []
         self.entrance_finishes = []
         finish_config = self.config.get('road_finish')
         if finish_config:
-            try:
-                self.road_finish = RoadFinish(self, finish_config)
-            except OSError as error:
-                print(f'[도로 표현] {error}')
+            regions = [finish_config['bounds'], *finish_config.get('extensions', [])]
+            # 현재 세 구역은 같은 높이로 맞닿는 직사각형이다. 내부 경계는 페이드하지 않는다.
+            fade_bounds = [min(bounds[0] for bounds in regions),
+                           min(bounds[1] for bounds in regions),
+                           max(bounds[2] for bounds in regions),
+                           max(bounds[3] for bounds in regions)]
+            for index, bounds in enumerate(regions):
+                try:
+                    finish = RoadFinish(self, {**finish_config, 'bounds': bounds,
+                                              'fade_bounds': fade_bounds})
+                    if index == 0:
+                        self.road_finish = finish
+                    else:
+                        self.road_finish_extensions.append(finish)
+                except OSError as error:
+                    print(f'[도로 표현 {index}] {error}')
             for path in finish_config.get('entry_paths', []):
                 if not path.get('standalone', False):
                     continue
@@ -118,6 +131,8 @@ class RoadMap:
         self._draw_access_paths()
         if self.road_finish is not None:
             self.road_finish.draw()
+        for finish in self.road_finish_extensions:
+            finish.draw()
         for entrance in self.entrance_finishes:
             entrance.draw()
 

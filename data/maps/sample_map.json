@@ -3,6 +3,10 @@
   "spawn": [750, 450],
   "road_finish": {
     "bounds": [0, 200, 1200, 1500],
+    "extensions": [
+      [1200, 200, 1800, 1500],
+      [1800, 200, 2400, 1500]
+    ],
     "fade_width": 96,
     "forecourt": {
       "bounds": [590, 220, 910, 390],
@@ -176,7 +180,6 @@
     {"asset": "recycling_bin", "position": [2220, 1450], "size": [32, 32], "collision": {"offset": [0, 0], "size": [24, 24]}},
     {"asset": "mailbox", "position": [620, 330], "size": [64, 64], "collision": {"offset": [0, 0], "size": [34, 32]}},
     {"asset": "mailbox", "position": [2100, 960], "size": [64, 64], "collision": {"offset": [0, 0], "size": [34, 32]}},
-    {"asset": "planter", "position": [620, 280], "size": [100, 100], "collision": {"offset": [0, 0], "size": [90, 30]}},
     {"asset": "planter", "position": [570, 650], "size": [120, 120], "collision": {"offset": [0, 0], "size": [110, 36]}},
     {"asset": "planter", "position": [1600, 1170], "size": [120, 120], "collision": {"offset": [0, 0], "size": [110, 36]}},
     {"asset": "fountain", "position": [2850, 1950], "size": [230, 230], "collision": {"offset": [-2, -1], "size": [188, 188]}},
