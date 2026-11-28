@@ -66,8 +66,9 @@ class RoadFinish:
         quiet = self._quiet_mask(road_map)
         pixels = self._material_pixels(mask, quiet, config['fade_width'])
         sidewalk = self._paint_paving(pixels, mask, quiet, road_map, config)
-        paint_neighborhood(self, pixels, mask, quiet, sidewalk,
-                           config.get('neighborhood'), _pump_loading_events)
+        for layout in [config.get('neighborhood'), *config.get('neighborhoods', [])]:
+            paint_neighborhood(self, pixels, mask, quiet, sidewalk,
+                               layout, _pump_loading_events)
         self._paint_entrances(pixels, mask, road_map, config)
         self._paint_markings(pixels, mask, quiet, road_map)
         self.image = self._upload(pixels)

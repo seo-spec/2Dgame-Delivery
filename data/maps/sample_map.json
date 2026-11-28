@@ -52,6 +52,39 @@
         [544, 184, 584, 248]
       ]
     },
+    "neighborhoods": [
+      {
+        "id": "blue_house_garden",
+        "bounds": [560, 1410, 940, 1800],
+        "surfaces": [
+          {"bounds": [588, 1538, 912, 1760], "material": "stone", "radius": 14},
+          {"bounds": [570, 1560, 594, 1710], "material": "garden", "radius": 10},
+          {"bounds": [906, 1560, 930, 1744], "material": "garden", "radius": 10},
+          {"bounds": [606, 1760, 886, 1784], "material": "garden", "radius": 10}
+        ]
+      },
+      {
+        "id": "north_shop_workyard",
+        "bounds": [1240, 1410, 1750, 1800],
+        "surfaces": [
+          {"bounds": [1264, 1538, 1618, 1768], "material": "brick", "radius": 12},
+          {"bounds": [1598, 1528, 1738, 1630], "material": "service", "radius": 12},
+          {"bounds": [1266, 1540, 1320, 1662], "material": "service", "radius": 8},
+          {"bounds": [1588, 1628, 1726, 1730], "material": "garden", "radius": 32},
+          {"bounds": [1280, 1768, 1536, 1788], "material": "garden", "radius": 8}
+        ]
+      },
+      {
+        "id": "east_shop_transit_front",
+        "bounds": [2040, 810, 2450, 1290],
+        "surfaces": [
+          {"bounds": [2070, 944, 2428, 1158], "material": "service", "radius": 12},
+          {"bounds": [2066, 1158, 2444, 1276], "material": "stone", "radius": 12},
+          {"bounds": [2402, 1020, 2430, 1188], "material": "garden", "radius": 12},
+          {"bounds": [2070, 1248, 2110, 1272], "material": "garden", "radius": 10}
+        ]
+      }
+    ],
     "entry_paths": [
       {
         "building_id": "collision_preview_house",
