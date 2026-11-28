@@ -147,7 +147,8 @@ class MapDecoration:
     """건물·도시 소품·신호등의 이미지 표시만 담당하는 월드 객체."""
 
     def __init__(self, camera, image, position, size, collision=None, object_id=None,
-                 is_building=False, tree_sway=None, depot_layout='original'):
+                 is_building=False, tree_sway=None, depot_layout='original',
+                 cull_when_offscreen=False):
         self.camera = camera
         self.image = image
         self.x, self.y = position
@@ -156,6 +157,7 @@ class MapDecoration:
         self.collision = collision
         self.object_id = object_id
         self.is_building = is_building
+        self.cull_when_offscreen = cull_when_offscreen
         self.tree_sway = tree_sway
         self.ambience = None
         if object_id == 'delivery_depot':
@@ -184,7 +186,7 @@ class MapDecoration:
         x, y = self.camera.world_to_screen(self.x, self.y)
         if self.tree_sway is None and (not self.is_building or self.object_id in (
                 'collision_preview_house', 'delivery_house_b', 'delivery_house_c',
-                'delivery_house_d', 'delivery_house_e')):
+                'delivery_house_d', 'delivery_house_e') or self.cull_when_offscreen):
             camera = self.camera
             if (x + self.width / 2 <= camera.viewport_left
                     or x - self.width / 2 >= camera.viewport_left + camera.viewport_width
@@ -236,6 +238,10 @@ def create_decorations(camera, config, roads):
         'planter': 'planter_pixel_v1.png',
     }
     pixel_props = set()
+    common_buildings = {
+        'cafe': 'building_cafe_pixel_v1.png',
+        'apartment': 'building_apartment_pixel_v1.png',
+    }
     depot_layout = 'original'
 
     def add_decoration(item, asset, is_building=False):
@@ -248,6 +254,13 @@ def create_decorations(camera, config, roads):
                     pixel_props.add(asset)
                 except OSError as error:
                     print(f'[도시 소품 {asset}] 원본 사용: {error}')
+                    images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
+            elif is_building and asset in common_buildings:
+                try:
+                    images[asset] = load_image(str(ROOT / 'assets/images' / common_buildings[asset]))
+                    import_module('pico2d.pico2d').SDL_SetTextureScaleMode(images[asset].texture, 0)
+                except OSError as error:
+                    print(f'[공통 건물 {asset}] 원본 사용: {error}')
                     images[asset] = load_image(str(ROOT / 'assets/images' / filenames[asset]))
             elif asset == 'delivery_depot':
                 try:
@@ -296,15 +309,6 @@ def create_decorations(camera, config, roads):
                     print(f'[주택 입구 이미지] 기존 도트 주택 사용: {error}')
                     images[key] = image
             image = images[key]
-        if is_building and item.get('id') == 'delivery_candidate_cafe_450_150':
-            key = 'start_cafe_pixel'
-            if key not in images:
-                try:
-                    images[key] = load_image(str(ROOT / 'assets/images/building_cafe_pixel_v1.png'))
-                except OSError as error:
-                    print(f'[카페 이미지] 기존 이미지 사용: {error}')
-                    images[key] = images[asset]
-            image = images[key]
         if is_building and asset == 'blue_house' and tuple(item['position']) == (150, 150):
             key = 'start_blue_house_pixel'
             if key not in images:
@@ -330,7 +334,8 @@ def create_decorations(camera, config, roads):
         decorations.append(MapDecoration(camera, image, item['position'], item['size'],
                                          collision=item.get('collision'), object_id=item.get('id'),
                                          is_building=is_building, tree_sway=tree_sway,
-                                         depot_layout=depot_layout))
+                                         depot_layout=depot_layout,
+                                         cull_when_offscreen=is_building and asset in common_buildings))
 
     for item in config['buildings']:
         add_decoration(item, item.get('asset', 'building'), is_building=True)
