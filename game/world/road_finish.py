@@ -2,15 +2,27 @@
 
 import ctypes
 from importlib import import_module
+from time import perf_counter
 
 from game.world.road_geometry import GRASS_COLOR, MARKING_COLOR, SIDEWALK_COLOR
 from game.world.ground_materials import asphalt_shade, grass_color
 from game.world.start_scene_art import ground_strength, ground_tint
+from game.world.ground_cache import cache_path, read_pixels, write_pixels
 
 
 _pico = import_module('pico2d.pico2d')
 ASPHALT_TINT = (65, 72, 75)
 PAINT_TINT = (224, 217, 196)
+_last_event_pump = 0.0
+
+
+def _pump_loading_events():
+    """최초 합성 중에도 창 메시지를 처리한다. 입력 이벤트는 소비하지 않는다."""
+    global _last_event_pump
+    now = perf_counter()
+    if now - _last_event_pump >= 0.05:
+        _pico.SDL_PumpEvents()
+        _last_event_pump = now
 
 
 class RoadFinish:
@@ -31,12 +43,24 @@ class RoadFinish:
         self.fade_edges = (fade_left > 0, fade_right < road_map.width,
                            fade_bottom > 0, fade_top < road_map.height)
         self.image = None
+        _pump_loading_events()
+        try:
+            path = cache_path(road_map, config)
+        except OSError:
+            path = None
+        cached = read_pixels(path, self.width * self.height * 4) if path else None
+        self.cache_hit = cached is not None
+        if self.cache_hit:
+            self.image = self._upload(cached)
+            return
         mask = self._road_mask(road_map.road_surface.rectangles)
         if config.get('entrance_only'):
             # 기존 재질 구역 밖에서는 진입부만 작은 투명 텍스처에 합성한다.
             pixels = bytearray(bytes((*GRASS_COLOR, 0)) * (self.width * self.height))
             self._paint_entrances(pixels, mask, road_map, config)
             self.image = self._upload(pixels)
+            if path:
+                write_pixels(path, pixels)
             return
         quiet = self._quiet_mask(road_map)
         pixels = self._material_pixels(mask, quiet, config['fade_width'])
@@ -44,6 +68,8 @@ class RoadFinish:
         self._paint_entrances(pixels, mask, road_map, config)
         self._paint_markings(pixels, mask, quiet, road_map)
         self.image = self._upload(pixels)
+        if path:
+            write_pixels(path, pixels)
 
     def _road_mask(self, rectangles):
         """반열린 월드 사각형을 표시용 마스크로 변환한다. 판정 데이터는 수정하지 않는다."""
@@ -57,6 +83,8 @@ class RoadFinish:
                 continue
             stripe = b'\x01' * (x2 - x1)
             for y in range(y1, y2):
+                if y % 16 == 0:
+                    _pump_loading_events()
                 start = (self.height - 1 - y) * self.width + x1
                 mask[start:start + len(stripe)] = stripe
         return mask
@@ -90,26 +118,40 @@ class RoadFinish:
         pixels = bytearray(self.width * self.height * 4)
         red, green, blue = ASPHALT_TINT
         fade_x, fade_y = self._fade_axes(fade_width)
+        cells = {}
+        previous_grid_y = None
         for row in range(self.height):
+            if row % 16 == 0:
+                _pump_loading_events()
             world_y = self.bottom + self.height - 1 - row
+            grid_y = world_y // 2
+            if grid_y != previous_grid_y:
+                cells.clear()
+                previous_grid_y = grid_y
             for x in range(self.width):
                 index = row * self.width + x
+                wx = self.left + x
                 alpha = min(fade_x[x], fade_y[row])
-                alpha = max(alpha, round(255 * ground_strength(self.left + x, world_y)))
-                if not mask[index]:
-                    color = self._grass_color(self.left + x, world_y, quiet[index])
-                    pixels[index * 4:index * 4 + 4] = bytes((*color, alpha))
-                    continue
-                # 매 픽셀 입자 대신 드문 작은 자국만 남겨 도로 면을 차분하게 유지한다.
-                shade = asphalt_shade(self.left + x, world_y, quiet[index])
-                if 2 <= x < self.width - 2 and 2 <= row < self.height - 2:
-                    if not (mask[index - 2] and mask[index + 2]
-                            and mask[index - self.width * 2] and mask[index + self.width * 2]):
-                        shade -= 2
-                color = ground_tint(self.left + x, world_y,
-                                    (red + shade, green + shade, blue + shade),
-                                    'asphalt', ASPHALT_TINT)
-                pixels[index * 4:index * 4 + 4] = bytes((*color, alpha))
+                alpha = max(alpha, round(255 * ground_strength(wx, world_y)))
+                edge = (mask[index] and 2 <= x < self.width - 2
+                        and 2 <= row < self.height - 2
+                        and not (mask[index - 2] and mask[index + 2]
+                                 and mask[index - self.width * 2] and mask[index + self.width * 2]))
+                # 재질은 월드2px 단위다. 마스크·조용한 구역·연석·알파가 같은
+                # 셀에서만 RGBA를 공유해 경계의 실제 1px 차이는 보존한다.
+                key = (wx // 2, mask[index], quiet[index], bool(edge), alpha)
+                rgba = cells.get(key)
+                if rgba is None:
+                    if not mask[index]:
+                        color = self._grass_color(wx, world_y, quiet[index])
+                    else:
+                        shade = asphalt_shade(wx, world_y, quiet[index]) - (2 if edge else 0)
+                        color = ground_tint(wx, world_y,
+                                            (red + shade, green + shade, blue + shade),
+                                            'asphalt', ASPHALT_TINT)
+                    rgba = bytes((*color, alpha))
+                    cells[key] = rgba
+                pixels[index * 4:index * 4 + 4] = rgba
         return pixels
 
     def _fade_axes(self, fade_width):
@@ -140,6 +182,8 @@ class RoadFinish:
         yard = self._road_mask([forecourt['bounds']]) if forecourt else bytearray(len(sidewalk))
         fade_x, fade_y = self._fade_axes(config['fade_width'])
         for row in range(self.height):
+            if row % 16 == 0:
+                _pump_loading_events()
             wy = self.bottom + self.height - 1 - row
             for x in range(self.width):
                 index = row * self.width + x
@@ -213,6 +257,8 @@ class RoadFinish:
                 y1, y2 = max(self.bottom, bottom), min(self.bottom + self.height, top)
                 tint = (205, 191, 160) if is_step else (179, 174, 154)
                 for wy in range(y1, y2):
+                    if wy % 16 == 0:
+                        _pump_loading_events()
                     row = self.height - 1 - (wy - self.bottom)
                     for wx in range(x1, x2):
                         index = row * self.width + wx - self.left
@@ -227,10 +273,15 @@ class RoadFinish:
                         elif local_x % 24 < 4 or local_y % 16 >= 14:
                             shade = 3
                         offset = index * 4
-                        color = tuple(channel + shade for channel in tint)
+                        # 독립 진입부도 기본 작업 마당과 같은 v2 재료를 쓴다.
+                        base = tint if is_step else ground_tint(wx, wy, tint, 'yard')
+                        color = tuple(channel + shade for channel in base)
                         # 진입부 바깥2px은 기존 지면과 섞어 잔디 위에 얹힌 느낌을 줄인다.
                         if not is_step and min(local_x, right - wx - 1) < 2:
-                            color = tuple((channel + pixels[offset + c]) // 2
+                            background = (self._grass_color(wx, wy, True)
+                                          if config.get('entrance_only')
+                                          else pixels[offset:offset + 3])
+                            color = tuple((channel + background[c]) // 2
                                           for c, channel in enumerate(color))
                         pixels[offset:offset + 3] = bytes(color)
                         if config.get('entrance_only'):
@@ -253,6 +304,8 @@ class RoadFinish:
                 bottom = max(0, round(tile_y * road_map.tile_size + y1 - self.bottom))
                 top = min(self.height, round(tile_y * road_map.tile_size + y2 + 1 - self.bottom))
                 for y in range(bottom, top):
+                    if y % 16 == 0:
+                        _pump_loading_events()
                     row = self.height - 1 - y
                     for x in range(left, right):
                         index = row * self.width + x

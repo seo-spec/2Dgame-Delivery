@@ -1,6 +1,7 @@
 """맵 전체의 공통 v2 자산·입구 변형·팔레트와 초기화 전용 텍스처 로더."""
 
 from importlib import import_module
+from functools import lru_cache
 import json
 from pathlib import Path
 
@@ -59,10 +60,19 @@ def ground_tint(wx, wy, color, material, base=None):
     strength = ground_strength(wx, wy)
     if strength <= 0:
         return color
-    target = TINTS[material]
     base = color if base is None else base
+    if strength == 1.0:
+        return _solid_ground_tint(color, material, base)
+    target = TINTS[material]
     return tuple(round(channel + strength * (target[index] - base[index]))
                  for index, channel in enumerate(color))
+
+
+@lru_cache(maxsize=256)
+def _solid_ground_tint(color, material, base):
+    # 월드 전체 팔레트는 작은 색상 조합만 반복한다. 좌표별 캐시는 만들지 않는다.
+    return tuple(channel + target - original
+                 for channel, target, original in zip(color, TINTS[material], base))
 
 
 def load_compact_image(filename, size):

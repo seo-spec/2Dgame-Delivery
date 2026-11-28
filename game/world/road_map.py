@@ -1,6 +1,7 @@
 """공통 규격의 도로와 이미지 장식으로 구성한 샘플 맵."""
 
 import json
+from time import perf_counter
 from importlib import import_module
 from pathlib import Path
 
@@ -59,6 +60,7 @@ class RoadMap:
         self.entrance_finishes = []
         finish_config = self.config.get('road_finish')
         if finish_config:
+            finish_started = perf_counter()
             regions = [finish_config['bounds'], *finish_config.get('extensions', [])]
             # 적용 구역들은 빈틈없는 직사각형을 이룬다. 내부 경계는 페이드하지 않는다.
             fade_bounds = [min(bounds[0] for bounds in regions),
@@ -85,6 +87,11 @@ class RoadMap:
                     }))
                 except OSError as error:
                     print(f'[주택 진입부] {error}')
+            finishes = ([self.road_finish] if self.road_finish is not None else [])
+            finishes += self.road_finish_extensions + self.entrance_finishes
+            hits = sum(finish.cache_hit for finish in finishes)
+            print(f'[지면 준비] 캐시 {hits}/{len(finishes)}, '
+                  f'재생성 {len(finishes) - hits}, {perf_counter() - finish_started:.2f}초')
 
     def is_point_on_road(self, x, y):
         """월드 좌표 점의 도로 포함 여부. 건물 충돌과는 독립적이다."""
