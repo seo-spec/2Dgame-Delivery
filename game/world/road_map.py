@@ -14,7 +14,7 @@ from game.world.road_surface import RoadSurface
 from game.world.road_finish import RoadFinish
 from game.world.depot_ambience import DepotAmbience
 from game.world.tree_sway import TreeSway
-from game.world.start_scene_art import ASSETS as START_ASSETS, load_compact_image
+from game.world.start_scene_art import get_asset_spec, load_compact_image
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -57,7 +57,6 @@ class RoadMap:
         self.road_finish = None
         self.road_finish_extensions = []
         self.entrance_finishes = []
-        self.start_finish_gap = None
         finish_config = self.config.get('road_finish')
         if finish_config:
             regions = [finish_config['bounds'], *finish_config.get('extensions', [])]
@@ -86,14 +85,6 @@ class RoadMap:
                     }))
                 except OSError as error:
                     print(f'[주택 진입부] {error}')
-            # 기존 재질 범위 아래(y90~200)도 출발 화면에 보이는 폭만 보완한다.
-            try:
-                self.start_finish_gap = RoadFinish(self, {
-                    **finish_config, 'bounds': [250, 90, 1250, 200],
-                    'fade_bounds': [0, 0, self.width, self.height],
-                })
-            except OSError as error:
-                print(f'[출발지 지면] 기존 바닥 사용: {error}')
 
     def is_point_on_road(self, x, y):
         """월드 좌표 점의 도로 포함 여부. 건물 충돌과는 독립적이다."""
@@ -143,8 +134,6 @@ class RoadMap:
             self.road_finish.draw()
         for finish in self.road_finish_extensions:
             finish.draw()
-        if self.start_finish_gap is not None:
-            self.start_finish_gap.draw()
         for entrance in self.entrance_finishes:
             entrance.draw()
 
@@ -276,15 +265,15 @@ def create_decorations(camera, config, roads):
 
     def add_decoration(item, asset, is_building=False):
         nonlocal depot_layout
-        start_spec = START_ASSETS.get((asset, tuple(item['position'])))
+        start_spec = get_asset_spec(asset, item.get('id'))
         start_image = None
         if start_spec:
-            key = 'start_title_v2_' + asset
+            key = ('title_v2', *start_spec)
             if key not in images:
                 try:
                     images[key] = load_compact_image(*start_spec)
                 except OSError as error:
-                    print(f'[출발지 {asset}] v1 사용: {error}')
+                    print(f'[환경 {start_spec[0]}] v1 사용: {error}')
                     images[key] = None
             start_image = images[key]
             if start_image is not None and asset == 'delivery_depot':
@@ -323,7 +312,7 @@ def create_decorations(camera, config, roads):
             'delivery_house_e': 'building_shop_entrance_pixel_v1.png',
         }
         entrance_file = entrance_assets.get(item.get('id')) if is_building else None
-        if entrance_file:
+        if start_image is None and entrance_file:
             if entrance_file not in images:
                 try:
                     images[entrance_file] = load_image(str(ROOT / 'assets/images' / entrance_file))
@@ -331,7 +320,8 @@ def create_decorations(camera, config, roads):
                     print(f'[배송 건물 이미지] 원본 사용: {error}')
                     images[entrance_file] = images[asset]
             image = images[entrance_file]
-        if is_building and item.get('id') in ('collision_preview_house', 'delivery_house_b'):
+        if (start_image is None and is_building
+                and item.get('id') in ('collision_preview_house', 'delivery_house_b')):
             key = 'north_house_entrance_pixel'
             if key not in images:
                 try:

@@ -1,0 +1,424 @@
+{
+    "depot_title_v2.png":  {
+                               "source_size":  [
+                                                   1254,
+                                                   1254
+                                               ],
+                               "source_rect":  [
+                                                   64,
+                                                   66,
+                                                   1125,
+                                                   1067
+                                               ],
+                               "reference_size":  [
+                                                      1254,
+                                                      1254
+                                                  ],
+                               "reference_rect":  [
+                                                      60,
+                                                      62,
+                                                      1135,
+                                                      1083
+                                                  ],
+                               "reference_asset":  "building_delivery_depot_pixel_v1.png"
+                           },
+    "cafe_title_v2.png":  {
+                              "source_size":  [
+                                                  1254,
+                                                  1254
+                                              ],
+                              "source_rect":  [
+                                                  218,
+                                                  252,
+                                                  819,
+                                                  799
+                                              ],
+                              "reference_size":  [
+                                                     1254,
+                                                     1254
+                                                 ],
+                              "reference_rect":  [
+                                                     216,
+                                                     252,
+                                                     821,
+                                                     799
+                                                 ],
+                              "reference_asset":  "building_cafe_pixel_v1.png"
+                          },
+    "house_title_v2.png":  {
+                               "source_size":  [
+                                                   1254,
+                                                   1254
+                                               ],
+                               "source_rect":  [
+                                                   146,
+                                                   310,
+                                                   963,
+                                                   661
+                                               ],
+                               "reference_size":  [
+                                                      1254,
+                                                      1254
+                                                  ],
+                               "reference_rect":  [
+                                                      146,
+                                                      310,
+                                                      961,
+                                                      661
+                                                  ],
+                               "reference_asset":  "building_sample_pixel_v1.png"
+                           },
+    "blue_house_title_v2.png":  {
+                                    "source_size":  [
+                                                        1388,
+                                                        1133
+                                                    ],
+                                    "source_rect":  [
+                                                        66,
+                                                        214,
+                                                        1257,
+                                                        737
+                                                    ],
+                                    "reference_size":  [
+                                                           1254,
+                                                           1254
+                                                       ],
+                                    "reference_rect":  [
+                                                           58,
+                                                           298,
+                                                           1139,
+                                                           663
+                                                       ],
+                                    "reference_asset":  "building_blue_house_pixel_v1.png"
+                                },
+    "shop_title_v2.png":  {
+                              "source_size":  [
+                                                  1254,
+                                                  1254
+                                              ],
+                              "source_rect":  [
+                                                  90,
+                                                  298,
+                                                  1075,
+                                                  657
+                                              ],
+                              "reference_size":  [
+                                                     1254,
+                                                     1254
+                                                 ],
+                              "reference_rect":  [
+                                                     88,
+                                                     288,
+                                                     1079,
+                                                     677
+                                                 ],
+                              "reference_asset":  "building_shop_pixel_v1.png",
+                              "opaque_roof":  {
+                                                  "color":  [
+                                                                72,
+                                                                125,
+                                                                122
+                                                            ],
+                                                  "rect":  [
+                                                               144,
+                                                               350,
+                                                               970,
+                                                               540
+                                                           ],
+                                                  "details":  [
+                                                                  [
+                                                                      220,
+                                                                      390,
+                                                                      300,
+                                                                      180
+                                                                  ],
+                                                                  [
+                                                                      820,
+                                                                      330,
+                                                                      300,
+                                                                      250
+                                                                  ]
+                                                              ]
+                                              }
+                          },
+    "apartment_title_v2.png":  {
+                                   "source_size":  [
+                                                       1254,
+                                                       1254
+                                                   ],
+                                   "source_rect":  [
+                                                       72,
+                                                       230,
+                                                       1109,
+                                                       817
+                                                   ],
+                                   "reference_size":  [
+                                                          1254,
+                                                          1254
+                                                      ],
+                                   "reference_rect":  [
+                                                          72,
+                                                          228,
+                                                          1109,
+                                                          821
+                                                      ],
+                                   "reference_asset":  "building_apartment_pixel_v1.png"
+                               },
+    "house_entrance_title_v2.png":  {
+                                        "source_size":  [
+                                                            1254,
+                                                            1254
+                                                        ],
+                                        "source_rect":  [
+                                                            144,
+                                                            310,
+                                                            967,
+                                                            663
+                                                        ],
+                                        "reference_size":  [
+                                                               1254,
+                                                               1254
+                                                           ],
+                                        "reference_rect":  [
+                                                               144,
+                                                               308,
+                                                               965,
+                                                               665
+                                                           ],
+                                        "reference_asset":  "building_sample_entrance_pixel_v1.png"
+                                    },
+    "blue_house_entrance_title_v2.png":  {
+                                             "source_size":  [
+                                                                 1254,
+                                                                 1254
+                                                             ],
+                                             "source_rect":  [
+                                                                 58,
+                                                                 296,
+                                                                 1139,
+                                                                 685
+                                                             ],
+                                             "reference_size":  [
+                                                                    1254,
+                                                                    1254
+                                                                ],
+                                             "reference_rect":  [
+                                                                    56,
+                                                                    296,
+                                                                    1143,
+                                                                    685
+                                                                ],
+                                             "reference_asset":  "building_blue_house_entrance_pixel_v1.png"
+                                         },
+    "shop_entrance_title_v2.png":  {
+                                       "source_size":  [
+                                                           1254,
+                                                           1254
+                                                       ],
+                                       "source_rect":  [
+                                                           84,
+                                                           290,
+                                                           1085,
+                                                           675
+                                                       ],
+                                       "reference_size":  [
+                                                              1254,
+                                                              1254
+                                                          ],
+                                       "reference_rect":  [
+                                                              86,
+                                                              290,
+                                                              1081,
+                                                              675
+                                                          ],
+                                       "reference_asset":  "building_shop_entrance_pixel_v1.png",
+                                       "opaque_roof":  {
+                                                           "color":  [
+                                                                         72,
+                                                                         125,
+                                                                         122
+                                                                     ],
+                                                           "rect":  [
+                                                                        144,
+                                                                        350,
+                                                                        970,
+                                                                        540
+                                                                    ],
+                                                           "details":  [
+                                                                           [
+                                                                               220,
+                                                                               390,
+                                                                               300,
+                                                                               180
+                                                                           ],
+                                                                           [
+                                                                               820,
+                                                                               330,
+                                                                               300,
+                                                                               250
+                                                                           ]
+                                                                       ]
+                                                       }
+                                   },
+    "tree_title_v2.png":  {
+                              "source_size":  [
+                                                  1254,
+                                                  1254
+                                              ],
+                              "source_rect":  [
+                                                  94,
+                                                  104,
+                                                  1063,
+                                                  1049
+                                              ],
+                              "reference_size":  [
+                                                     1254,
+                                                     1254
+                                                 ],
+                              "reference_rect":  [
+                                                     94,
+                                                     102,
+                                                     1065,
+                                                     1053
+                                                 ],
+                              "reference_asset":  "tree_title_pixel_v1.png"
+                          },
+    "bench_title_v2.png":  {
+                               "source_size":  [
+                                                   1254,
+                                                   1254
+                                               ],
+                               "source_rect":  [
+                                                   40,
+                                                   372,
+                                                   1173,
+                                                   569
+                                               ],
+                               "reference_size":  [
+                                                      1254,
+                                                      1254
+                                                  ],
+                               "reference_rect":  [
+                                                      42,
+                                                      372,
+                                                      1171,
+                                                      569
+                                                  ],
+                               "reference_asset":  "bench_pixel_v1.png"
+                           },
+    "bin_title_v2.png":  {
+                             "source_size":  [
+                                                 1254,
+                                                 1254
+                                             ],
+                             "source_rect":  [
+                                                 174,
+                                                 152,
+                                                 905,
+                                                 949
+                                             ],
+                             "reference_size":  [
+                                                    1254,
+                                                    1254
+                                                ],
+                             "reference_rect":  [
+                                                    158,
+                                                    150,
+                                                    939,
+                                                    957
+                                                ],
+                             "reference_asset":  "recycling_bin_pixel_v1.png"
+                         },
+    "mailbox_title_v2.png":  {
+                                 "source_size":  [
+                                                     1254,
+                                                     1254
+                                                 ],
+                                 "source_rect":  [
+                                                     286,
+                                                     318,
+                                                     683,
+                                                     707
+                                                 ],
+                                 "reference_size":  [
+                                                        1254,
+                                                        1254
+                                                    ],
+                                 "reference_rect":  [
+                                                        280,
+                                                        310,
+                                                        695,
+                                                        723
+                                                    ],
+                                 "reference_asset":  "mailbox_pixel_v1.png"
+                             },
+    "planter_title_v2.png":  {
+                                 "source_size":  [
+                                                     1254,
+                                                     1254
+                                                 ],
+                                 "source_rect":  [
+                                                     52,
+                                                     440,
+                                                     1153,
+                                                     409
+                                                 ],
+                                 "reference_size":  [
+                                                        1254,
+                                                        1254
+                                                    ],
+                                 "reference_rect":  [
+                                                        52,
+                                                        440,
+                                                        1151,
+                                                        409
+                                                    ],
+                                 "reference_asset":  "planter_pixel_v1.png"
+                             },
+    "bus_stop_title_v2.png":  {
+                                  "source_size":  [
+                                                      1536,
+                                                      1024
+                                                  ],
+                                  "source_rect":  [
+                                                      96,
+                                                      334,
+                                                      1345,
+                                                      377
+                                                  ],
+                                  "reference_size":  [
+                                                         1536,
+                                                         1024
+                                                     ],
+                                  "reference_rect":  [
+                                                         96,
+                                                         334,
+                                                         1345,
+                                                         373
+                                                     ],
+                                  "reference_asset":  "bus_stop_pixel_v1.png"
+                              },
+    "fountain_title_v2.png":  {
+                                  "source_size":  [
+                                                      1254,
+                                                      1254
+                                                  ],
+                                  "source_rect":  [
+                                                      100,
+                                                      108,
+                                                      1049,
+                                                      1053
+                                                  ],
+                                  "reference_size":  [
+                                                         1254,
+                                                         1254
+                                                     ],
+                                  "reference_rect":  [
+                                                         98,
+                                                         106,
+                                                         1051,
+                                                         1057
+                                                     ],
+                                  "reference_asset":  "fountain_pixel_v1.png"
+                              }
+}
