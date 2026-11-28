@@ -239,6 +239,9 @@ def create_decorations(camera, config, roads):
     }
     pixel_props = set()
     common_buildings = {
+        'building': 'building_sample_pixel_v1.png',
+        'blue_house': 'building_blue_house_pixel_v1.png',
+        'shop': 'building_shop_pixel_v1.png',
         'cafe': 'building_cafe_pixel_v1.png',
         'apartment': 'building_apartment_pixel_v1.png',
     }
@@ -288,18 +291,6 @@ def create_decorations(camera, config, roads):
                     print(f'[배송 건물 이미지] 원본 사용: {error}')
                     images[entrance_file] = images[asset]
             image = images[entrance_file]
-        # 지정한 주택들은 같은 도트 자산/폴백 캐시를 공유한다. 나머지는 원본을 유지한다.
-        if is_building and (item.get('id') in ('collision_preview_house', 'delivery_house_b')
-                            or (asset == 'building' and tuple(item['position'])
-                                in ((150, 450), (150, 750)))):
-            key = 'collision_preview_house_pixel'
-            if key not in images:
-                try:
-                    images[key] = load_image(str(ROOT / 'assets/images/building_sample_pixel_v1.png'))
-                except OSError as error:
-                    print(f'[주택 이미지] 기존 이미지 사용: {error}')
-                    images[key] = images[asset]
-            image = images[key]
         if is_building and item.get('id') in ('collision_preview_house', 'delivery_house_b'):
             key = 'north_house_entrance_pixel'
             if key not in images:
@@ -308,15 +299,6 @@ def create_decorations(camera, config, roads):
                 except OSError as error:
                     print(f'[주택 입구 이미지] 기존 도트 주택 사용: {error}')
                     images[key] = image
-            image = images[key]
-        if is_building and asset == 'blue_house' and tuple(item['position']) == (150, 150):
-            key = 'start_blue_house_pixel'
-            if key not in images:
-                try:
-                    images[key] = load_image(str(ROOT / 'assets/images/building_blue_house_pixel_v1.png'))
-                except OSError as error:
-                    print(f'[파란 주택 이미지] 기존 이미지 사용: {error}')
-                    images[key] = images[asset]
             image = images[key]
         tree_sway = None
         if asset == 'tree' and 'sway' in item:
