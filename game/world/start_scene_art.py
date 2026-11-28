@@ -26,6 +26,9 @@ COMMON_ASSETS = {
     'planter': ('planter_title_v2.png', (120, 120)),
     'bus_stop': ('bus_stop_title_v2.png', (230, 154)),
     'fountain': ('fountain_title_v2.png', (230, 230)),
+    'parcel_locker': ('parcel_locker_city_v1.png', (96, 56)),
+    'utility_cabinet': ('utility_cabinet_city_v1.png', (64, 48)),
+    'cargo_pallet': ('cargo_pallet_city_v1.png', (88, 56)),
 }
 ENTRANCE_ASSETS = {
     'collision_preview_house': ('house_entrance_title_v2.png', (280, 280)),

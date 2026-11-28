@@ -76,7 +76,8 @@ def paint_neighborhood(finish, pixels, road_mask, quiet, sidewalk, layout, pump)
                 inside = (_ellipse_coverage(wx, wy, bounds) > 0
                           if surface.get('shape') == 'ellipse'
                           else _inside_rounded(wx, wy, bounds, radius))
-                if road_mask[index] or sidewalk[index] or quiet[index] or not inside:
+                if (road_mask[index] or sidewalk[index]
+                        or quiet[index] and not layout.get('quiet_floor') or not inside):
                     continue
                 underlays[index] = owners[index]
                 owners[index] = number
@@ -94,6 +95,9 @@ def paint_neighborhood(finish, pixels, road_mask, quiet, sidewalk, layout, pump)
                 surface = surfaces[number - 1]
                 material = surface['material']
                 color = _color(wx, wy, material)
+                if quiet[index] and layout.get('quiet_floor'):
+                    # 배송 공간은 포장 바탕만 이어 주고 줄눈/장식을 넣지 않는다.
+                    color = (190, 182, 157)
                 offset = index * 4
                 if surface.get('shape') == 'ellipse':
                     coverage = _ellipse_coverage(wx, wy, surface['bounds'])

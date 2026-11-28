@@ -1,134 +1,134 @@
 {
     "format":  "zlib-compressed ABGR8888",
     "count":  25,
-    "total_bytes":  657520,
+    "total_bytes":  739550,
     "source_newlines":  "LF canonical",
-    "generated_by":  "RoadFinish; map includes fixed density props",
+    "generated_by":  "offline city block asset bake; no game execution",
     "files":  [
                   {
-                      "name":  "2b7191ab2707f68d322d71ec67f2bbad07c4716ea6c5a470a1d54eeac537261b.rgba.z",
-                      "bytes":  37525,
-                      "sha256":  "a064012740a479fea719b544ea281e841b9c87dd274737ed4eb08212f3466c30"
+                      "name":  "0c9b073b931462f95f707c8ab11b3c39b111f482b37e091f4b506c2ace21f97b.rgba.z",
+                      "bytes":  62213,
+                      "sha256":  "914998351b2ec7187c035c7e4a6f332246d4025a9e143f2a73a2fa47d666f9c2"
                   },
                   {
-                      "name":  "2d5ca217b5280da743e61a70100205e991365d10d8473aa1df0a235b801b6d04.rgba.z",
-                      "bytes":  6449,
-                      "sha256":  "e4449d87df4fefcabb74251624cf4042f25f1cd3a0b4312683406a5a7a4e85ee"
+                      "name":  "115d2f31703ce19cbeb973d368ffbf22b075fb277e7b7875e1ffa3a796979fa8.rgba.z",
+                      "bytes":  66400,
+                      "sha256":  "dbc032768021c438a16a1f7c58af92d5123b5aa5ae5623764f4419a0c89f79e6"
                   },
                   {
-                      "name":  "3c5137b2154b453e74f63dad1e3cd0cd927f81e4e93c4143bd8a9a634b1b32b7.rgba.z",
-                      "bytes":  52724,
-                      "sha256":  "b5f84dccdfd8e427da7b27da5a36ba461e3dec5777f136f06723fb7b5124af13"
-                  },
-                  {
-                      "name":  "4a50e3d5bf0f37a0cfc0650f929bff45a30ea4473e92d35e0e4c8e02bbd9320f.rgba.z",
+                      "name":  "1b6adacbede1b04f35f385b401bc4d651c95e7ea8ada549b980903f9763f2da4.rgba.z",
                       "bytes":  441,
                       "sha256":  "36383f4d75948e083b671f6808163fdb9f38e234e15fe7fc8521908f6e1b64e5"
                   },
                   {
-                      "name":  "4af32b946250af0c20abbbdbafbbb5a613dc5829888872b2811aa9b037c187a0.rgba.z",
-                      "bytes":  353,
-                      "sha256":  "77b39db1529758846419ebe62f73a8c1dd6a1ad3fbde38656d3426ed91832b3b"
+                      "name":  "21fb6ba73b342ffc1a22be90af51f6dd31ed779639dfa0d2ae5937b26c2214ef.rgba.z",
+                      "bytes":  41423,
+                      "sha256":  "f54f32ba18932d0f27306c624cf1e67cab5857d7580877510a38f8fe5c087df9"
                   },
                   {
-                      "name":  "4bdc71b28bbde4665fcddd7b01db458b61dc1af07a6b9533950e7c54fc12e98d.rgba.z",
-                      "bytes":  6238,
-                      "sha256":  "618f634861fb6fdcfa97cc7d4bd383223a5fcbb83f23b5f0440f116805ff218a"
+                      "name":  "2ba6f784fe464257a5652a586192e3f991b5f533493cd031a2a4c8e9d4ceaa82.rgba.z",
+                      "bytes":  8501,
+                      "sha256":  "781ad7bfdea6077d1ba7f8209b449d34c4cbcd26048438770871e50e43fa12dd"
                   },
                   {
-                      "name":  "4cf6e7eb0d808b448a6b7feaad38c24c646514eb861096fc029249fd3e22be7a.rgba.z",
+                      "name":  "330ee877d2d76c83f53dc29c736086ed246010157b1816ee6a862ec03fbfc6af.rgba.z",
                       "bytes":  352,
                       "sha256":  "54b20862bdf2e850c64472ef4ac6183937e316036f70a26110c49bc71709e098"
                   },
                   {
-                      "name":  "508cf528799fa610a168a092a6d2f774b70d28122971ad5f3ca9e3e7f296d2b6.rgba.z",
-                      "bytes":  23281,
-                      "sha256":  "68a5627635245219dbad77d0b6998229540041dc9481c08099d2c1563b0bbb53"
+                      "name":  "48b7b8221c947b03dec3e397024a8b90ead604c2856a2b5969e5ceb673c28eb2.rgba.z",
+                      "bytes":  23590,
+                      "sha256":  "740d26fca713d3c4b2374d13c71757895b8fe1dd968a66ed9574e97ea7007c04"
                   },
                   {
-                      "name":  "521d4c0c15385f53c725fc1a79c08d047591438bbc0453ebd1d7b851308ac3f8.rgba.z",
-                      "bytes":  133168,
-                      "sha256":  "cf91b9a6c380828de5995f8a36bbdafa0caa6c257fe0f5a6f47b6b6488a11dee"
+                      "name":  "5000cfba83a9ded25a0c938dd6cfc011f6a83c76eb85e132c228c36b4049b4ee.rgba.z",
+                      "bytes":  22652,
+                      "sha256":  "3e56d4e1e104eeb2c00ceda04d1c0a2008107d15d1f6667e94159fe117fe049a"
                   },
                   {
-                      "name":  "59dbf224a0ce1ba62a6dc5e33ba7fce141c9e982b9fefe1d6f41fa863a56c505.rgba.z",
-                      "bytes":  18580,
-                      "sha256":  "df0395c9d636e3e6d7ff499b3570211a65a3a7ff568240ea08f73b63562e5732"
-                  },
-                  {
-                      "name":  "611828bc15227649d1a080f645f4c391cb5996e23909e7a3b045e798d93c1ee3.rgba.z",
-                      "bytes":  15713,
-                      "sha256":  "c706c1446a09c5cdffc03388b6aa85da67d3f549dd1f774fc1db095944cbae62"
-                  },
-                  {
-                      "name":  "7d415552d6c6c81f3007b4c741b8718d1f57371cdb5a686f8fac00afa2c1a621.rgba.z",
-                      "bytes":  12106,
-                      "sha256":  "b17a94431e28a7df7c384df90e232e43e0ae629628ef1c2fe367173bdd0acc2c"
-                  },
-                  {
-                      "name":  "849e48f3736affe2464d954a49f1c978f4e8ac403db5be9c5f834f42a36dbfc7.rgba.z",
-                      "bytes":  54117,
-                      "sha256":  "844c888647a28272fe5a477c6d8f6941dac3532ed15d93a308b1b9a682ccd6a5"
-                  },
-                  {
-                      "name":  "9797911f10bc02d02d5de3cf818f4b1f73ae622ba9d223795661618f5bc32a56.rgba.z",
+                      "name":  "55157f3a599ecc40a9f2847e38d17170a87927143d7c075030a976f5e3fb2c6b.rgba.z",
                       "bytes":  455,
                       "sha256":  "7f2f8422a34e572b4fc1a444011f5a547e9542c13d01df7837031a28f090ab25"
                   },
                   {
-                      "name":  "a5c596adb596ce4eee96e7a6c06bdf5735d71056505222d485ce62a6befc771f.rgba.z",
-                      "bytes":  7069,
-                      "sha256":  "cf1bf7d1a146ff49186358f1b49e4a379dd22d577c5c7ccf29f0811135f5c248"
+                      "name":  "5d96c9d77b768303dc14c0a9be5c189c63ede15c853cfe97f9e9a2b8ee1094f5.rgba.z",
+                      "bytes":  24066,
+                      "sha256":  "63d562c79a8929b98020ceeffbcc99b3f73f71f47fc6ce167c69b05388dea128"
                   },
                   {
-                      "name":  "b3cfd178b33404cd9356b421da08ded42771f33f22069f307881debadf4b2dee.rgba.z",
-                      "bytes":  37849,
-                      "sha256":  "85ea971431c41a343c0da8a00c2f5fa0496fb0279806664ce65792d8227a3c9c"
+                      "name":  "7140bd64e172251b051efd01b66420c27ea5707823128d836382db7d94f5a29b.rgba.z",
+                      "bytes":  11591,
+                      "sha256":  "044e7188efd6bbae3631f8c9266c388ecd2fbbd972388e56340d8f483f738886"
                   },
                   {
-                      "name":  "b4cb3671f448c86519715aaceb1b8a67cce0b99cbc5e9baa8a7bb40437d62055.rgba.z",
-                      "bytes":  36746,
-                      "sha256":  "f3ef0c53d90ed9c2e182adc0c997678c2d881aa40c0efc550f83accd8e69beeb"
+                      "name":  "80e554dd152aead8aadbc8061b84ce6f67de335335099ece6fa041f7a7be1f71.rgba.z",
+                      "bytes":  54124,
+                      "sha256":  "e2b7857977f272f517bf8fe77001730a7603959fdc687f865483c6c4c0012500"
                   },
                   {
-                      "name":  "baaa48906337758919589fbbf620b37dbb9455487aecece752890cb4b9c02d70.rgba.z",
-                      "bytes":  6857,
-                      "sha256":  "3cc13f9cd52f35a74bec61e435d3721989e04b25d46ea2a9cf04275113f82454"
+                      "name":  "919999a888988ce99e624d7bdda7b127257ab7ba1dc99306777615934b755340.rgba.z",
+                      "bytes":  8417,
+                      "sha256":  "c9e2e5faeddc3b9517c8f9e426528881a2c17356d01784cb3ed58128f2949c13"
                   },
                   {
-                      "name":  "c4c64457930a09ba4f16b85671889721c2d5e34894021e89da0d6be0d597d246.rgba.z",
-                      "bytes":  18582,
-                      "sha256":  "f14b79697792536f3ac6a2ec1074f6d65e082f46cc53103fb2401b088c5457b4"
+                      "name":  "a01f21bad00097ecfbb2eeaa2e6d16d7736ba13ff66f3e7c0443125e8415dbd6.rgba.z",
+                      "bytes":  40248,
+                      "sha256":  "48ae4e8e81bf7c05cba27d51d7d428ffc4063e35a7fc265872e7713b54bd252d"
                   },
                   {
-                      "name":  "d22860a3397b5aa376824fec4c2d9820c19ba9aaeb25ded2b638d3ed1a58551b.rgba.z",
-                      "bytes":  41801,
-                      "sha256":  "833d08328bb6637d3b831950fef7c382c5a857690d5bcd42f376a7a6a3119fd4"
+                      "name":  "a43c6dc3a7b3a42a86bc9a8f125fd14ee5bc7a75c99adc84b179f98fe46ccb37.rgba.z",
+                      "bytes":  353,
+                      "sha256":  "77b39db1529758846419ebe62f73a8c1dd6a1ad3fbde38656d3426ed91832b3b"
                   },
                   {
-                      "name":  "e4d19e865b9bbb804729dc9eda805316efa3c09f02a5911920a0bc12ad6a7afb.rgba.z",
-                      "bytes":  18608,
-                      "sha256":  "d51f40df4f79632fe02bcdf21744e87767d7343eab52c03214dc459d9728d303"
+                      "name":  "a9321442b433fcc1923221eb5cbbadcc0a4a26bd999bf72892de3c1a2df323be.rgba.z",
+                      "bytes":  46541,
+                      "sha256":  "dbc9f1b1b00eb5554429274ffc872be914345a1ed89fdde5ca5f1ddc5cf0c0be"
                   },
                   {
-                      "name":  "ea61a7dc1aa031a13ebfb1e768642b93d0713de5cbe95035b2277dd5050338dd.rgba.z",
-                      "bytes":  24819,
-                      "sha256":  "d263ad4fced6888335caeaae962b6e7e93255233e52be832eca00a7bcb8eb98d"
+                      "name":  "ba6c470735c5c0ac025bea879c99052590394deea20a98924739d60ae892d366.rgba.z",
+                      "bytes":  43673,
+                      "sha256":  "d07e48c0b604f5cb5514fecc5c1b320aca59df0b1181ccafb436b7a31e3d5ab5"
                   },
                   {
-                      "name":  "f2c96946c81d724a59204eac1d88981409b884073faace253a9e7fd6d10a0654.rgba.z",
-                      "bytes":  37546,
-                      "sha256":  "e739756c90dee8f54ca79fe456fe5a119338b2e91d8b2bc216d06141ef7fd2a9"
+                      "name":  "cb593f115478d52b61bdd2734ad108ab5577e2b283752585592964f01880b558.rgba.z",
+                      "bytes":  8725,
+                      "sha256":  "2529c60c3c19f637c4d1b4239c83dcc7e8fa15f83d75cabae0d667a9efedb994"
                   },
                   {
-                      "name":  "f3debd33074615849ac56ca1d8b7351080262b849d50047e7a3da004a220fba3.rgba.z",
-                      "bytes":  11516,
-                      "sha256":  "8c9451bef2aa1b06d89b91629be2d17f2a7acc50698ddbc27af0455586036791"
+                      "name":  "d5c9d45748612190011cb22ea0002f91ccd3bf1832a11b9c64e0e899f2fe3c65.rgba.z",
+                      "bytes":  9137,
+                      "sha256":  "a816cd4d57ca4050d49dd9bb7fee8aa8fb62c067eafa5371a9fe13c27e475437"
                   },
                   {
-                      "name":  "ff63394e7a00bff4611e7cfac15571dcac67531b526175518fadc1d3291b2bcf.rgba.z",
-                      "bytes":  54625,
-                      "sha256":  "4d8df06a95e67689f34ddf91524f7f02472e24483a1feaafef6f12d99ef166b9"
+                      "name":  "d87eb04b247d7d70a864d80359f4243d27fd0814e59a87f87874c0c62d757ee6.rgba.z",
+                      "bytes":  28379,
+                      "sha256":  "01843c7bc22c1130b4ed307148365037f2853646a91e7b2c151a548689ce850d"
+                  },
+                  {
+                      "name":  "dd3b69c60727ae8c686044f85114684f43795116fdd1775ff9ba0ed4d6408b21.rgba.z",
+                      "bytes":  11831,
+                      "sha256":  "801f8a2c2f6867ef7e43aa231225ea79468bf9305229dae72acaf97cfed08eaa"
+                  },
+                  {
+                      "name":  "e9585f86b877ce4849c67d0192de7175f0211c24d8ad418dcc802ea96a04c376.rgba.z",
+                      "bytes":  42100,
+                      "sha256":  "02eee74677275e8cbab145bf7b2d61732d12efa0005316a73fa8d32bd330ba47"
+                  },
+                  {
+                      "name":  "ea53f7e02e34f3dae47fe4b1da018477229b6e626146a901d9234d6176c047e5.rgba.z",
+                      "bytes":  23655,
+                      "sha256":  "221ea13c333cd7a635352ee93cef04cfb3c2cfeb646a4926c5f4309dc423517c"
+                  },
+                  {
+                      "name":  "ee3528e8ecf34e974673aa28a0ff43643e3705cba80ecc31455bcb43c640274d.rgba.z",
+                      "bytes":  132242,
+                      "sha256":  "960cca31f2240df7e126eb20972619a018aa24b43ce492286a90e42b936c7709"
+                  },
+                  {
+                      "name":  "fabd3c4acd0913d928fc81a5e352801935c64f268993329171ac4f4fe1a598de.rgba.z",
+                      "bytes":  28441,
+                      "sha256":  "dc32b75c412ac767573570539a0939f21d208c11812fcb3ecbcee3ff7a0ff805"
                   }
               ]
 }

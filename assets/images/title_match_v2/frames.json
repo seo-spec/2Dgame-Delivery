@@ -1,4 +1,19 @@
 {
+    "parcel_locker_city_v1.png": {
+        "source_size": [1860, 846], "source_rect": [386, 182, 1089, 507],
+        "reference_size": [96, 56], "reference_rect": [4, 6, 88, 44],
+        "reference_asset": "parcel_locker_city_v1.png"
+    },
+    "utility_cabinet_city_v1.png": {
+        "source_size": [1536, 1024], "source_rect": [364, 246, 809, 551],
+        "reference_size": [64, 48], "reference_rect": [4, 4, 56, 40],
+        "reference_asset": "utility_cabinet_city_v1.png"
+    },
+    "cargo_pallet_city_v1.png": {
+        "source_size": [1635, 962], "source_rect": [260, 176, 1115, 643],
+        "reference_size": [88, 56], "reference_rect": [4, 4, 80, 48],
+        "reference_asset": "cargo_pallet_city_v1.png"
+    },
     "depot_title_v2.png":  {
                                "source_size":  [
                                                    1254,

@@ -253,6 +253,9 @@ def create_decorations(camera, config, roads):
         'recycling_bin': 'recycling_bin.png',
         'mailbox': 'mailbox.png',
         'planter': 'planter.png',
+        'parcel_locker': 'mailbox_pixel_v1.png',
+        'utility_cabinet': 'recycling_bin_pixel_v1.png',
+        'cargo_pallet': 'planter_pixel_v1.png',
     }
     images = {}
     prop_files = {
