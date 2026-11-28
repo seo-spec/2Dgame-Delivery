@@ -8,6 +8,7 @@ from game.world.road_geometry import GRASS_COLOR, MARKING_COLOR, SIDEWALK_COLOR
 from game.world.ground_materials import asphalt_shade, grass_color
 from game.world.start_scene_art import ground_strength, ground_tint
 from game.world.ground_cache import cache_path, read_pixels, write_pixels
+from game.world.neighborhood_finish import paint_neighborhood
 
 
 _pico = import_module('pico2d.pico2d')
@@ -64,7 +65,9 @@ class RoadFinish:
             return
         quiet = self._quiet_mask(road_map)
         pixels = self._material_pixels(mask, quiet, config['fade_width'])
-        self._paint_paving(pixels, mask, quiet, road_map, config)
+        sidewalk = self._paint_paving(pixels, mask, quiet, road_map, config)
+        paint_neighborhood(self, pixels, mask, quiet, sidewalk,
+                           config.get('neighborhood'), _pump_loading_events)
         self._paint_entrances(pixels, mask, road_map, config)
         self._paint_markings(pixels, mask, quiet, road_map)
         self.image = self._upload(pixels)
@@ -241,6 +244,8 @@ class RoadFinish:
                     continue
                 pixels[index * 4:index * 4 + 4] = bytes(
                     (*[channel + shade for channel in tint], alpha))
+
+        return sidewalk
 
     def _paint_entrances(self, pixels, road_mask, road_map, config):
         """표시용 진입부만 합성한다. RoadSurface나 건물 판정에 등록하지 않는다."""

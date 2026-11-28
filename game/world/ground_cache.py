@@ -17,7 +17,8 @@ def cache_path(road_map, config):
     if signature is None:
         digest = sha256(b'ground-rgba-v1')
         for filename in ('road_finish.py', 'ground_materials.py', 'road_geometry.py',
-                         'road_surface.py', 'start_scene_art.py', 'ground_cache.py'):
+                         'road_surface.py', 'start_scene_art.py', 'ground_cache.py',
+                         'neighborhood_finish.py'):
             digest.update((ROOT / 'game/world' / filename).read_bytes().replace(b'\r\n', b'\n'))
         digest.update((ROOT / 'game/config/settings.py').read_bytes().replace(b'\r\n', b'\n'))
         digest.update(json.dumps(road_map.config, sort_keys=True).encode('utf-8'))

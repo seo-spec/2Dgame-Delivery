@@ -30,6 +30,28 @@
       "bounds": [590, 220, 910, 390],
       "edge_fade": 8
     },
+    "neighborhood": {
+      "bounds": [0, 0, 1200, 1060],
+      "surfaces": [
+        {"bounds": [18, 24, 286, 312], "material": "stone", "radius": 14},
+        {"bounds": [18, 346, 284, 578], "material": "stone", "radius": 14},
+        {"bounds": [26, 646, 276, 858], "material": "stone", "radius": 12},
+        {"bounds": [302, 24, 586, 294], "material": "brick", "radius": 14},
+        {"bounds": [590, 12, 956, 302], "material": "service", "radius": 10},
+        {"bounds": [542, 96, 590, 260], "material": "service", "radius": 6},
+        {"bounds": [530, 526, 804, 682], "material": "stone", "radius": 18},
+        {"bounds": [790, 540, 862, 578], "material": "stone", "radius": 10},
+        {"bounds": [838, 538, 962, 668], "material": "garden", "radius": 40},
+        {"bounds": [602, 800, 898, 1010], "material": "stone", "radius": 12},
+        {"bounds": [294, 34, 316, 236], "material": "garden", "radius": 10},
+        {"bounds": [920, 72, 958, 264], "material": "garden", "radius": 12},
+        {"bounds": [538, 662, 686, 680], "material": "garden", "radius": 8}
+      ],
+      "parking_bays": [
+        [544, 110, 584, 174],
+        [544, 184, 584, 248]
+      ]
+    },
     "entry_paths": [
       {
         "building_id": "collision_preview_house",
