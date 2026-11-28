@@ -92,6 +92,10 @@ class RoadMap:
             hits = sum(finish.cache_hit for finish in finishes)
             print(f'[지면 준비] 캐시 {hits}/{len(finishes)}, '
                   f'재생성 {len(finishes) - hits}, {perf_counter() - finish_started:.2f}초')
+            saved = sum(finish.cache_saved is True for finish in finishes)
+            failed = sum(finish.cache_saved is False for finish in finishes)
+            if saved or failed:
+                print(f'[지면 캐시] 저장 성공 {saved}, 저장 실패 {failed}')
 
     def is_point_on_road(self, x, y):
         """월드 좌표 점의 도로 포함 여부. 건물 충돌과는 독립적이다."""

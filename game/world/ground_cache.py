@@ -9,6 +9,7 @@ import zlib
 
 ROOT = Path(__file__).resolve().parents[2]
 CACHE_DIR = ROOT / '.tmp/ground-cache'
+BUNDLED_CACHE_DIR = ROOT / 'assets/ground/title_match_v2'
 
 
 def cache_path(road_map, config):
@@ -17,8 +18,8 @@ def cache_path(road_map, config):
         digest = sha256(b'ground-rgba-v1')
         for filename in ('road_finish.py', 'ground_materials.py', 'road_geometry.py',
                          'road_surface.py', 'start_scene_art.py', 'ground_cache.py'):
-            digest.update((ROOT / 'game/world' / filename).read_bytes())
-        digest.update((ROOT / 'game/config/settings.py').read_bytes())
+            digest.update((ROOT / 'game/world' / filename).read_bytes().replace(b'\r\n', b'\n'))
+        digest.update((ROOT / 'game/config/settings.py').read_bytes().replace(b'\r\n', b'\n'))
         digest.update(json.dumps(road_map.config, sort_keys=True).encode('utf-8'))
         digest.update(json.dumps([road_map.width, road_map.height,
                                   road_map.road_surface.rectangles]).encode('utf-8'))
@@ -29,6 +30,15 @@ def cache_path(road_map, config):
 
 
 def read_pixels(path, expected_size):
+    pixels = _read_pixels(path, expected_size)
+    if pixels is None:
+        # 배포된 현재 맵은 첫 시작에도 합성하지 않는다. 소스/맵 해시가
+        # 일치하는 파일만 찾으므로 수정된 지면에 오래된 그림을 쓰지 않는다.
+        pixels = _read_pixels(BUNDLED_CACHE_DIR / path.name, expected_size)
+    return pixels
+
+
+def _read_pixels(path, expected_size):
     try:
         # 압축 체크섬과 크기를 확인하고 손상/불완전 캐시는 다시 생성한다.
         with path.open('rb') as stream:
@@ -54,9 +64,10 @@ def write_pixels(path, pixels):
             temporary = Path(stream.name)
             stream.write(zlib.compress(pixels, level=1))
         temporary.replace(path)
+        return True
     except OSError:
         # 읽기 전용 설치/디스크 부족이어도 현재 합성 결과로 플레이한다.
-        pass
+        return False
     finally:
         if temporary is not None:
             try:

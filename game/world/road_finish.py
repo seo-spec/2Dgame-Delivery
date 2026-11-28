@@ -50,6 +50,7 @@ class RoadFinish:
             path = None
         cached = read_pixels(path, self.width * self.height * 4) if path else None
         self.cache_hit = cached is not None
+        self.cache_saved = None
         if self.cache_hit:
             self.image = self._upload(cached)
             return
@@ -59,8 +60,7 @@ class RoadFinish:
             pixels = bytearray(bytes((*GRASS_COLOR, 0)) * (self.width * self.height))
             self._paint_entrances(pixels, mask, road_map, config)
             self.image = self._upload(pixels)
-            if path:
-                write_pixels(path, pixels)
+            self.cache_saved = write_pixels(path, pixels) if path else False
             return
         quiet = self._quiet_mask(road_map)
         pixels = self._material_pixels(mask, quiet, config['fade_width'])
@@ -68,8 +68,7 @@ class RoadFinish:
         self._paint_entrances(pixels, mask, road_map, config)
         self._paint_markings(pixels, mask, quiet, road_map)
         self.image = self._upload(pixels)
-        if path:
-            write_pixels(path, pixels)
+        self.cache_saved = write_pixels(path, pixels) if path else False
 
     def _road_mask(self, rectangles):
         """반열린 월드 사각형을 표시용 마스크로 변환한다. 판정 데이터는 수정하지 않는다."""
