@@ -363,7 +363,7 @@ def create_decorations(camera, config, roads):
 
     for item in config['buildings']:
         add_decoration(item, item.get('asset', 'building'), is_building=True)
-    for item in config.get('props', []):
+    for item in [*config.get('props', []), *config.get('density_props', [])]:
         add_decoration(item, item['asset'])
     # 북·동·남·서가 모두 연결된 타일의 네 모서리에만 배치한다.
     intersections = [(x, y) for (x, y), mask in roads.items() if mask == 15]
